@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MTHosting · Prototipo navegable</title>
+<style>
+:root{
+  --ink:#17302C; --paper:#F4F6F3; --surface:#FFFFFF;
+  --line:#E1E6E0; --line-2:#C7D0C6;
+  --text:#17302C; --text-2:#5C6B65; --text-3:#8D9992;
+  --brand:#0E6B57; --brand-bg:#E4EFEB;
+  --warn:#9C6114; --warn-bg:#FAEFDD;
+  --danger:#A03528; --danger-bg:#FAE9E6;
+  --font-ui:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font-ui);background:var(--paper);color:var(--text);
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- shell ---------- */
+.topbar{height:46px;background:var(--ink);color:#EAF0EC;display:flex;align-items:center;
+  justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:50}
+.topbar .brand{font-weight:600;letter-spacing:.14em;font-size:11px}
+.topbar .demo{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8FA9A0}
+.vp-toggle{display:flex;gap:2px;background:rgba(255,255,255,.1);border-radius:6px;padding:2px}
+.vp-toggle button{padding:4px 12px;border-radius:4px;font-size:11px;color:#B7C9C2}
+.vp-toggle button.on{background:#EAF0EC;color:var(--ink);font-weight:600}
+
+.app{display:flex;min-height:calc(100vh - 46px)}
+.side{width:196px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--line);padding:14px 8px}
+.side a{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:var(--r);
+  font-size:13px;color:var(--text-2);text-decoration:none;margin-bottom:1px;cursor:pointer}
+.side a:hover{background:var(--paper)}
+.side a.on{background:var(--brand-bg);color:var(--brand);font-weight:600}
+.side .grp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);
+  padding:14px 11px 6px}
+.side .dot{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:600;
+  min-width:17px;height:17px;border-radius:9px;display:grid;place-items:center;padding:0 5px}
+.main{flex:1;min-width:0;padding:22px 26px 60px}
+.wrap{max-width:940px}
+
+/* mobile frame */
+body.mob .app{justify-content:center;background:#DDE3DD;padding:22px 0 40px}
+body.mob .side{display:none}
+body.mob .main{flex:0 0 390px;width:390px;background:var(--paper);border-radius:22px;
+  padding:0 0 62px;overflow:hidden;box-shadow:0 8px 32px rgba(23,48,44,.16);position:relative;min-height:720px}
+body.mob .wrap{max-width:none;padding:14px 14px 0}
+.mnav{display:none}
+body.mob .mnav{display:flex;position:absolute;bottom:0;left:0;right:0;height:58px;
+  background:var(--surface);border-top:1px solid var(--line);border-radius:0 0 22px 22px}
+.mnav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;font-size:10px;color:var(--text-3)}
+.mnav button.on{color:var(--brand);font-weight:600}
+.mnav .ic{font-size:17px;line-height:1}
+.mnav .mdot{position:absolute;top:8px;margin-left:16px;background:var(--danger);width:7px;height:7px;border-radius:4px}
+
+/* ---------- type ---------- */
+h1{font-size:19px;font-weight:600;letter-spacing:-.01em}
+h2{font-size:15px;font-weight:600;margin-bottom:9px}
+.lbl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);font-weight:600}
+.mono{font-family:var(--font-mono);font-size:12px}
+.sub{color:var(--text-2);font-size:12.5px}
+.mut{color:var(--text-3)}
+
+/* ---------- pieces ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.btn{border:1px solid var(--line-2);border-radius:var(--r);padding:6px 13px;font-size:12.5px;background:var(--surface)}
+.btn:hover{border-color:var(--text-3)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:500}
+.btn.pri:hover{background:#0B5849}
+.tabs{display:flex;gap:4px}
+.tabs button{padding:6px 13px;border-radius:var(--r);font-size:12.5px;color:var(--text-2)}
+.tabs button.on{background:var(--surface);border:1px solid var(--line-2);font-weight:600;color:var(--text)}
+.search{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:9px 13px;display:flex;align-items:center;gap:9px;color:var(--text-3);font-size:13px;width:100%}
+
+.row{background:var(--surface);border-left:3px solid transparent;padding:12px 15px;
+  border-bottom:1px solid var(--line);cursor:pointer;display:block;width:100%;text-align:left}
+.row:last-child{border-bottom:none}
+.row:hover{background:#FAFBFA}
+.row.dg{border-left-color:var(--danger)}
+.sec-in .row{border-left-color:var(--brand)}
+.sec-in .row.dg{border-left-color:var(--danger)}
+.sec-out .row{border-left-color:#B8862E}
+.sec-out .row.dg{border-left-color:var(--danger)}
+.sec-head{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-weight:600;font-size:15px}
+.sec-head.in{color:var(--brand)}
+.sec-head.out{color:#8A6420}
+.sec-head .pill{width:9px;height:9px;border-radius:5px}
+.sec-head.in .pill{background:var(--brand)}
+.sec-head.out .pill{background:#B8862E}
+.tabs button.in.on{border-color:var(--brand);color:var(--brand);background:var(--brand-bg)}
+.tabs button.out.on{border-color:#B8862E;color:#8A6420;background:#F7EFDF}
+.row.wn{border-left-color:var(--warn)}
+.row.nt{border-left-color:var(--line-2)}
+.r1{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.r1 strong{font-size:13.5px;font-weight:600}
+.r2{margin-top:3px;font-size:12.5px;color:var(--text-2)}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:5px;
+  background:var(--paper);color:var(--text-2);white-space:nowrap}
+.tag.br{background:var(--brand-bg);color:var(--brand)}
+.tag.wn{background:var(--warn-bg);color:var(--warn)}
+.tag.dg{background:var(--danger-bg);color:var(--danger)}
+.tag.ok{background:var(--brand-bg);color:var(--brand)}
+.tag.gh{background:none;border:1px dashed var(--line-2);color:var(--text-3)}
+
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.stat .n{font-size:22px;font-weight:600;margin-top:1px;letter-spacing:-.02em}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px}
+
+.bar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--paper)}
+.bar i{display:block}
+.bar .a{background:var(--brand)}
+.bar .u{background:var(--danger)}
+.bar .w{background:var(--warn)}
+.bar .g{background:var(--line-2)}
+
+.sel{position:relative}
+.selbtn{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
+  padding:7px 11px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.selbtn.empty{border:1.5px dashed var(--warn);color:var(--warn);background:var(--warn-bg);font-weight:500}
+.selbtn.urg{border-color:var(--danger)!important;color:var(--danger)!important;background:var(--danger-bg)!important}
+.pop{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:10px;box-shadow:0 10px 28px rgba(23,48,44,.15);
+  max-height:262px;overflow:auto}
+.pop .ph{padding:7px 12px 3px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-3);font-weight:600}
+.pop button{display:block;width:100%;text-align:left;padding:7px 12px;font-size:13px}
+.pop button:hover{background:var(--paper)}
+.pop .sp{border-top:1px solid var(--line);margin-top:4px}
+
+.kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:13px}
+.kv+.kv{border-top:1px solid var(--line)}
+.sec{padding:13px 15px;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:none}
+
+.ov{position:fixed;inset:0;background:rgba(23,48,44,.4);z-index:100;display:flex;
+  justify-content:flex-end}
+body.mob .ov{justify-content:center;align-items:center}
+.dw{background:var(--surface);width:412px;max-width:100%;overflow-y:auto;height:100%}
+body.mob .dw{width:390px;height:720px;border-radius:22px}
+.dwh{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);
+  padding:12px 15px;display:flex;align-items:center;gap:10px;z-index:2}
+
+.note{background:var(--warn-bg);border-left:3px solid var(--warn);padding:10px 14px;
+  border-radius:0 var(--r) var(--r) 0;font-size:12.5px;color:var(--warn)}
+.note.dg{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+.note.ok{background:var(--brand-bg);border-color:var(--brand);color:var(--brand)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);
+  padding:9px 12px;border-bottom:1px solid var(--line);font-weight:600;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+
+.dayh{display:flex;justify-content:space-between;align-items:center;margin:18px 0 7px}
+.dayh h2{margin:0}
+.drop{cursor:pointer}
+.hidden{display:none}
+.pend{border:1.5px dashed var(--warn)!important;background:var(--warn-bg)!important;
+  color:var(--warn)!important;font-weight:500}
+.pend.urg{border-color:var(--danger)!important;background:var(--danger-bg)!important;color:var(--danger)!important}
+.falta{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 9px;border-radius:5px;
+  background:var(--warn-bg);color:var(--warn);border:1px dashed var(--warn);font-weight:500;white-space:nowrap}
+.falta.urg{background:var(--danger-bg);color:var(--danger);border-color:var(--danger)}
+.todo{background:var(--warn-bg);border-left:3px solid var(--warn);border-radius:0 var(--r) var(--r) 0;
+  padding:11px 14px;margin-bottom:2px}
+.todo.urg{background:var(--danger-bg);border-color:var(--danger)}
+.todo ul{margin:6px 0 0 16px;font-size:12.5px}
+.todo li{margin-bottom:2px}
+.help{display:flex;gap:7px;align-items:flex-start;background:#EEF3F7;border-radius:var(--r);
+  padding:8px 11px;font-size:12px;color:#456;margin-top:8px}
+.help .i{font-size:13px;flex-shrink:0;margin-top:1px}
+.selfmsg{background:var(--brand-bg);border-radius:var(--r);padding:9px 12px;font-size:12.5px;
+  color:var(--brand);margin-top:8px;display:flex;gap:7px;align-items:flex-start}
+.selfmsg.wn{background:var(--warn-bg);color:var(--warn)}
+.selfmsg.dg{background:var(--danger-bg);color:var(--danger)}
+.chk{width:20px;height:20px;border:1.5px solid var(--line-2);border-radius:5px;flex-shrink:0;
+  display:grid;place-items:center;cursor:pointer;font-size:13px;background:var(--surface)}
+.chk.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.invrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.invrow:first-child{border-top:none}
+.invrow .nm{flex:1;font-size:13px}
+.invrow input.det{flex:1;border:1px solid var(--line);border-radius:6px;padding:5px 9px;font:inherit;font-size:12px;background:var(--paper)}
+.numsel{display:flex;align-items:center;gap:8px}
+.numsel button{width:26px;height:26px;border:1px solid var(--line-2);border-radius:6px;font-size:15px;background:var(--surface)}
+.numsel .v{min-width:20px;text-align:center;font-weight:600}
+.acc{border-bottom:1px solid var(--line)}
+.acc:last-child{border-bottom:none}
+.acc-h{width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:12px 15px;text-align:left;background:var(--paper);border-left:3px solid var(--brand)}
+.acc-h:hover{background:var(--paper)}
+.acc-h{background:var(--surface-1,#F4F6F3)}
+.acc-h .tt{font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.acc-h .ch{font-size:15px;color:var(--text-3);transition:transform .15s}
+.acc-h.open{background:var(--brand-bg)}
+.acc-h.open .ch{transform:rotate(90deg)}
+.acc-b{padding:0 15px 14px}
+.acc-sum{font-size:12px;color:var(--text-3);margin-left:8px;font-weight:400}
+.vent{margin-top:6px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;
+  font-size:12.5px;background:var(--paper);border-radius:6px;padding:6px 10px}
+.vent .lbl{margin-right:3px}
+input[type=time].vacio{border:1.5px dashed var(--warn);background:var(--warn-bg);color:var(--warn)}
+input[type=time]{font:inherit;font-size:13px;border:1px solid var(--line);
+  border-radius:var(--r);padding:6px 10px;background:var(--paper);width:100%}
+input[type=time]:focus{outline:2px solid var(--brand);outline-offset:1px;background:var(--surface)}
+.ta{width:100%;min-height:62px;border:1px solid var(--line);border-radius:var(--r);
+  padding:9px 11px;font:inherit;font-size:13px;background:var(--paper);resize:vertical}
+.ta:focus{outline:2px solid var(--brand);outline-offset:1px;background:var(--surface)}
+.mt{margin-top:16px}.mt2{margin-top:22px}.mb{margin-bottom:12px}
+.flexb{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+</style>
+</head>
+<body class="desk">
+
+<div class="topbar">
+  <div class="flexb" style="gap:14px">
+    <span class="brand">MTHOSTING</span>
+    <span class="demo">Prototipo · datos de ejemplo</span>
+  </div>
+  <div class="vp-toggle">
+    <button id="vd" class="on" onclick="setVp('desk')">Escritorio</button>
+    <button id="vm" onclick="setVp('mob')">Celular</button>
+  </div>
+</div>
+
+<div class="app">
+  <nav class="side" id="side"></nav>
+  <main class="main"><div class="wrap" id="view"></div>
+    <div class="mnav" id="mnav"></div>
+  </main>
+</div>
+<div id="overlay"></div>
+
+<script>
+/* ============ DATOS DE EJEMPLO ============ */
+const HOY = '2026-07-20';
+
+const PERSONAS = ['Anto','Ludmila','Trini','Mili','Sabri','Erika','Patricia'];
+const CHECKIN_P = ['Diego','Maguie','Franco','Patricia','Mili'];
+const ACCESOS = [
+  'Self','Sobre Esmeralda','Valijas Talcahuano','Valijas en depto',
+  'Candado Kennedy 1 · #1080','Candado Kennedy 3 · #2906','Llaves Esmeralda'
+];
+
+const DEPTOS = [
+  {n:'ARENALES 5', d:'Arenales 1384 PB B', b:'Recoleta', a:'2 amb', cap:4, prop:'Cecilia', soc:'BONO', wifi:'Fibertel 1384 · Ar3n4l3s!', acc:'Self', self:'siempre', reg:true, seg:true, enc:'Martín · +54 9 11 3044-2552'},
+  {n:'ARAOZ 1', d:'Araoz 1113 11B', b:'Palermo', a:'2 amb', cap:4, prop:'Cecilia', soc:'BONO', wifi:'Personal 187 · sDyBhB8EvJ', acc:'Valijas en depto', self:'multi', reg:false, seg:false, enc:'Rubén · +54 9 11 5521-7788'},
+  {n:'BORGES 1', d:'J. L. Borges 2258 2A', b:'Palermo', a:'3 amb', cap:6, prop:'Marcos', soc:'GATO', wifi:'Movistar 2258 · b0rg3s22', acc:'Candado Kennedy 3 · #2906', self:'multi', reg:true, seg:false, enc:'—'},
+  {n:'BORGES 2', d:'J. L. Borges 2363 3D', b:'Palermo', a:'2 amb', cap:4, prop:'Marcos', soc:'GATO', wifi:'Fibertel B2 · 2363home', acc:'Self', self:'siempre', reg:false, seg:false, enc:'—'},
+  {n:'CERVIÑO 1', d:'Av. Cerviño 3883 7A', b:'Palermo', a:'Monoamb.', cap:2, prop:'Laura', soc:'BONO', wifi:'Telecentro C1 · cerv3883', acc:'Self', self:'siempre', reg:false, seg:true, enc:'Julio · +54 9 11 6612-3390'},
+  {n:'CIUDAD 1', d:'Ciudad de la Paz 1972 4F', b:'Belgrano', a:'4 amb', cap:8, prop:'Marcos', soc:'GATO', wifi:'Fibertel CP · ciudad1972', acc:'Candado Kennedy 1 · #1080', self:'no', reg:true, seg:true, enc:'Norma · +54 9 11 4478-1204'},
+  {n:'DARREGUEYRA 1', d:'Darregueyra 2257 PB C', b:'Palermo', a:'3 amb', cap:5, prop:'Laura', soc:'BONO', wifi:'Movistar D1 · darre2257', acc:'Sobre Esmeralda', self:'multi', reg:false, seg:false, enc:'—'},
+  {n:'ED TALC 08', d:'Talcahuano 1186 8º', b:'Tribunales', a:'2 amb', cap:4, prop:'Consorcio TL', soc:'FRANCO', wifi:'Telecentro 08 · talc1186a', acc:'Valijas Talcahuano', self:'multi', reg:true, seg:false, enc:'Sergio · +54 9 11 3044-2552'},
+  {n:'ED TALC 33', d:'Talcahuano 1186 3º', b:'Tribunales', a:'2 amb', cap:4, prop:'Consorcio TL', soc:'FRANCO', wifi:'Telecentro 33 · talc1186b', acc:'Valijas Talcahuano', self:'multi', reg:true, seg:false, enc:'Sergio · +54 9 11 3044-2552'},
+  {n:'LAPRIDA 4', d:'Laprida 1937 5º 33', b:'Recoleta', a:'3 amb', cap:6, prop:'Ana', soc:'GATO', wifi:'Fibertel L4 · lapri1937', acc:'Sobre Esmeralda', self:'no', reg:false, seg:true, enc:'Claudia · +54 9 11 5033-8811'},
+  {n:'MARCELO T. 2', d:'M. T. de Alvear 952 6C', b:'Retiro', a:'2 amb', cap:4, prop:'Ana', soc:'GATO', wifi:'Movistar MT · alvear952', acc:'Self', self:'siempre', reg:false, seg:false, enc:'—'},
+  {n:'MENDOZA 1', d:'Mendoza 2246 PB B', b:'Belgrano', a:'2 amb', cap:4, prop:'Laura', soc:'BONO', wifi:'Telecentro M1 · mendo2246', acc:'Self', self:'siempre', reg:false, seg:false, enc:'—'},
+  {n:'BERUTI 2', d:'Beruti 3454 9B', b:'Palermo', a:'3 amb', cap:6, prop:'Cecilia', soc:'BONO', wifi:'Fibertel B2 · beruti345', acc:'Self', self:'multi', reg:true, seg:true, enc:'Elena · +54 9 11 6690-4471'}
+];
+
+/* ---- inventario: definición de campos ---- */
+const INV_DEF = [
+  ['dist','Distribución',[['hab','Habitaciones'],['camas','Total de camas'],['king','King'],['queen','Queen'],['twin','Twin'],['sillon','Sillón cama'],['bano1','Baño 1'],['bano2','Baño 2'],['bano3','Baño 3']]],
+  ['clima','Climatización',[['aac1','Aire hab. 1'],['aac2','Aire hab. 2'],['aac3','Aire hab. 3'],['aacl','Aire living'],['calef','Calefacción'],['agua','Agua caliente']]],
+  ['cocina','Cocina',[['cocina','Cocina'],['heladera','Heladera'],['micro','Microondas'],['pava','Pava'],['cafetera','Cafetera'],['tostadora','Tostadora'],['sangu','Sanguchera'],['hornito','Hornito eléctrico'],['licua','Licuadora']]],
+  ['lavado','Lavado',[['lavarropas','Lavarropas'],['tender','Tender'],['plancha','Plancha'],['tabla','Tabla de planchar'],['aspiradora','Aspiradora'],['laundry','Laundry']]],
+  ['otros','Otros',[['tv','TV'],['balcon','Balcón'],['perchas','Perchas'],['basura','Basura'],['secador','Secador de pelo'],['frazada','Frazadas'],['estac','Estacionamiento'],['wifivel','Velocidad wifi']]],
+  ['edificio','Edificio',[['pileta','Pileta'],['gym','Gimnasio'],['sauna','Sauna']]]
+];
+const INV_BASE = {
+  hab:'1', camas:'2', queen:'1', bano1:'Completo con ducha',
+  calef:'Split frío/calor', agua:'Termotanque 80 L', aacl:'Split 3000 fg',
+  cocina:'4 hornallas con horno', heladera:'No frost 2 puertas', micro:'Sí',
+  pava:'Eléctrica', cafetera:'Cafetera de filtro', tostadora:'Sí', hornito:'Sí',
+  lavarropas:'Automático 6 kg', tender:'Sí', plancha:'Sí', tabla:'Sí',
+  tv:'Smart 43"', perchas:'12', basura:'Cesto bajo mesada', secador:'Sí',
+  frazada:'2 frazadas + acolchado', wifivel:'300 Mb'
+};
+const INV_OVR = {
+  'ARENALES 5':{hab:'1', camas:'3', queen:'1', twin:'1', sillon:'1', aac1:'Split 2200 fg', licua:'Sí', laundry:'A 2 cuadras, Arenales 1420', balcon:'Sí, al frente', gym:'Sí, en PB'},
+  'ARAOZ 1':{hab:'1', camas:'2', queen:'1', aac1:'Split 2200 fg', aspiradora:'Sí', wifivel:'200 Mb'},
+  'BORGES 1':{hab:'2', camas:'4', king:'1', twin:'2', bano2:'Toilette', aac1:'Split 2200 fg', aac2:'Split 2200 fg', licua:'Sí', sangu:'Sí', balcon:'Sí, contrafrente', tv:'Smart 50"', pileta:'Sí, terraza', gym:'Sí, en PB'},
+  'BORGES 2':{hab:'1', camas:'3', queen:'1', sillon:'1', aac1:'Split 2200 fg', estac:'Cochera fija, subsuelo'},
+  'CERVIÑO 1':{hab:'0', camas:'1', queen:'1', bano1:'Completo con bañera', calef:'Losa radiante', tv:'Smart 32"', perchas:'8', wifivel:'100 Mb'},
+  'CIUDAD 1':{hab:'3', camas:'6', king:'1', queen:'1', twin:'2', sillon:'1', bano1:'Completo con bañera', bano2:'Completo con ducha', bano3:'Toilette', aac1:'Split 3000 fg', aac2:'Split 2200 fg', aac3:'Split 2200 fg', calef:'Losa radiante', licua:'Sí', sangu:'Sí', aspiradora:'Sí', laundry:'En el edificio, PB', balcon:'Sí, con parrilla', tv:'Smart 55"', estac:'Cochera fija', pileta:'Sí, climatizada', gym:'Sí, 2º piso', sauna:'Sí'},
+  'DARREGUEYRA 1':{hab:'2', camas:'4', queen:'1', twin:'2', bano2:'Toilette', aac1:'Split 2200 fg', aac2:'Ventilador de techo', licua:'Sí', balcon:'Sí, al frente'},
+  'ED TALC 08':{hab:'1', camas:'3', queen:'1', sillon:'1', aac1:'Split 2200 fg', wifivel:'500 Mb', laundry:'Talcahuano 1160'},
+  'ED TALC 33':{hab:'1', camas:'3', queen:'1', sillon:'1', aac1:'Split 2200 fg', wifivel:'500 Mb', laundry:'Talcahuano 1160'},
+  'LAPRIDA 4':{hab:'2', camas:'4', king:'1', twin:'2', bano2:'Completo con ducha', aac1:'Split 3000 fg', aac2:'Split 2200 fg', licua:'Sí', aspiradora:'Sí', balcon:'Sí, contrafrente', tv:'Smart 50"', estac:'Cochera fija'},
+  'MARCELO T. 2':{hab:'1', camas:'2', queen:'1', aac1:'Split 2200 fg', calef:'Radiadores', wifivel:'200 Mb'},
+  'MENDOZA 1':{hab:'1', camas:'3', queen:'1', twin:'1', aac1:'Split 2200 fg', balcon:'Sí, al frente'},
+  'BERUTI 2':{hab:'2', camas:'5', king:'1', queen:'1', twin:'1', bano2:'Completo con ducha', aac1:'Split 3000 fg', aac2:'Split 2200 fg', licua:'Sí', sangu:'Sí', aspiradora:'Sí', tv:'Smart 55"', balcon:'Sí, al frente', pileta:'Sí, terraza', gym:'Sí, en PB'}
+};
+DEPTOS.forEach(d => { d.inv = Object.assign({}, INV_BASE, INV_OVR[d.n] || {}); });
+const ALIASES = {
+  'ARENALES 5':['Luminoso depto en Recoleta','Moderno 2 amb Arenales','Cozy flat Recoleta'],
+  'CIUDAD 1':['Exclusivo 4 amb en Belgrano','Amplio depto familiar Belgrano'],
+  'ED TALC 33':['ED TALC 33','Depto en Tribunales 3º','Studio Talcahuano'],
+  'BORGES 1':['Palermo Soho 3 ambientes','Borges 2258 luminoso']
+};
+DEPTOS.forEach(d=>{ d.aliases = ALIASES[d.n] || ['Depto en '+d.b]; });
+const PROPTEL = {'Cecilia':'+54 9 2392 49-4674','Marcos':'+54 9 11 4021-8890','Laura':'+54 9 11 6745-2210','Ana':'+54 9 11 5590-3312','Consorcio TL':'+54 9 11 4811-7200'};
+DEPTOS.forEach(d=>{ d.propTel = PROPTEL[d.prop] || ''; });
+DEPTOS.find(x=>x.n==='ARENALES 5').ical='https://www.airbnb.com/calendar/ical/48213.ics?s=a1b2c3';
+DEPTOS.find(x=>x.n==='CIUDAD 1').ical='https://www.airbnb.com/calendar/ical/77120.ics?s=d4e5f6';
+DEPTOS.find(x=>x.n==='CIUDAD 1').observ='El propietario usa el depto la primera semana de enero. Bloquear esas fechas.';
+DEPTOS.find(x=>x.n==='LAPRIDA 4').observ='Portero solo hasta las 20h. Después, acceso por el sobre.';
+
+const DX = n => DEPTOS.find(d=>d.n===n) || DEPTOS[0];
+
+let LLEGADAS = [
+  {dp:'ED TALC 33', h:'11:00', g:'Gustavo Rabelo', t:'+55 38 99940-9246', cod:'HM2HB2SA35', prev:{g:'Marcela Torres', f:'19/07/2026', h:'11:30'}, noc:3, pax:'1 adulto', acc:'Valijas Talcahuano', reg:false, seg:null, sl:11, fres:'19/07/2026', f:null, obs:'Avisó que llega desde Ezeiza, puede demorar.'},
+  {dp:'BERUTI 2', h:'12:00', g:'Paula Sanmartín', t:'+34 687 47 11 03', cod:'HM3W8FQ6ZT', prev:{g:'Lucas Ferreyra', f:'18/07/2026', h:'10:00'}, noc:8, pax:'4 adultos', acc:'Self', reg:true, seg:true, sl:1, fres:'19/07/2026', f:null, obs:''},
+  {dp:'ARENALES 5', h:'14:00', g:'Tatiana Leuridan', t:'+55 61 98274-7459', cod:'HM2A9K3L2P', prev:{g:'Hanna Weber', f:'17/07/2026', h:'10:00'}, listoDesde:'17/07/2026', listo:true, noc:4, pax:'2 adultos', acc:'Self', reg:true, seg:true, sl:0, fres:'19/07/2026', f:null, obs:''},
+  {dp:'CERVIÑO 1', h:'14:00', g:'Diego Ferrada', t:'+56 9 6520 8488', cod:'HM5R2YT9WC', prev:null, noc:3, pax:'2 adultos', acc:'Self', reg:null, seg:false, sl:2, fres:'19/07/2026', f:null, obs:''},
+  {dp:'LAPRIDA 4', h:'15:00', g:'Marion Duclos', t:'+33 6 58 86 62 72', cod:'HM7N3PL8QK', prev:{g:'Edith Liberman', f:'19/07/2026', h:'14:00'}, noc:6, pax:'2 adultos', acc:'Sobre Esmeralda', reg:null, seg:false, sl:12, fres:'19/07/2026', f:'20/07/2026', obs:'Pidió entrar al día siguiente. Fecha del evento corrida al 20.'},
+  {dp:'CIUDAD 1', h:'16:00', g:'Axel Alejandro', t:'+1 832-594-6654', cod:'HMK4X9W2VD', prev:{g:'Sofía Ledesma', f:'19/07/2026', h:'10:00'}, noc:1, pax:'2 adultos', acc:'Candado Kennedy 1 · #1080', reg:false, seg:false, sl:3, fres:'19/07/2026', f:null, obs:''},
+  {dp:'ARAOZ 1', h:'17:00', g:'Bruna Machado', t:'+55 21 98812-4471', cod:'HM9J6KD3XN', prev:null, noc:5, pax:'2 adultos', acc:'Valijas en depto', reg:null, seg:null, sl:1, fres:'19/07/2026', f:null, obs:''},
+  {dp:'BORGES 1', h:null, g:'Celeste Lazzaro', t:'+54 2326 40-9850', cod:'HMQ8ZT4RB1', prev:{g:'Martín Ocampo', f:'19/07/2026', h:'10:00'}, noc:4, pax:'3 adultos', acc:null, reg:false, seg:null, sl:0, fres:'19/07/2026', f:null, obs:'Falta que confirme horario. Escribirle.'}
+];
+
+let SALIDAS = [
+  {dp:'MARCELO T. 2', h:'7:30', g:'Sabrina Meli', cod:'HM4B7X2NQL', noc:2, late:false, est:'Entra 15:00 · limpieza urgente', st:'dg', fres:'23/07/2026', f:null, obs:''},
+  {dp:'BORGES 2', h:'8:00', g:'Nicolás Prieto', cod:'HM8T5RW3KM', noc:3, late:false, est:'Limpieza asignada · Trini', st:'', fres:'19/07/2026', f:null, obs:''},
+  {dp:'MENDOZA 1', h:'8:00', g:'Filipe Bentemuller', cod:'HM6P9LC4VZ', noc:4, late:false, est:'Limpieza asignada · Anto', st:'', fres:'19/07/2026', f:null, obs:''},
+  {dp:'DARREGUEYRA 1', h:'10:00', g:'Ana Villalba', cod:'HM2K8YD6WR', noc:3, late:false, est:'Limpieza asignada · Ludmila', st:'', fres:'19/07/2026', f:null, obs:''},
+  {dp:'ED TALC 08', h:'10:00', g:'Carlos Guty Zamorano', cod:'HM9F3QT7XB', noc:5, late:false, est:'Limpieza sin responsable', st:'dg', fres:'23/07/2026', f:'22/07/2026', obs:'Avisó que se va el 22 a las 15:00.'},
+  {dp:'LAPRIDA 4', h:'10:00', g:'Edith Liberman', cod:'HM5M2VJ8NH', noc:3, late:true, est:'Late check-out · con entrada el mismo día', st:'wn', fres:'19/07/2026', f:null, obs:'Pidió salir 14:00. Entra huésped 15:00.'}
+];
+
+let SEMANA = [
+  {dia:'Lun', f:'20', fecha:'Lunes 20 de julio', tot:6, sin:3, hechas:1, urg:'dg', dob:false},
+  {dia:'Mar', f:'21', fecha:'Martes 21 de julio', tot:4, sin:1, hechas:0, urg:'wn', dob:false},
+  {dia:'Mié', f:'22', fecha:'Miércoles 22 de julio', tot:5, sin:0, hechas:0, urg:'', dob:false},
+  {dia:'Jue', f:'23', fecha:'Jueves 23 de julio', tot:3, sin:1, hechas:0, urg:'nt', dob:false},
+  {dia:'Vie', f:'24', fecha:'Viernes 24 de julio', tot:7, sin:2, hechas:0, urg:'nt', dob:false},
+  {dia:'Sáb', f:'25', fecha:'Sábado 25 de julio', tot:2, sin:0, hechas:0, urg:'', dob:false},
+  {dia:'Dom', f:'26', fecha:'Domingo 26 de julio', tot:1, sin:0, hechas:0, urg:'', dob:true}
+];
+
+let LIMPIEZAS = {
+  '20':[
+    {dp:'MARCELO T. 2', tipo:'Normal', urg:true, noches:2, coF:'20/07', coH:'07:30', ciF:'20/07', ciH:'15:00', ult:'Anto', amb:'2 amb', $:18000, dob:false, resp:null, sl:0, fecha:null},
+    {dp:'ED TALC 08', tipo:'Normal', urg:false, noches:14, coF:'20/07', coH:'10:00', ciF:'20/07', ciH:'17:00', ult:'Ludmila', amb:'2 amb', $:18000, dob:false, resp:null, sl:0, fecha:null},
+    {dp:'LAPRIDA 4', tipo:'Normal', urg:false, noches:3, coF:'20/07', coH:'10:00', ciF:null, ciH:null, ult:'Trini', amb:'3 amb', $:22000, dob:false, resp:null, sl:12, fecha:null},
+    {dp:'MENDOZA 1', tipo:'Normal', urg:false, noches:4, coF:'20/07', coH:'08:00', ciF:'20/07', ciH:'11:00', ult:'Anto', amb:'2 amb', $:18000, dob:false, resp:'Anto', sl:0, fecha:null},
+    {dp:'BORGES 2', tipo:'Normal', urg:false, noches:3, coF:'20/07', coH:'08:00', ciF:'20/07', ciH:'16:00', ult:'Trini', amb:'2 amb', $:18000, dob:false, resp:'Trini', sl:0, fecha:null},
+    {dp:'DARREGUEYRA 1', tipo:'Normal', urg:false, noches:3, coF:'20/07', coH:'10:00', ciF:null, ciH:null, ult:'Ludmila', amb:'3 amb', $:22000, dob:false, resp:'Ludmila', sl:0, fecha:null}
+  ],
+  '21':[
+    {dp:'BORGES 1', tipo:'Normal', urg:false, noches:5, coF:'21/07', coH:'08:00', ciF:'21/07', ciH:'16:00', ult:'Trini', amb:'3 amb', $:22000, dob:false, resp:null, sl:0, fecha:null},
+    {dp:'CIUDAD 1', tipo:'Cambio de blancos', urg:false, noches:null, coF:null, coH:null, ciF:null, ciH:null, ult:'Trini', amb:'4 amb', $:12000, dob:false, resp:'Trini', sl:0, fecha:null, nota:'Con huéspedes · estadía de 14 noches'},
+    {dp:'ARENALES 5', tipo:'Normal', urg:false, noches:6, coF:'21/07', coH:'10:00', ciF:'21/07', ciH:'14:00', ult:'Anto', amb:'2 amb', $:18000, dob:false, resp:'Anto', sl:0, fecha:null},
+    {dp:'CERVIÑO 1', tipo:'Normal', urg:false, noches:2, coF:'21/07', coH:'10:00', ciF:null, ciH:null, ult:'Mili', amb:'Monoamb.', $:14000, dob:false, resp:'Mili', sl:0, fecha:null}
+  ],
+  '22':[
+    {dp:'ARAOZ 1', tipo:'Normal', urg:false, noches:9, coF:'22/07', coH:'10:00', ciF:'22/07', ciH:'15:00', ult:'Anto', amb:'2 amb', $:18000, dob:false, resp:'Anto', sl:0, fecha:null},
+    {dp:'ED TALC 33', tipo:'Normal', urg:true, noches:3, coF:'22/07', coH:'10:00', ciF:'22/07', ciH:'12:00', ult:'Ludmila', amb:'2 amb', $:18000, dob:false, resp:'Ludmila', sl:0, fecha:null},
+    {dp:'BERUTI 2', tipo:'Repaso', urg:false, noches:null, coF:null, coH:null, ciF:'22/07', ciH:'14:00', ult:'Sabri', amb:'3 amb', $:22000, dob:false, resp:'Sabri', sl:9, fecha:null, nota:'Sin check-out previo'},
+    {dp:'MENDOZA 1', tipo:'Normal', urg:false, noches:7, coF:'22/07', coH:'08:00', ciF:'22/07', ciH:'14:00', ult:'Anto', amb:'2 amb', $:18000, dob:false, resp:'Anto', sl:0, fecha:null},
+    {dp:'MARCELO T. 2', tipo:'Normal', urg:false, noches:4, coF:'22/07', coH:'10:00', ciF:null, ciH:null, ult:'Erika', amb:'2 amb', $:18000, dob:false, resp:'Erika', sl:0, fecha:null}
+  ]
+};
+
+let SINDEPTO = [
+  {anuncio:'Luminoso monoambiente en Palermo Soho', cod:'HM7X4KP2ML', ci:'24/07/2026', co:'27/07/2026', g:'Renata Cardoso'},
+  {anuncio:'Exclusivo depto. en Recoleta 41', cod:'HM3B9WN5QT', ci:'26/07/2026', co:'02/08/2026', g:'Thomas Berger'}
+];
+
+/* ============ ESTADO ============ */
+let S = {vp:'desk', screen:'hoy', day:'20', tab:'llegadas', drawer:null, pop:null, imported:false, limpSel:null, accOpen:{}};
+
+const NAV = [
+  {g:'Operación'},
+  {id:'dash', ic:'▦', t:'Dashboard'},
+  {id:'hoy', ic:'◧', t:'Hoy'},
+  {id:'inout', ic:'⇄', t:'Check-in / out'},
+  {id:'limp', ic:'✦', t:'Limpiezas'},
+  {id:'equidad', ic:'⚖', t:'Distribución'},
+  {id:'mislimp', ic:'◐', t:'Vista limpiadora'},
+  {id:'alertas', ic:'!', t:'Alertas', badge:true},
+  {g:'Datos'},
+  {id:'deptos', ic:'▤', t:'Departamentos'},
+  {id:'accesos', ic:'⚿', t:'Accesos y llaves'},
+  {id:'import', ic:'↥', t:'Importar reservas'},
+  {id:'export', ic:'↧', t:'Exportar'},
+  {id:'calidad', ic:'★', t:'Calidad'},
+  {g:'Ajustes'},
+  {id:'config', ic:'⚙', t:'Configuración'}
+];
+const MNAV = [
+  {id:'hoy', ic:'◧', t:'Hoy'},
+  {id:'inout', ic:'⇄', t:'Check-in'},
+  {id:'limp', ic:'✦', t:'Limpiezas'},
+  {id:'equidad', ic:'⚖', t:'Distribución'},
+  {id:'mislimp', ic:'◐', t:'Vista limpiadora'},
+  {id:'alertas', ic:'!', t:'Alertas', badge:true},
+  {id:'deptos', ic:'▤', t:'Deptos'}
+];
+
+/* ============ HELPERS ============ */
+const money = n => '$' + n.toLocaleString('es-AR');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function go(s){ S.screen=s; S.pop=null; S.limpSel=null; render(); window.scrollTo(0,0); }
+function setVp(v){ S.vp=v; document.body.className=v; vd.classList.toggle('on',v==='desk'); vm.classList.toggle('on',v==='mob'); render(); }
+function openDw(k,i){ S.drawer={k,i}; S.accOpen={}; render(); }
+function closeDw(){ S.drawer=null; S.pop=null; render(); }
+function togglePop(id,ev){ ev.stopPropagation(); S.pop = S.pop===id?null:id; render(); }
+
+function pick(kind,idx,val){
+  if(kind==='ci') LLEGADAS[idx].acc = val;
+  if(kind==='lp') LIMPIEZAS[S.day][idx].resp = val;
+  S.pop=null; render();
+}
+
+
+const FECHAS = ['19/07/2026','20/07/2026','21/07/2026','22/07/2026','23/07/2026','24/07/2026'];
+function setFecha(kind,idx,val){
+  if(kind==='ci') LLEGADAS[idx].f = val;
+  if(kind==='co') SALIDAS[idx].f = val;
+  if(kind==='lf') LIMPIEZAS[S.day][idx].fecha = val;
+  S.pop=null; render();
+}
+function setHora(kind,idx,val){
+  if(!val) return;
+  if(kind==='ci'){ LLEGADAS[idx].h = val; }
+  if(kind==='co'){
+    const r = SALIDAS[idx];
+    r.h = val;
+    if(toMin(val) > toMin('12:00') && !r.late){
+      if(confirm('La salida quedó a las '+val+', después de las 12:00.\n\n¿Es un late check-out?\n\nSi lo es, ese día no se puede limpiar el departamento.')){
+        r.late = true;
+      }
+    }
+  }
+  render();
+}
+function setDev(idx,val){ SALIDAS[idx].dev = val; S.pop=null; render(); }
+function toggleLate(idx){
+  const r = SALIDAS[idx];
+  r.late = !r.late;
+  render();
+}
+function toggleDejado(kind,idx){
+  if(kind==='ci') LLEGADAS[idx].dejado = !LLEGADAS[idx].dejado;
+  render();
+}
+function toggleFlag(idx,campo){
+  const r = LLEGADAS[idx];
+  r[campo] = r[campo] ? false : true;
+  render();
+}
+function setObs(kind,idx,val){
+  if(kind==='ci') LLEGADAS[idx].obs = val;
+  if(kind==='co') SALIDAS[idx].obs = val;
+}
+function irA(pantalla, extra){
+  S.screen = pantalla; S.pop = null;
+  if(extra && extra.day) S.day = extra.day;
+  render(); window.scrollTo(0,0);
+  if(extra && extra.drawer) { S.drawer = extra.drawer; render(); }
+}
+const CFG = {limCheckout:'11:00', minCheckin:'12:00'};
+const hhmm = h => { if(!h) return ''; const [a,b]=h.split(':'); return a.padStart(2,'0')+':'+(b||'00'); };
+const toMin = h => h ? (+h.split(':')[0])*60 + (+h.split(':')[1]) : null;
+function ventanaMala(r){
+  if(!r.prev || !r.h) return false;
+  const fEnt = r.f || r.fres;
+  if(r.prev.f !== fEnt) return false;
+  return toMin(r.prev.h) > toMin(CFG.limCheckout) && toMin(r.h) < toMin(CFG.minCheckin);
+}
+function ventanaTxt(r){
+  if(!r.prev || !r.h) return null;
+  const d = toMin(r.h) - toMin(r.prev.h);
+  if(d < 0) return 'La entrada quedó antes que la salida';
+  const hh = Math.floor(d/60), mm = d%60;
+  return (hh?hh+' h ':'') + (mm?mm+' min':'') || 'sin margen';
+}
+function toggleAcc(k){ S.accOpen[k] = !S.accOpen[k]; render(); }
+function invEstado(v){ return (v===null||v===undefined||v==='') ? null : v; }
+
+function sinAsignarSemana(){ return SEMANA.reduce((a,d)=>a+d.sin,0); }
+function cargaDia(d){
+  const m={}; PERSONAS.forEach(p=>m[p]={n:0,$:0});
+  (LIMPIEZAS[d]||[]).forEach(l=>{ if(l.resp&&m[l.resp]){ m[l.resp].n++; m[l.resp].$ += l.dob?l.$*2:l.$; } });
+  return m;
+}
+
+/* ============ PANTALLAS ============ */
+function scHoy(){
+  const sinA = sinAsignarSemana();
+  const totSem = SEMANA.reduce((a,d)=>a+d.tot,0);
+  const sinCoord = LLEGADAS.filter(l=>!l.h||!l.acc).length;
+  return `
+  <div class="hdr"><div><h1>Domingo 19 de julio</h1><p class="sub">Resumen del día y de la semana</p></div></div>
+
+  <div class="grid3 mb">
+    <div class="stat"><div class="lbl">Llegan hoy</div><div class="n">${LLEGADAS.length}</div></div>
+    <div class="stat"><div class="lbl">Salen hoy</div><div class="n">${SALIDAS.length}</div></div>
+    <div class="stat" style="background:var(--danger-bg);border-color:#F0D2CC">
+      <div class="lbl" style="color:var(--danger)">Sin coordinar</div>
+      <div class="n" style="color:var(--danger)">${sinCoord}</div></div>
+  </div>
+
+  <div class="card mb">
+    <div class="sec" style="display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-weight:600">Limpiezas de la semana</div>
+        <div class="sub">${totSem} en total</div></div>
+      <div class="flexb" style="gap:10px">
+        <span style="font-size:11px;color:var(--text-3)"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--brand);vertical-align:-1px;margin-right:3px"></span>listas</span>
+        <span style="font-size:11px;color:var(--text-3)"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#9DC3B6;vertical-align:-1px;margin-right:3px"></span>asignadas</span>
+        ${sinA?`<span class="tag dg">${sinA} sin asignar</span>`:''}
+      </div>
+    </div>
+    ${SEMANA.map(d=>`
+      <button class="row ${d.urg}" onclick="S.day='${d.f}';go('limp')">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;flex-shrink:0">
+            <div class="lbl">${d.dia}</div>
+            <div style="font-size:17px;font-weight:600;line-height:1.1">${d.f}</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="bar" style="margin-bottom:5px">
+              <i style="width:${d.tot?(d.hechas||0)/d.tot*100:0}%;background:var(--brand)"></i>
+              <i style="width:${d.tot?(d.tot-d.sin-(d.hechas||0))/d.tot*100:0}%;background:#9DC3B6"></i>
+              <i class="${d.urg==='dg'?'u':d.urg==='wn'?'w':'g'}" style="width:${d.tot?d.sin/d.tot*100:0}%"></i>
+            </div>
+            <div style="font-size:12.5px"><strong>${d.tot}</strong>
+              ${d.hechas?`<span class="mut"> · </span><span style="color:var(--brand)">${d.hechas} lista${d.hechas>1?'s':''}</span>`:''}
+              ${d.sin?`<span class="mut"> · </span><span style="color:var(--${d.urg==='dg'?'danger':d.urg==='wn'?'warn':'text-3'})">${d.sin} sin asignar</span>`
+                     :`<span class="mut"> · todas asignadas</span>`}
+              ${d.dob?`<span class="tag wn" style="margin-left:6px">pago doble</span>`:''}
+            </div>
+          </div>
+          <span class="mut">›</span>
+        </div>
+      </button>`).join('')}
+  </div>
+
+  <h2>Pendientes de hoy</h2>
+  <div class="card">
+    <button class="row dg" onclick="go('inout')">
+      <div class="r1"><strong>BORGES 1 · Celeste Lazzaro</strong><span class="tag dg">sin hora</span></div>
+      <div class="r2">Llegada sin coordinar y sin responsable asignado</div></button>
+    <button class="row wn" onclick="go('alertas')">
+      <div class="r1"><strong>LAPRIDA 4</strong><span class="tag wn">conflicto</span></div>
+      <div class="r2">Late check-out con entrada el mismo día</div></button>
+    <button class="row wn" onclick="go('import')">
+      <div class="r1"><strong>2 reservas sin departamento</strong><span class="tag wn">bandeja</span></div>
+      <div class="r2">Anuncios que todavía no están mapeados</div></button>
+  </div>`;
+}
+
+function scInOut(){
+  const isL = S.tab==='llegadas';
+  const list = isL?LLEGADAS:SALIDAS;
+  return `
+  <div class="hdr">
+    <div class="flexb">
+      <button class="btn">‹</button>
+      <div style="font-weight:600;padding:0 4px">Domingo 19 de julio</div>
+      <button class="btn">›</button>
+      <button class="btn">Hoy</button>
+    </div>
+  </div>
+
+  <div class="search mb">🔍 Buscar por código, huésped, departamento o teléfono</div>
+
+  <div class="tabs mb">
+    <button class="in ${isL?'on':''}" onclick="S.tab='llegadas';render()">Llegadas · ${LLEGADAS.length}</button>
+    <button class="out ${!isL?'on':''}" onclick="S.tab='salidas';render()">Salidas · ${SALIDAS.length}</button>
+  </div>
+
+  <div class="sec-head ${isL?'in':'out'}"><span class="pill"></span>${isL?'Llegadas del día':'Salidas del día'}</div>
+
+  <div class="card ${isL?'sec-in':'sec-out'}">
+    ${isL ? LLEGADAS.map((r,i)=>{
+      const st = ventanaMala(r) ? 'dg' : ((!r.h||!r.acc)?'dg':'');
+      return `<button class="row ${st}" onclick="openDw('ci',${i})">
+        <div class="r1"><strong>${esc(r.dp)}</strong>
+          ${r.h?`<span style="font-weight:600;font-size:13px">${r.h}</span>`:`<span class="falta urg">Falta horario</span>`}</div>
+        <div class="r2">${esc(r.g)} <span class="mut">· ${esc(r.t)}</span></div>
+        <div class="flexb" style="margin-top:7px">
+          ${r.acc?`<span class="tag br">${esc(r.acc)}</span>`:`<span class="falta urg">Falta responsable</span>`}
+          ${r.reg===false?`<span class="falta">Falta registro</span>`:r.reg?`<span class="tag ok">Registro ✓</span>`:''}
+          ${r.seg===false?`<span class="falta">Falta avisar seguridad</span>`:r.seg?`<span class="tag ok">Seguridad ✓</span>`:''}
+          ${r.sl>7?`<span class="tag wn">${r.sl} días sin limpiar</span>`:''}
+          ${ventanaMala(r)?`<span class="tag dg">Ventana imposible · ${ventanaTxt(r)}</span>`:''}
+          ${r.listo?`<span class="tag ok">✓ Depto listo</span>`:''}
+        </div></button>`;
+    }).join('')
+    : SALIDAS.map((r,i)=>`
+      <button class="row ${r.st}" onclick="openDw('co',${i})">
+        <div class="r1"><strong>${esc(r.dp)}</strong>
+          <span style="font-weight:600;font-size:13px">${r.h}${r.late?' · late':''}</span></div>
+        <div class="r2">${esc(r.g)} <span class="mut">· ${r.noc} noches</span></div>
+        <div class="flexb" style="margin-top:7px">
+          <span class="tag ${r.st==='dg'?'dg':r.st==='wn'?'wn':''}">${esc(r.est)}</span>
+          ${r.listo?`<span class="tag ok">✓ Depto listo</span>`:''}
+        </div>
+      </button>`).join('')}
+  </div>`;
+}
+
+function scLimp(){
+  const dia = SEMANA.find(d=>d.f===S.day) || SEMANA[0];
+  const ls = LIMPIEZAS[S.day] || [];
+  const sinA = ls.filter(l=>!l.resp).length;
+  const carga = cargaDia(S.day);
+  const dias = S.vp==='mob' ? [dia] : SEMANA.filter(d=>LIMPIEZAS[d.f]);
+
+  return `
+  <div class="hdr">
+    <div><h1>Limpiezas</h1><p class="sub">${S.vp==='mob'?'Día a día':'Próximos 7 días'}</p></div>
+    <button class="btn" onclick="abrirManual()">+ Limpieza manual</button>
+  </div>
+
+  ${S.vp==='mob'?`
+    <div class="flexb mb" style="justify-content:space-between">
+      <button class="btn" onclick="stepDay(-1)">‹</button>
+      <div style="font-weight:600">${dia.fecha}</div>
+      <button class="btn" onclick="stepDay(1)">›</button>
+    </div>`:''}
+
+  ${sinA?`<div class="note dg mb">${sinA} limpieza${sinA>1?'s':''} de este día sin responsable</div>`:''}
+
+  <div class="lbl" style="margin:16px 0 7px">Carga del día</div>
+  <div class="grid4 mb">
+    ${PERSONAS.slice(0,5).map(p=>`
+      <div class="stat" style="padding:9px 12px">
+        <div class="sub">${p}</div>
+        <div style="font-size:13px;margin-top:2px"><strong>${carga[p].n}</strong>
+          <span class="mut"> · ${money(carga[p].$)}</span></div>
+      </div>`).join('')}
+  </div>
+
+  ${dias.map(d=>{
+    const items = LIMPIEZAS[d.f]||[];
+    return `
+    <div class="dayh"><h2>${d.fecha}</h2>
+      <button class="btn" onclick="alert('Genera el PDF con las limpiezas de este día, incluida la columna de responsable.')">Emitir PDF</button></div>
+    <div class="card">
+      ${items.map((l,i)=>{
+        const st = !l.resp ? (d.f==='20'?'dg':d.f==='21'?'wn':'nt') : '';
+        const monto = l.dob ? l.$*2 : l.$;
+        return `<div class="row ${st}" style="cursor:default">
+          <div class="r1">
+            <strong>${esc(l.dp)}
+              ${l.hecha?`<span class="tag ok" style="margin-left:6px;font-weight:400">✓ Terminada</span>`:''}
+              ${l.urg&&!l.hecha?`<span class="tag dg" style="margin-left:6px;font-weight:400">Urgente</span>`:''}
+              ${l.tipo!=='Normal'?`<span class="tag" style="margin-left:6px;font-weight:400">${esc(l.tipo)}</span>`:''}
+              ${l.dob?`<span class="tag wn" style="margin-left:6px;font-weight:400">Pago doble</span>`:''}
+            </strong>
+            <span class="sub" style="white-space:nowrap">${l.amb} · ${money(monto)}</span>
+          </div>
+          <div class="r2">${DX(l.dp).b} · última vez: ${l.ult}${l.sl>7?` · <span style="color:var(--warn)">${l.sl} días sin limpiar</span>`:''}</div>
+          <div class="vent">
+            ${l.coF?`<span><span class="lbl">Salida</span> ${l.coF} · ${l.coH}</span>`:`<span class="mut">Sin check-out previo</span>`}
+            ${l.noches?`<span class="${l.noches>=10?'tag wn':'mut'}" style="font-size:12px">${l.noches} noches</span>`:''}
+            <span class="mut">→</span>
+            ${l.ciF?`<span><span class="lbl">Entrada</span> ${l.ciF} · ${l.ciH}</span>`:`<span class="mut">Sin próxima reserva</span>`}
+            ${l.nota?`<span class="mut">· ${esc(l.nota)}</span>`:''}
+          </div>
+          <div class="flexb" style="margin-top:8px;align-items:flex-start">
+            <div style="flex:1" class="sel">
+              <div class="lbl mb">Responsable</div>
+              <button class="selbtn ${l.resp?'':'empty'} ${!l.resp&&d.f==='20'?'urg':''}"
+                onclick="togglePop('lp${d.f}_${i}',event)">
+                <span>${l.resp||'Falta asignar'}</span><span>⌄</span></button>
+              ${S.pop===`lp${d.f}_${i}`?`
+                <div class="pop">
+                  <div class="ph">Personal de limpieza</div>
+                  ${PERSONAS.map(p=>`<button onclick="S.day='${d.f}';pick('lp',${i},'${p}')">${p}
+                    <span class="mut" style="font-size:11px"> · ${cargaDia(d.f)[p].n} este día</span></button>`).join('')}
+                  ${l.resp?`<div class="sp"></div><button onclick="S.day='${d.f}';pick('lp',${i},null)" class="mut">Quitar asignación</button>`:''}
+                </div>`:''}
+            </div>
+            <div style="flex:1" class="sel">
+              <div class="lbl mb">Fecha de limpieza</div>
+              <button class="selbtn" onclick="togglePop('lf${d.f}_${i}',event)">
+                <span>${l.fecha||(d.f+'/07/2026')}</span><span>⌄</span></button>
+              ${S.pop===`lf${d.f}_${i}`?`
+                <div class="pop">
+                  <div class="ph">Mover la limpieza a</div>
+                  ${FECHAS.map(f=>`<button onclick="S.day='${d.f}';setFecha('lf',${i},'${f}')">${f}</button>`).join('')}
+                </div>`:''}
+            </div>
+          </div>
+          ${l.fecha && l.fecha !== (d.f+'/07/2026') ? `<div class="note" style="margin-top:8px">Movida de fecha. Verificá que entre en la ventana entre el check-out y el próximo check-in.</div>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('')}`;
+}
+
+function abrirManual(){
+  alert('Alta manual de limpieza\n\nSe elige:\n· Departamento (obligatorio)\n· Tipo: inicial, repaso, cambio de blancos, con huéspedes, desmantelar, propietario\n· Fecha\n· Responsable\n\nNo hace falta que exista una reserva asociada.');
+}
+function stepDay(n){
+  const i = SEMANA.findIndex(d=>d.f===S.day);
+  const j = Math.max(0, Math.min(SEMANA.length-1, i+n));
+  S.day = SEMANA[j].f; S.pop=null; render();
+}
+
+function scAlertas(){
+  // Las alertas se calculan del estado actual: al resolver algo, desaparecen solas.
+  const sinResp = [];
+  Object.keys(LIMPIEZAS).forEach(dia=>{
+    LIMPIEZAS[dia].forEach(l=>{
+      if(!l.resp){
+        const d = SEMANA.find(x=>x.f===dia);
+        sinResp.push([l.dp, (dia==='20'?'Mañana':d.fecha) + (l.urg?' · urgente, entra huésped el mismo día':''),
+                      'Asignar', "irA('limp',{day:'"+dia+"'})"]);
+      }
+    });
+  });
+
+  const ventana = LLEGADAS.filter(ventanaMala).map((r)=>{
+    const i = LLEGADAS.indexOf(r);
+    return [r.dp, 'Sale '+r.prev.h+' y entra '+r.h+' el mismo día. Ventana: '+(ventanaTxt(r)||'sin margen'),
+            'Ver llegada', "S.tab='llegadas';irA('inout');openDw('ci',"+i+")"];
+  });
+
+  const sinHora = LLEGADAS.filter(r=>!r.h||!r.acc).map(r=>{
+    const i = LLEGADAS.indexOf(r);
+    const q = [!r.h?'sin horario':null, !r.acc?'sin responsable':null].filter(Boolean).join(' y ');
+    return [r.dp+' · '+r.g, 'Llegada '+q, 'Coordinar', "S.tab='llegadas';irA('inout');openDw('ci',"+i+")"];
+  });
+
+  const lates = SALIDAS.map((r,i)=>[r,i]).filter(([r])=>r.late && r.est.indexOf('entrada el mismo día')>-1)
+    .map(([r,i])=>[r.dp, 'Late check-out y entrada el mismo día. No se puede limpiar',
+                   'Ver check-out', "S.tab='salidas';irA('inout');openDw('co',"+i+")"]);
+
+  const sd = SINDEPTO.map(r=>[r.anuncio, r.cod+' · '+r.ci+' → '+r.co, 'Asignar depto', "S.imported=true;irA('import')"]);
+
+  const A = [
+    {t:'Ventana insuficiente', c:'dg',
+     nota:'Salida y entrada el mismo día sin tiempo material para limpiar.', items:ventana},
+    {t:'Late check-out con entrada el mismo día', c:'dg',
+     nota:'El huésped se va tarde y entra otro ese día. Requiere decisión.', items:lates},
+    {t:'Llegadas sin coordinar', c:'dg',
+     nota:'Falta horario o responsable para recibir al huésped.', items:sinHora},
+    {t:'Limpiezas sin responsable', c:'dg',
+     nota:'La limpieza existe pero todavía nadie la va a hacer.', items:sinResp},
+    {t:'Reservas sin departamento', c:'wn',
+     nota:'El anuncio no coincide con ningún departamento. Se mapea una vez y nunca más.', items:sd},
+    {t:'Conflictos de cancelación', c:'wn',
+     nota:'Se canceló una reserva y la limpieza necesita una decisión.',
+     items:[['ED TALC 10','Estadía en curso cancelada. Falta la fecha real de salida','Ver reserva',"irA('inout')"]]}
+  ];
+  const tot = A.reduce((a,g)=>a+g.items.length,0);
+  return `
+  <div class="hdr"><div><h1>Alertas</h1>
+    <p class="sub">${tot?tot+' pendientes de decisión · al resolverlas desaparecen solas':'Sin pendientes. Todo en orden.'}</p></div></div>
+  ${tot===0?`<div class="note ok">No hay nada que requiera atención en este momento.</div>`:''}
+  ${A.filter(g=>g.items.length).map(g=>`
+    <div class="dayh"><h2>${g.t}</h2><span class="tag ${g.c}">${g.items.length}</span></div>
+    <p class="sub mb">${g.nota}</p>
+    <div class="card">
+      ${g.items.map(([a,b,cta,fn])=>`
+        <button class="row ${g.c==='dg'?'dg':'wn'}" onclick="${fn}">
+          <div class="r1"><strong>${esc(a)}</strong>
+            <span class="tag ${g.c}">${cta} ›</span></div>
+          <div class="r2">${esc(b)}</div>
+        </button>`).join('')}
+    </div>`).join('')}`;
+}
+
+function contarAlertas(){
+  let n = 0;
+  Object.keys(LIMPIEZAS).forEach(d=>{ n += LIMPIEZAS[d].filter(l=>!l.resp).length; });
+  n += LLEGADAS.filter(ventanaMala).length;
+  n += LLEGADAS.filter(r=>!r.h||!r.acc).length;
+  n += SINDEPTO.length + 1;
+  n += SALIDAS.filter(r=>r.late && r.est.indexOf('entrada el mismo día')>-1).length;
+  return n;
+}
+
+function scDeptos(){
+  return `
+  <div class="hdr"><div><h1>Departamentos</h1>
+    <p class="sub">${DEPTOS.length} activos</p></div>
+    <button class="btn pri">+ Nuevo</button></div>
+  <div class="search mb">🔍 Buscar por nombre, dirección o barrio</div>
+  <div class="card">
+    ${DEPTOS.map((d,i)=>`
+      <button class="row" onclick="openDw('dp',${i})">
+        <div class="r1"><strong>${esc(d.n)}</strong><span class="sub">${d.a} · ${d.cap} pax</span></div>
+        <div class="r2">${esc(d.d)} · ${d.b}</div>
+        <div class="flexb" style="margin-top:7px">
+          <span class="tag">${esc(d.prop)}</span>
+          <span class="tag">${d.soc}</span>
+          ${d.reg?`<span class="tag br">Requiere registro</span>`:''}
+          ${d.seg?`<span class="tag br">Avisar seguridad</span>`:''}
+        </div>
+      </button>`).join('')}
+  </div>`;
+}
+
+function scImport(){
+  if(S.vp==='mob') return `
+    <div class="hdr"><div><h1>Importar reservas</h1></div></div>
+    <div class="note">La importación se hace desde la computadora. Está pensada para trabajar con varios archivos a la vez y revisar el resultado con detalle.</div>`;
+
+  if(!S.imported) return `
+  <div class="hdr"><div><h1>Importar reservas</h1>
+    <p class="sub">Archivos CSV exportados de Airbnb</p></div></div>
+  <div class="card" style="padding:34px;text-align:center;border-style:dashed">
+    <div style="font-size:28px;color:var(--text-3)">↥</div>
+    <p style="font-weight:600;margin-top:8px">Arrastrá los archivos acá</p>
+    <p class="sub" style="margin:4px 0 16px">Se pueden subir varios juntos. Cada export de Airbnb trae hasta 40 reservas.</p>
+    <button class="btn pri" onclick="S.imported=true;render()">Elegir archivos</button>
+  </div>
+  <div class="note ok mt">Importar el mismo archivo dos veces no duplica nada. La clave es el código de reserva.</div>`;
+
+  return `
+  <div class="hdr"><div><h1>Importación completa</h1>
+    <p class="sub">3 archivos procesados como un solo lote</p></div>
+    <button class="btn" onclick="S.imported=false;render()">Importar otros</button></div>
+
+  <div class="grid4 mb">
+    <div class="stat"><div class="lbl">Nuevas</div><div class="n">47</div></div>
+    <div class="stat"><div class="lbl">Actualizadas</div><div class="n">12</div></div>
+    <div class="stat"><div class="lbl">Sin cambios</div><div class="n">58</div></div>
+    <div class="stat" style="background:var(--warn-bg);border-color:#EBDCC0">
+      <div class="lbl" style="color:var(--warn)">Sin depto</div>
+      <div class="n" style="color:var(--warn)">2</div></div>
+    <div class="stat"><div class="lbl">Canceladas</div><div class="n">4</div></div>
+    <div class="stat"><div class="lbl">Reaparecidas</div><div class="n">1</div></div>
+  </div>
+
+  <div class="note ok mb">Se generaron 47 limpiezas y 94 eventos de check-in / check-out.</div>
+  <div class="note mb">1 reserva que había sido descartada volvió a aparecer en el archivo y se reactivó: BERUTI 2 · Ivana Petrova · 28/07 → 02/08.</div>
+
+  <div class="dayh"><h2>Reservas sin departamento</h2><span class="tag wn">2</span></div>
+  <p class="sub mb">Estos anuncios no coinciden con ningún departamento. Al asignarlos una vez, el sistema los reconoce para siempre.</p>
+  <div class="card mb">
+    ${SINDEPTO.map((r,i)=>`
+      <div class="row wn" style="cursor:default">
+        <div class="r1"><strong>${esc(r.anuncio)}</strong><span class="mono mut">${r.cod}</span></div>
+        <div class="r2">${esc(r.g)} · ${r.ci} → ${r.co}</div>
+        <div style="margin-top:8px" class="sel">
+          <button class="selbtn empty" onclick="togglePop('sd${i}',event)">
+            <span>Asignar departamento</span><span>⌄</span></button>
+          ${S.pop===`sd${i}`?`<div class="pop">
+            <div class="ph">Departamentos</div>
+            ${DEPTOS.map(d=>`<button onclick="SINDEPTO.splice(${i},1);S.pop=null;render()">${esc(d.n)}</button>`).join('')}
+          </div>`:''}
+        </div>
+      </div>`).join('')}
+    ${SINDEPTO.length===0?`<div class="sec"><span class="sub">No quedan reservas sin asignar.</span></div>`:''}
+  </div>
+
+  <div class="dayh"><h2>Cancelaciones detectadas</h2><span class="tag">4</span></div>
+  <div class="card">
+    <div class="row nt" style="cursor:default">
+      <div class="r1"><strong>ED TALC 10 · Marcela Torres</strong><span class="tag wn">requiere decisión</span></div>
+      <div class="r2">La estadía ya estaba en curso. La limpieza se mantiene: falta cargar la fecha real de salida.</div>
+    </div>
+    <div class="row" style="cursor:default">
+      <div class="r1"><strong>ARENALES 6 · Florencia Ortega</strong><span class="tag">resuelto</span></div>
+      <div class="r2">Cancelada antes de comenzar. La limpieza del 28/7 se canceló automáticamente.</div>
+    </div>
+    <div class="row" style="cursor:default">
+      <div class="r1"><strong>BORGES 2 · Lucas Ferreyra</strong><span class="tag">resuelto</span></div>
+      <div class="r2">Cancelada antes de comenzar. Se conservaron nombre y teléfono anteriores.</div>
+    </div>
+    <div class="row" style="cursor:default">
+      <div class="r1"><strong>CIUDAD 1 · Hanna Weber</strong><span class="tag">resuelto</span></div>
+      <div class="r2">Cancelada antes de comenzar. La limpieza del 3/8 se canceló automáticamente.</div>
+    </div>
+  </div>`;
+}
+
+function scExport(){
+  return `
+  <div class="hdr"><div><h1>Exportar</h1>
+    <p class="sub">Listas de limpieza y contactos de huéspedes</p></div></div>
+
+  <div class="card mb">
+    <div class="sec"><div style="font-weight:600">Lista de limpiezas del día (PDF)</div>
+      <p class="sub" style="margin-top:2px">La que se manda por WhatsApp. Por defecto, las de mañana.</p></div>
+    <div class="sec">
+      <div class="kv"><span>Fecha</span><strong>Lunes 20 de julio</strong></div>
+      <div class="kv"><span>Limpiezas</span><strong>6</strong></div>
+      <div class="kv"><span>Sin responsable</span><span style="color:var(--danger);font-weight:600">3</span></div>
+      <div class="note dg" style="margin-top:11px">Hay limpiezas sin responsable. Revisalas antes de emitir la lista.</div>
+      <button class="btn pri" style="margin-top:11px">Generar PDF</button>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="sec"><div style="font-weight:600">Exportar limpiezas por rango</div>
+      <p class="sub" style="margin-top:2px">Toma la fecha de limpieza. Columnas: departamento, fecha de limpieza y responsable.</p></div>
+    <div class="sec">
+      <div class="flexb mb">
+        <div style="flex:1"><div class="lbl mb">Desde</div>
+          <input type="date" value="2026-07-20" class="datepick" style="width:100%"></div>
+        <div style="flex:1"><div class="lbl mb">Hasta</div>
+          <input type="date" value="2026-07-31" class="datepick" style="width:100%"></div>
+      </div>
+      <div class="kv"><span>Limpiezas en el rango</span><strong>28</strong></div>
+      <div class="kv"><span>Con responsable</span><strong>21</strong></div>
+      <div class="kv"><span class="mut">Sin responsable</span><span class="mut">7</span></div>
+      <div class="flexb" style="margin-top:13px">
+        <button class="btn pri">Exportar Excel</button>
+        <button class="btn">Exportar CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec"><div style="font-weight:600">Contactos de huéspedes</div>
+      <p class="sub" style="margin-top:2px">Se eligen por fecha de check-in. Se excluyen las canceladas y las que no tienen departamento.</p></div>
+    <div class="sec">
+      <div class="flexb mb">
+        <div style="flex:1"><div class="lbl mb">Desde</div>
+          <div class="selbtn">20/07/2026</div></div>
+        <div style="flex:1"><div class="lbl mb">Hasta</div>
+          <div class="selbtn">31/07/2026</div></div>
+      </div>
+      <div class="kv"><span>Reservas en el rango</span><strong>34</strong></div>
+      <div class="kv"><span>Se exportan</span><strong>31</strong></div>
+      <div class="kv"><span class="mut">Excluidas · canceladas</span><span class="mut">2</span></div>
+      <div class="kv"><span class="mut">Excluidas · sin departamento</span><span class="mut">1</span></div>
+      <div class="flexb" style="margin-top:13px">
+        <button class="btn pri">Sistema de comunicación (XLSX)</button>
+        <button class="btn">Google Contacts (CSV)</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function scConfig(){
+  const USUARIOS = [
+    ['Marcos','admin','Acceso total'],
+    ['Maguie','manager','Operación completa'],
+    ['Diego','coordinador','Check-in/out, reportes, asignación. No edita datos de Airbnb'],
+    ['Franco','coordinador','Check-in/out, reportes, asignación. No edita datos de Airbnb'],
+    ['Anto','limpieza','Solo sus limpiezas asignadas'],
+    ['Ludmila','limpieza','Solo sus limpiezas asignadas'],
+    ['Trini','limpieza','Solo sus limpiezas asignadas']
+  ];
+  return `
+  <div class="hdr"><div><h1>Configuración</h1></div></div>
+
+  <div class="dayh"><h2>Usuarios y roles</h2><button class="btn pri">+ Usuario</button></div>
+  <div class="card mb">
+    ${USUARIOS.map(([n,r,d])=>`
+      <div class="row" style="cursor:default">
+        <div class="r1"><strong>${n}</strong><span class="tag ${r==='admin'||r==='manager'?'br':''}">${r}</span></div>
+        <div class="r2">${d}</div>
+      </div>`).join('')}
+  </div>
+
+  <div class="note mb">Solo el administrador y el manager pueden descartar reservas o modificar las fechas que vienen de Airbnb. Airbnb manda sobre sus propios campos: una edición manual dura hasta la próxima importación, y una reserva descartada reaparece si vuelve a venir en un archivo.</div>
+
+  <div class="dayh"><h2>Valores de limpieza</h2><button class="btn">+ Nuevos valores</button></div>
+  <div class="card mb">
+    <div class="sec"><span class="tag br">Vigente desde el 20/07/2026</span></div>
+    <table>
+      <tr><th>Ambientes</th><th>Monto</th></tr>
+      <tr><td>Monoambiente</td><td class="mono">$14.000</td></tr>
+      <tr><td>2 ambientes</td><td class="mono">$18.000</td></tr>
+      <tr><td>3 ambientes</td><td class="mono">$22.000</td></tr>
+      <tr><td>4 ambientes</td><td class="mono">$26.000</td></tr>
+    </table>
+    <div class="sec"><p class="sub">Domingos y feriados se paga el doble. Los valores anteriores quedan guardados: las limpiezas ya asignadas conservan el monto con el que se asignaron.</p></div>
+  </div>
+
+  <div class="dayh"><h2>Parámetros operativos</h2></div>
+  <div class="card mb">
+    <div class="sec">
+      <div class="kv"><span>Hora límite de check-out</span><strong>${CFG.limCheckout}</strong></div>
+      <div class="kv"><span>Hora mínima de check-in</span><strong>${CFG.minCheckin}</strong></div>
+      <p class="sub" style="margin-top:9px">Si una salida es posterior a la primera y una entrada del mismo día es anterior a la segunda, el sistema avisa que la ventana no alcanza para limpiar. Se ajustan acá, sin tocar el sistema.</p>
+    </div>
+  </div>
+
+  <div class="dayh"><h2>Feriados</h2><button class="btn">+ Feriado</button></div>
+  <p class="sub mb">En estas fechas la limpieza se paga doble. El sistema lo detecta solo al asignar.</p>
+  <div class="card mb">
+    <table>
+      <tr><th>Fecha</th><th>Descripción</th><th></th></tr>
+      ${[['20/06/2026','Paso a la Inmortalidad del Gral. Güemes'],
+         ['09/07/2026','Día de la Independencia'],
+         ['17/08/2026','Paso a la Inmortalidad del Gral. San Martín'],
+         ['12/10/2026','Día del Respeto a la Diversidad Cultural'],
+         ['20/11/2026','Día de la Soberanía Nacional'],
+         ['08/12/2026','Inmaculada Concepción'],
+         ['25/12/2026','Navidad']]
+        .map(f=>`<tr><td><strong>${f[0]}</strong></td><td>${f[1]}</td><td class="mut" style="text-align:right">editar</td></tr>`).join('')}
+    </table>
+  </div>
+
+  <div class="dayh"><h2>Puntos de acceso</h2><button class="btn">+ Punto de acceso</button></div>
+  <div class="card mb">
+    <table>
+      <tr><th>Punto</th><th>Método</th><th>Entrada</th><th>Salida</th></tr>
+      ${[['Self','self','Sí','Sí'],['Sobre Esmeralda','sobre','Sí','No'],
+         ['Valijas Talcahuano','valijas','Sí','No'],['Valijas en depto','valijas','Sí','No'],
+         ['Candado Kennedy 1 · #1080','candado','Sí','Sí'],['Candado Kennedy 3 · #2906','candado','Sí','Sí'],
+         ['Llaves Esmeralda','llaves','No','Sí']]
+        .map(r=>`<tr><td><strong>${r[0]}</strong></td><td class="mut">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}
+    </table>
+  </div>
+
+  <div class="dayh"><h2>Personas</h2><button class="btn">+ Persona</button></div>
+  <div class="card">
+    <table>
+      <tr><th>Nombre</th><th>Limpieza</th><th>Check-in</th><th>Back office</th></tr>
+      ${[['Anto','Sí','Sí','No'],['Ludmila','Sí','No','No'],['Trini','Sí','Sí','No'],
+         ['Mili','Sí','Sí','No'],['Sabri','Sí','No','No'],['Erika','Sí','No','No'],
+         ['Patricia','Sí','Sí','No'],['Diego','No','Sí','Sí'],['Maguie','No','Sí','Sí']]
+        .map(r=>`<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}
+    </table>
+  </div>`;
+}
+
+/* ============ DRAWERS ============ */
+function dwCheckin(i){
+  const r = LLEGADAS[i], d = DX(r.dp);
+  const faltas = (()=>{
+    const f=[];
+    if(!r.h) f.push('Horario de llegada');
+    if(!r.acc) f.push('Responsable o punto de acceso');
+    if(d.reg && !r.reg) f.push('Registro de ingreso');
+    if(d.seg && !r.seg) f.push('Aviso a seguridad');
+    return f;
+  })();
+  return `
+  <div class="dwh"><button onclick="closeDw()">‹</button>
+    <div style="flex:1;min-width:0;display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+      <div style="min-width:0">
+        <div style="font-weight:600">${esc(r.dp)}</div>
+        <div class="mono mut">${r.cod}</div>
+      </div>
+      <div style="text-align:right;min-width:0">
+        <div style="font-size:12px;color:var(--text-2)">${esc(d.d)}</div>
+        <div class="sub" style="font-size:11px">${d.b}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO IMPORTANTE: huésped + fecha al lado -->
+  <div class="sec">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+      <div style="font-weight:600">${esc(r.g)}</div>
+      <div style="text-align:right;white-space:nowrap">
+        <span class="lbl">Ingreso</span>
+        <strong style="font-size:13px;margin-left:5px">${r.f||r.fres}${r.h?' · '+r.h:''}</strong>
+      </div>
+    </div>
+    <div class="sub">${r.noc} noches · ${esc(r.pax)}</div>
+    <div class="flexb" style="margin-top:11px">
+      <button class="btn" style="flex:1">Llamar</button>
+      <button class="btn" style="flex:1">WhatsApp</button>
+    </div>
+    <div class="mono mut" style="margin-top:7px">${esc(r.t)}</div>
+    ${r.sl>7?`<div class="kv" style="margin-top:9px"><span>Última limpieza</span><span style="color:var(--warn)">hace ${r.sl} días</span></div>`:''}
+    ${r.listo?`<div class="flexb" style="margin-top:9px"><span class="tag ok">✓ Departamento listo</span>
+      <span class="sub" style="font-size:11px">limpieza terminada</span></div>`:''}
+  </div>
+
+  <!-- FALTA COMPLETAR: arriba, justo bajo lo importante -->
+  ${faltas.length?`<div class="todo ${!r.h||!r.acc?'urg':''}">
+    <strong style="font-size:12.5px">Falta completar (${faltas.length})</strong>
+    <ul>${faltas.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}
+
+  <!-- Llegada coordinada -->
+  <div class="sec">
+    <div class="lbl mb">Llegada coordinada</div>
+    <div class="flexb" style="align-items:flex-start">
+      <div style="flex:1" class="sel">
+        <div class="lbl mb">Fecha</div>
+        <button class="selbtn ${r.f?'':'empty'}" onclick="togglePop('cf${i}',event)">
+          <span>${r.f||r.fres}</span><span>⌄</span></button>
+        ${S.pop===`cf${i}`?`<div class="pop">
+          <div class="ph">Llega el</div>
+          ${FECHAS.map(f=>`<button onclick="setFecha('ci',${i},'${f}')">${f}</button>`).join('')}
+          <div class="sp"></div>
+          <button class="mut" onclick="setFecha('ci',${i},null)">Igual que la reserva (${r.fres})</button>
+        </div>`:''}
+      </div>
+      <div style="flex:1">
+        <div class="lbl mb">Hora</div>
+        <input type="time" class="${r.h?'':'vacio'}" value="${r.h?hhmm(r.h):''}"
+          step="300" onchange="setHora('ci',${i},this.value)">
+      </div>
+    </div>
+    ${r.f && r.f!==r.fres ?`<div class="note" style="margin-top:10px">Llega distinto de lo que dice la reserva (${r.fres}). Es solo coordinación: la reserva y la limpieza no cambian.</div>`:''}
+  </div>
+
+  <!-- Acceso -->
+  <div class="sec">
+    <div class="lbl mb">Acceso</div>
+    <div class="sel">
+      <button class="selbtn ${r.acc?'':'empty'}" onclick="togglePop('ci${i}',event)">
+        <span>${r.acc||'Elegir responsable o punto de acceso'}</span><span>⌄</span></button>
+      ${S.pop===`ci${i}`?`<div class="pop">
+        <div class="ph">Sin persona</div>
+        ${ACCESOS.map(a=>`<button onclick="pick('ci',${i},'${a}')">${a}</button>`).join('')}
+        <div class="sp"></div>
+        <div class="ph">Personas</div>
+        ${CHECKIN_P.map(p=>`<button onclick="pick('ci',${i},'${p}')">${p}</button>`).join('')}
+      </div>`:''}
+    </div>
+    ${r.acc==='Self'?(()=>{const m=selfMsg(r.dp, parseInt(r.pax)||1); return `<div class="selfmsg ${m.c}"><span>⚑</span><span>${m.t}</span></div>`;})()
+      : r.acc?`<p class="sub" style="margin-top:9px">${accTexto(r.acc)}</p>`:''}
+    ${requiereDejar(r.acc)?`<div class="kv" style="margin-top:9px"><span>¿Se dejó en el ${/candado/i.test(r.acc)?'candado':/sobre/i.test(r.acc)?'sobre':'lugar'}?</span>
+      <button class="${r.dejado?'tag ok':'falta'}" onclick="toggleDejado('ci',${i})">${r.dejado?'Confirmado ✓':'Falta confirmar'}</button></div>`:''}
+  </div>
+
+  <!-- Trámites de ingreso -->
+  <div class="sec">
+    <div class="lbl mb">Trámites de ingreso</div>
+    ${d.reg?`<div class="kv"><span>Registro</span>
+      <button class="${r.reg?'tag ok':'falta'}" onclick="toggleFlag(${i},'reg')">${r.reg?'Hecho ✓':'Falta hacerlo'}</button></div>`
+     :`<div class="kv"><span>Registro</span><span class="mut">No aplica</span></div>`}
+    ${d.seg?`<div class="kv"><span>Aviso a seguridad</span>
+      <button class="${r.seg?'tag ok':'falta'}" onclick="toggleFlag(${i},'seg')">${r.seg?'Hecho ✓':'Falta hacerlo'}</button></div>`
+     :`<div class="kv"><span>Aviso a seguridad</span><span class="mut">No aplica</span></div>`}
+  </div>
+
+  <!-- Salida anterior / ventana -->
+  <div class="sec">
+    <div class="lbl mb">Salida anterior</div>
+    ${r.prev ? `
+      <div class="kv"><span>${esc(r.prev.g)}</span><strong>${r.prev.f} · ${r.prev.h}</strong></div>
+      <div class="kv"><span>Ventana para limpiar</span>
+        <strong style="${ventanaMala(r)?'color:var(--danger)':''}">${ventanaTxt(r)||'—'}</strong></div>
+      ${ventanaMala(r)?`<div class="note dg" style="margin-top:10px">La salida es después de las ${CFG.limCheckout} y la entrada antes de las ${CFG.minCheckin}. No hay tiempo para limpiar: hay que renegociar un horario.</div>`:''}
+    ` : `<p class="sub">El departamento venía libre. No hay salida previa.</p>`}
+  </div>
+
+  <!-- Departamento -->
+  <div class="sec">
+    <button class="btn" style="width:100%" onclick="closeDw();openDw('dp',${DEPTOS.findIndex(x=>x.n===r.dp)})">Ver ficha del departamento</button>
+  </div>
+
+  <!-- Observaciones -->
+  <div class="sec">
+    <div class="lbl mb">Observaciones del check-in</div>
+    <textarea class="ta" placeholder="Notas para el equipo…"
+      oninput="setObs('ci',${i},this.value)">${esc(r.obs||'')}</textarea>
+  </div>`;
+}
+function requiereDejar(acc){
+  if(!acc) return false;
+  return /candado|sobre/i.test(acc);
+}
+function selfMsg(depto, pax){
+  const d = DX(depto);
+  if(d.self==='siempre') return {c:'', t:'Self habilitado. El huésped deja las llaves adentro y sale.'};
+  if(d.self==='no') return {c:'dg', t:'Este departamento NO permite self check-out. Asigná un responsable o punto de acceso.'};
+  if(pax>=2) return {c:'', t:'Self habilitado (2+ huéspedes). Instrucción: bajan, abren la puerta, uno sube a dejar las llaves y baja.'};
+  return {c:'wn', t:'Self con aviso: la reserva es de 1 huésped. Con una sola persona puede quedar trabada afuera al dejar la llave adentro. Confirmá antes de usar self.'};
+}
+function accTexto(a){
+  const m = {
+    'Self':'El huésped entra solo. Las instrucciones se envían por Airbnb 24 horas antes.',
+    'Sobre Esmeralda':'Retirar el sobre en la oficina de Esmeralda. Horario de 9 a 19.',
+    'Valijas Talcahuano':'Retirar en conserjería de Talcahuano 1186, planta baja. Preguntar por Sergio.',
+    'Valijas en depto':'Las llaves quedan dentro del departamento, en la mesa de entrada.',
+    'Candado Kennedy 1 · #1080':'Candado en la reja de entrada. Código 1080.',
+    'Candado Kennedy 3 · #2906':'Candado en la puerta del palier. Código 2906.',
+    'Llaves Esmeralda':'Devolver las llaves en la oficina de Esmeralda.'
+  };
+  return m[a] || 'Coordina la llegada de forma presencial.';
+}
+
+function dwCheckout(i){
+  const r = SALIDAS[i], d = DX(r.dp);
+  return `
+  <div class="dwh"><button onclick="closeDw()">‹</button>
+    <div><div style="font-weight:600">${esc(r.dp)}</div>
+      <div class="mono mut">${r.cod}</div></div></div>
+  <div class="sec">
+    <div style="font-weight:600">${esc(r.g)}</div>
+    <div class="sub">${r.noc} noches</div>
+  </div>
+
+  <div class="sec">
+    <div class="kv"><span>Check-out de la reserva</span><strong>${r.fres}</strong></div>
+  </div>
+
+  <div class="sec">
+    <div class="lbl mb">Salida coordinada</div>
+    <div class="flexb" style="align-items:flex-start">
+      <div style="flex:1" class="sel">
+        <div class="lbl mb">Fecha</div>
+        <button class="selbtn ${r.f?'':'empty'}" onclick="togglePop('of${i}',event)">
+          <span>${r.f||r.fres}</span><span>⌄</span></button>
+        ${S.pop===`of${i}`?`<div class="pop">
+          <div class="ph">Se va el</div>
+          ${FECHAS.map(f=>`<button onclick="setFecha('co',${i},'${f}')">${f}</button>`).join('')}
+          <div class="sp"></div>
+          <button class="mut" onclick="setFecha('co',${i},null)">Igual que la reserva</button>
+        </div>`:''}
+      </div>
+      <div style="flex:1">
+        <div class="lbl mb">Hora</div>
+        <input type="time" value="${hhmm(r.h)}"
+          step="300" onchange="setHora('co',${i},this.value)">
+      </div>
+    </div>
+    ${r.f && r.f!==r.fres ?`<div class="note" style="margin-top:10px">Avisó que sale antes de lo que dice la reserva. El depto está pago hasta el ${r.fres}: la limpieza sigue planificada para esa fecha. Se puede mover a mano.</div>`:''}
+    <div class="kv" style="margin-top:9px"><span>Late check-out</span>
+      <button class="${r.late?'tag wn':'tag gh'}" onclick="toggleLate(${i})">${r.late?'Sí ✓':'No'}</button></div>
+    <div class="sel" style="margin-top:9px">
+      <div class="lbl mb">Punto de devolución</div>
+      <button class="selbtn" onclick="togglePop('od${i}',event)">
+        <span>${r.dev||d.acc}</span><span>⌄</span></button>
+      ${S.pop===`od${i}`?`<div class="pop">
+        <div class="ph">Sin persona</div>
+        ${ACCESOS.filter(a=>a!=='Self').map(a=>`<button onclick="setDev(${i},'${a}')">${a}</button>`).join('')}
+        <div class="sp"></div>
+        <div class="ph">Personas</div>
+        ${CHECKIN_P.map(pp=>`<button onclick="setDev(${i},'${pp}')">${pp}</button>`).join('')}
+      </div>`:''}
+    </div>
+    ${r.late?`<div class="note" style="margin-top:11px">Con late check-out el departamento no se puede limpiar ese día. Si no hay entrada, la limpieza pasa al día siguiente sola.</div>`:''}
+  </div>
+
+  <div class="sec">
+    <div class="lbl mb">Limpieza</div>
+    <div class="note ${r.st==='dg'?'dg':r.st==='wn'?'':'ok'}">${esc(r.est)}</div>
+    <button class="btn" style="margin-top:10px" onclick="closeDw();irA('limp',{day:'20'})">Ver en limpiezas</button>
+  </div>
+
+  <div class="sec">
+    <div class="lbl mb">Observaciones del check-out</div>
+    <textarea class="ta" placeholder="Notas para el equipo…"
+      oninput="setObs('co',${i},this.value)">${esc(r.obs||'')}</textarea>
+  </div>
+
+  <div class="sec">
+    <div class="lbl mb">Departamento</div>
+    <p class="sub">${esc(d.d)} · ${d.b} · ${d.a}</p>
+    <button class="btn" style="margin-top:10px" onclick="closeDw();openDw('dp',${DEPTOS.findIndex(x=>x.n===r.dp)})">Ver ficha del departamento</button>
+  </div>`;
+}
+
+/* ===== VISTA DEL PERSONAL DE LIMPIEZA ===== */
+const CHECKLIST = {
+  'Cocina':['Heladera vacía y limpia','Horno y hornallas','Microondas','Vajilla completa y guardada','Bacha y mesada','Piso','Tacho vacío con bolsa nueva','Cafetera y pava','Alacenas ordenadas','Repasadores limpios'],
+  'Baño':['Inodoro','Ducha y mampara','Bacha y espejo','Piso','Amenities repuestos'],
+  'Habitación':['Cama tendida con blanco limpio','Placard vacío y con perchas','Mesas de luz','Piso y debajo de la cama','Cortinas y ventanas'],
+  'Funcionamiento':['Luces','Aire acondicionado','Agua caliente','Wifi','TV','Cerradura y llaves','Ventanas y persianas']
+};
+function juegos(d){
+  const i = d.inv, n = v => v ? parseInt(v) || 0 : 0;
+  const camas = [];
+  if(n(i.king)) camas.push(n(i.king)+' juego'+(n(i.king)>1?'s':'')+' king');
+  if(n(i.queen)) camas.push(n(i.queen)+' juego'+(n(i.queen)>1?'s':'')+' queen');
+  if(n(i.twin)) camas.push(n(i.twin)+' juego'+(n(i.twin)>1?'s':'')+' twin');
+  if(n(i.sillon)) camas.push(n(i.sillon)+' juego sillón cama');
+  const banos = ['bano1','bano2','bano3'].filter(k=>invEstado(i[k])).length;
+  return {camas, banos, toallas:d.cap};
+}
+const MIS_LIMPIEZAS = [
+  {dp:'ARENALES 5', fecha:'Lunes 21/07', tipo:'Normal', hora:'10:00', prox:'14:00', noches:6, monto:18000, dob:false, estado:'pendiente'},
+  {dp:'CIUDAD 1', fecha:'Lunes 21/07', tipo:'Normal', hora:'10:00', prox:null, noches:14, monto:26000, dob:false, estado:'pendiente'},
+  {dp:'MENDOZA 1', fecha:'Martes 22/07', tipo:'Normal', hora:'08:00', prox:'14:00', noches:7, monto:18000, dob:false, estado:'pendiente'}
+];
+const ANTERIOR = {
+  'ARENALES 5':{fecha:'14/07', por:'Anto', faltantes:['2 toallones','Papel higiénico (quedaba 1)','Jabón líquido de cocina'], coment:'La tostadora hace ruido raro. El placard de la habitación tiene la puerta floja.'},
+  'CIUDAD 1':{fecha:'08/07', por:'Trini', faltantes:['4 juegos de toallas','Pastillas de lavavajillas','Bolsas de residuo'], coment:'Estadía de 14 noches con 6 personas. Vino muy sucio. Manchas en el sillón del living que no salieron.'},
+  'MENDOZA 1':{fecha:'15/07', por:'Anto', faltantes:[], coment:'Todo en orden.'}
+};
+function avisarListo(){
+  alert('Al marcar la limpieza como terminada:\n\n· Aparece con \u2713 en la vista de asignación\n· En el check-in del huésped que entra, el depto figura LISTO\n· Se suma el monto a tu acumulado del período');
+}
+function scMisLimpiezas(){
+  if(S.limpSel !== null && S.limpSel !== undefined) return scLimpDetalle(S.limpSel);
+  const tot = MIS_LIMPIEZAS.reduce((a,l)=>a+l.monto,0);
+  return `
+  <div class="hdr"><div><h1>Mis limpiezas</h1>
+    <p class="sub">Vista del personal de limpieza</p></div></div>
+  <div class="note ok mb">Acumulado del período: <strong>${money(tot)}</strong> · ${MIS_LIMPIEZAS.length} limpiezas + viáticos</div>
+  ${['Lunes 21/07','Martes 22/07'].map(f=>{
+    const items = MIS_LIMPIEZAS.filter(l=>l.fecha===f);
+    if(!items.length) return '';
+    return `<div class="dayh"><h2>${f}</h2></div>
+    <div class="card">
+      ${items.map(l=>{
+        const idx = MIS_LIMPIEZAS.indexOf(l);
+        const d = DX(l.dp);
+        return `<button class="row ${l.noches>=10?'wn':''}" onclick="S.limpSel=${idx};render()">
+          <div class="r1"><strong>${esc(l.dp)}</strong>
+            <span class="sub">${l.hora}${l.prox?' → '+l.prox:''}</span></div>
+          <div class="r2">${esc(d.d)} · ${d.a}</div>
+          <div class="flexb" style="margin-top:7px">
+            <span class="tag ${l.noches>=10?'wn':''}">${l.noches} noches de estadía</span>
+            <span class="tag">${money(l.monto)}</span>
+            ${ANTERIOR[l.dp] && ANTERIOR[l.dp].faltantes.length?`<span class="tag wn">${ANTERIOR[l.dp].faltantes.length} cosas para llevar</span>`:''}
+          </div></button>`;
+      }).join('')}
+    </div>`;
+  }).join('')}`;
+}
+function scLimpDetalle(i){
+  const l = MIS_LIMPIEZAS[i], d = DX(l.dp), j = juegos(d), ant = ANTERIOR[l.dp];
+  return `
+  <div class="flexb mb"><button class="btn" onclick="S.limpSel=null;render()">‹ Volver</button></div>
+  <div class="hdr"><div><h1>${esc(l.dp)}</h1>
+    <p class="sub">${l.fecha} · ${l.tipo}</p></div></div>
+  <div class="card mb">
+    <div class="sec">
+      <div class="lbl mb">Dirección</div>
+      <p style="font-size:14px;font-weight:500">${esc(d.d)}</p>
+      <p class="sub">${d.b}</p>
+      <button class="btn pri" style="margin-top:9px;width:100%"
+        onclick="alert('Abre Google Maps con la dirección cargada.')">Abrir en Google Maps</button>
+    </div>
+    <div class="sec">
+      <div class="kv"><span>Sale el huésped</span><strong>${l.hora}</strong></div>
+      <div class="kv"><span>Entra el próximo</span><strong>${l.prox||'Sin próxima reserva'}</strong></div>
+      <div class="kv"><span>Duró la estadía anterior</span>
+        <strong style="${l.noches>=10?'color:var(--warn)':''}">${l.noches} noches</strong></div>
+      ${l.noches>=10?`<div class="note" style="margin-top:9px">Estadía larga. Es probable que lleve más tiempo de lo habitual.</div>`:''}
+    </div>
+    <div class="sec">
+      <div class="lbl mb">Acceso</div>
+      <p style="font-size:13px">${esc(d.acc)}</p>
+      <p class="sub" style="margin-top:4px">${accTexto(d.acc)}</p>
+      ${d.enc!=='—'?`<p class="sub" style="margin-top:6px">Encargado: <span style="color:var(--brand)">${esc(d.enc)}</span></p>`:''}
+    </div>
+  </div>
+  <h2>Qué llevar</h2>
+  <div class="card mb">
+    <div class="sec">
+      <div class="lbl mb">Blanco</div>
+      ${j.camas.map(c=>`<div class="kv"><span>${c}</span><span class="tag ok">sábanas</span></div>`).join('')}
+      <div class="kv"><span>${j.toallas} juegos de toallas</span>
+        <span class="sub">1 por huésped (capacidad ${d.cap})</span></div>
+      <div class="kv"><span>${j.banos} pie${j.banos>1?'s':''} de baño</span>
+        <span class="sub">1 por baño</span></div>
+    </div>
+    ${ant && ant.faltantes.length?`
+    <div class="sec" style="background:var(--warn-bg)">
+      <div class="lbl mb" style="color:var(--warn)">Faltaba en la limpieza anterior</div>
+      ${ant.faltantes.map(f=>`<div class="kv"><span>${esc(f)}</span><span class="falta">llevar</span></div>`).join('')}
+    </div>`:''}
+  </div>
+  ${ant?`
+  <h2>Limpieza anterior</h2>
+  <div class="card mb">
+    <div class="sec">
+      <div class="kv"><span>Fecha</span><strong>${ant.fecha}</strong></div>
+      <div class="kv"><span>La hizo</span><span>${ant.por}</span></div>
+      ${ant.coment?`<p class="sub" style="margin-top:9px">${esc(ant.coment)}</p>`:''}
+    </div>
+  </div>`:''}
+  <h2>Checklist</h2>
+  <div class="card mb">
+    ${Object.keys(CHECKLIST).map(sec=>`
+      <div class="sec">
+        <div class="lbl mb">${sec}</div>
+        ${CHECKLIST[sec].map(it=>`
+          <div class="kv"><span>${it}</span>
+            <span style="width:19px;height:19px;border:1.5px solid var(--line-2);border-radius:4px;display:inline-block"></span></div>`).join('')}
+      </div>`).join('')}
+  </div>
+  <h2>Al terminar</h2>
+  <div class="card">
+    <div class="sec"><button class="btn" style="width:100%">Subir fotos del departamento</button></div>
+    <div class="sec"><button class="btn" style="width:100%">Cargar lo que falta reponer</button></div>
+    <div class="sec"><button class="btn" style="width:100%">Reportar algo para arreglar</button></div>
+    <div class="sec"><button class="btn" style="width:100%">Cargar viático con comprobante</button></div>
+    <div class="sec">
+      <div class="kv"><span>Cobrás por esta limpieza</span><strong>${money(l.monto)}</strong></div>
+      <button class="btn pri" style="width:100%;margin-top:11px" onclick="avisarListo()">Marcar como terminada</button>
+    </div>
+  </div>`;
+}
+
+/* ===== ACCESOS Y LLAVES ===== */
+const ACCESO_HIST = [
+  {punto:'Candado Kennedy 3 · #2906', comp:['BORGES 1','BORGES 2'], adentro:1, mov:[
+    {tipo:'in', dp:'BORGES 1', txt:'Llave dejada · check-out de Nicolás Prieto', por:'Ludmila', cuando:'Hoy 10:20', ok:true},
+    {tipo:'out', dp:'BORGES 2', txt:'Llave retirada · check-in de Renata Cardoso (self)', por:'—', cuando:'Hoy 09:05', ok:true},
+    {tipo:'in', dp:'BORGES 2', txt:'Llave dejada · check-out anterior', por:'Anto', cuando:'Ayer 11:40', ok:true},
+    {tipo:'pend', dp:'BORGES 1', txt:'Check-in de mañana · falta dejar el sobre', por:'—', cuando:'Mañana', ok:false}
+  ]},
+  {punto:'Candado Kennedy 1 · #1080', comp:['CIUDAD 1'], adentro:0, mov:[
+    {tipo:'out', dp:'CIUDAD 1', txt:'Llave retirada · check-in de Axel Alejandro', por:'—', cuando:'Hoy 16:00', ok:true},
+    {tipo:'in', dp:'CIUDAD 1', txt:'Llave dejada · check-out de Hanna Weber', por:'Trini', cuando:'Hoy 10:10', ok:true}
+  ]},
+  {punto:'Sobre Esmeralda', comp:['DARREGUEYRA 1','LAPRIDA 4'], adentro:1, mov:[
+    {tipo:'in', dp:'LAPRIDA 4', txt:'Sobre dejado · check-out de Edith Liberman', por:'Franco', cuando:'Hoy 10:30', ok:true},
+    {tipo:'pend', dp:'DARREGUEYRA 1', txt:'Check-in de Marion Duclos · falta dejar sobre', por:'—', cuando:'Hoy 15:00', ok:false}
+  ]},
+  {punto:'Valijas Talcahuano', comp:['ED TALC 08','ED TALC 33'], adentro:2, mov:[
+    {tipo:'in', dp:'ED TALC 33', txt:'Valija dejada · check-out de Marcela Torres', por:'Ludmila', cuando:'Hoy 10:00', ok:true},
+    {tipo:'in', dp:'ED TALC 08', txt:'Valija dejada · check-out de Carlos Zamorano', por:'Sabri', cuando:'Hoy 10:15', ok:true}
+  ]}
+];
+function scAccesos(){
+  return `
+  <div class="hdr"><div><h1>Accesos y llaves</h1>
+    <p class="sub">Historial de cada candado, sobre y punto de entrega compartido</p></div></div>
+  <div class="help mb"><span class="i">ℹ</span><span>Cada movimiento se anota solo cuando se coordina un check-in o check-out. Lo único que se marca a mano es confirmar que la llave quedó dejada (solo en check-in).</span></div>
+  ${ACCESO_HIST.map(a=>`
+    <div class="card mb">
+      <div class="sec" style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:600">${esc(a.punto)}</div>
+          <div class="sub">${a.comp.length>1?'Compartido · ':''}${a.comp.join(' y ')}</div>
+        </div>
+        ${a.adentro?`<span class="tag wn">${a.adentro} llave${a.adentro>1?'s':''} adentro</span>`:`<span class="tag ok">Sin llaves adentro</span>`}
+      </div>
+      ${a.mov.map(m=>`
+        <div class="sec" style="display:flex;gap:11px;align-items:flex-start;${!m.ok?'background:var(--warn-bg)':''}">
+          <span style="font-size:15px;color:${m.tipo==='in'?'var(--brand)':m.tipo==='out'?'var(--text-secondary)':'var(--warn)'};margin-top:1px">
+            ${m.tipo==='in'?'↙':m.tipo==='out'?'↗':'◔'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px"><strong style="font-weight:500">${esc(m.dp)}</strong> · ${esc(m.txt)}</div>
+            ${m.por!=='—'?`<div class="sub">dejó ${m.por}</div>`:''}
+          </div>
+          <div style="text-align:right;white-space:nowrap">
+            <div style="font-size:12px;font-weight:500">${m.cuando}</div>
+            ${m.ok?`<span style="font-size:11px;color:var(--text-success)">✓ confirmado</span>`
+                  :`<button class="falta" onclick="alert('Marca la llave como dejada. Queda registrada con tu nombre y la hora.')">Marcar dejado</button>`}
+          </div>
+        </div>`).join('')}
+    </div>`).join('')}`;
+}
+
+
+function dwDepto(i){
+  const d = DEPTOS[i];
+  const O = S.accOpen;
+  const invRow = (k,lab) => {
+    const v = invEstado(d.inv[k]);
+    return `<div class="invrow">
+      <span class="chk ${v?'on':''}">${v?'✓':''}</span>
+      <span class="nm">${lab}</span>
+      <input class="det" placeholder="detalle (opcional)" value="${v?esc(v):''}">
+    </div>`;
+  };
+  const selfMap = {siempre:'Siempre',solo_multiples:'Solo con más de un huésped',multi:'Solo con más de un huésped',no:'No permitido'};
+  const camasTot = ['king','queen','twin','sillon'].reduce((a,k)=>a+(parseInt(d.inv[k])||0),0);
+  const banos = ['bano1','bano2','bano3'].filter(k=>invEstado(d.inv[k])).length;
+
+  const acc = (key, titulo, sum, body) => `
+    <div class="acc">
+      <button class="acc-h ${O[key]?'open':''}" onclick="toggleAcc('${key}')">
+        <span class="tt">${titulo}${sum&&!O[key]?`<span class="acc-sum">${sum}</span>`:''}</span>
+        <span class="ch">›</span>
+      </button>
+      ${O[key]?`<div class="acc-b">${body}</div>`:''}
+    </div>`;
+
+  return `
+  <div class="dwh"><button onclick="closeDw()">‹</button>
+    <div style="font-weight:600">${esc(d.n)}</div></div>
+
+  <!-- BLOQUE FIJO ARRIBA: lo más consultado -->
+  <div class="sec">
+    <div class="kv"><span>Dirección</span><strong>${esc(d.d)}</strong></div>
+    <div class="kv"><span>Barrio</span><span>${d.b}</span></div>
+    <div class="kv"><span>Ambientes / capacidad</span><span>${d.a} · ${d.cap} pax</span></div>
+    <div style="background:var(--paper);border-radius:var(--r);padding:9px 12px;margin-top:9px;
+      display:flex;justify-content:space-between;align-items:center">
+      <div><div class="lbl">Wifi</div><div style="font-size:12.5px">${esc(d.wifi)}</div></div>
+      <button class="mut" onclick="alert('Copiado')">copiar</button>
+    </div>
+  </div>
+
+  <!-- ACORDEÓN -->
+  ${acc('prop','Propiedad', d.prop, `
+    <div class="kv"><span>Propietario</span><strong>${esc(d.prop)}</strong></div>
+    <div class="flexb" style="align-items:flex-start;margin-top:6px">
+      <div style="flex:1"><div class="lbl mb">Tel. propietario</div>
+        <input class="det" style="width:100%" value="${esc(d.propTel||'')}" placeholder="Teléfono"></div>
+    </div>
+    <div class="kv" style="margin-top:8px"><span>Acuerdo de pago</span><span>Cobra todo MTH</span></div>
+    <div class="kv"><span>Cuenta de cobro</span><span>LLC MTHosting</span></div>
+    <div class="kv"><span>Publicación</span><span style="color:var(--brand)">Ver en Airbnb</span></div>
+    <div class="kv"><span>Credenciales de Airbnb</span><span class="mut">Solo admin</span></div>
+    <div style="border-top:1px solid var(--line);margin:11px 0 0;padding-top:11px">
+      <div class="lbl mb">Encargado del edificio</div>
+      <div class="flexb" style="align-items:flex-start">
+        <div style="flex:1"><input class="det" style="width:100%" value="${d.enc!=='—'?esc(d.enc.split(' · ')[0]):''}" placeholder="Nombre"></div>
+        <div style="flex:1"><input class="det" style="width:100%" value="${d.enc!=='—'&&d.enc.includes(' · ')?esc(d.enc.split(' · ')[1]):''}" placeholder="Teléfono"></div>
+      </div>
+    </div>
+  `)}
+
+  ${acc('ingreso','Requisitos de ingreso',
+    [d.reg?'registro':'', d.seg?'seguridad':'', selfMap[d.self]].filter(Boolean).join(' · '), `
+    <div class="kv"><span>Registro</span>
+      ${d.reg?`<span class="tag br">Requerido</span>`:`<span class="mut">No aplica</span>`}</div>
+    <div class="kv"><span>Aviso a seguridad</span>
+      ${d.seg?`<span class="tag br">Requerido</span>`:`<span class="mut">No aplica</span>`}</div>
+    <div class="sel" style="margin-top:9px">
+      <div class="lbl mb">Modalidad de self check-out</div>
+      <button class="selbtn" onclick="togglePop('dself',event)">
+        <span>${selfMap[d.self]||'No permitido'}</span><span>⌄</span></button>
+      ${S.pop==='dself'?`<div class="pop">
+        ${['Siempre','Solo con más de un huésped','No permitido'].map(x=>`<button>${x}</button>`).join('')}
+      </div>`:''}
+    </div>
+    <div style="margin-top:11px">
+      <div class="lbl mb">Indicaciones de check-in / check-out</div>
+      <textarea class="ta" placeholder="Recorrido, dónde está la llave de luz, indicaciones del portero…">${esc(accTexto(d.acc))}</textarea>
+      <button class="btn" style="margin-top:8px;width:100%">Subir fotos o archivos</button>
+    </div>
+  `)}
+
+  ${acc('anuncios','Anuncios y calendario', d.aliases.length+' anuncios', `
+    <div class="lbl mb">Nombres de anuncio vinculados</div>
+    <p class="sub mb">Se pueden agregar o quitar: los anuncios de Airbnb se renombran.</p>
+    ${d.aliases.map(a=>`<div class="invrow"><span class="nm">${esc(a)}</span>
+      <button class="mut" style="font-size:12px">quitar</button></div>`).join('')}
+    <div class="flexb" style="margin-top:9px;gap:8px">
+      <input class="det" style="flex:1" placeholder="Agregar otro nombre…">
+      <button class="btn">Agregar</button>
+    </div>
+    <div style="border-top:1px solid var(--line);margin:13px 0 0;padding-top:12px">
+      <div class="lbl mb">Calendario iCal de Airbnb</div>
+      <input class="det" style="width:100%" value="${d.ical||''}" placeholder="https://www.airbnb.com/calendar/ical/…">
+      <div class="flexb" style="margin-top:8px;justify-content:space-between">
+        <span class="sub">${d.ical?'Última sincronización: hoy 08:00':'Sin configurar'}</span>
+        <button class="btn" style="font-size:12px">Sincronizar ahora</button>
+      </div>
+      <div class="help"><span class="i">ℹ</span><span>El sistema lee este calendario cada pocas horas. Cuando aparece una reserva nueva, la crea con fecha y código y genera su limpieza. La importación del CSV completa el resto.</span></div>
+    </div>
+  `)}
+
+  ${acc('ambientes','Ambientes y camas', `${d.a} · ${camasTot} camas · ${banos} baño${banos>1?'s':''}`, `
+    <div class="kv"><span>Ambientes</span><span>${d.a}</span></div>
+    <div class="kv"><span>Habitaciones</span><span>${parseInt(d.inv.hab)||0}</span></div>
+    <div class="kv"><span>Baños</span><span>${banos}</span></div>
+    <div class="lbl mb" style="margin-top:11px">Camas</div>
+    ${[['king','King'],['queen','Queen'],['twin','Twin'],['sillon','Sillón cama']].map(([k,lab])=>{
+      const n=parseInt(d.inv[k])||0;
+      return `<div class="invrow"><span class="nm">${lab}</span>
+        <div class="numsel"><button>−</button><span class="v">${n}</span><button>+</button></div></div>`;
+    }).join('')}
+    <div class="kv" style="margin-top:6px"><span>Total de camas</span><strong>${camasTot}</strong></div>
+  `)}
+
+  ${INV_DEF.filter(g=>g[0]!=='dist').map(([key,titulo,campos])=>{
+    const tiene = campos.filter(([k])=>invEstado(d.inv[k])).length;
+    return acc('inv_'+key, titulo, tiene+'/'+campos.length,
+      campos.map(([k,lab])=>invRow(k,lab)).join(''));
+  }).join('')}
+
+  ${acc('obs','Observación', d.observ?'con nota':'', `
+    <textarea class="ta" placeholder="Cualquier nota sobre este departamento…">${d.observ?esc(d.observ):''}</textarea>
+  `)}
+`;
+}
+
+
+
+/* ===== DASHBOARD ===== */
+function scDashboard(){
+  const ocup = [
+    {dp:'CIUDAD 1', pct:92}, {dp:'ARENALES 5', pct:88}, {dp:'BORGES 1', pct:85},
+    {dp:'BERUTI 2', pct:81}, {dp:'ED TALC 33', pct:78}, {dp:'LAPRIDA 4', pct:74},
+    {dp:'MENDOZA 1', pct:70}, {dp:'DARREGUEYRA 1', pct:64}, {dp:'CERVIÑO 1', pct:58}
+  ];
+  const calidad = [
+    {dp:'ARENALES 5', prom:4.9, n:23}, {dp:'BORGES 1', prom:4.8, n:31},
+    {dp:'CIUDAD 1', prom:4.7, n:44}, {dp:'BERUTI 2', prom:4.6, n:18},
+    {dp:'MARCELO T. 2', prom:4.3, n:12}, {dp:'CERVIÑO 1', prom:4.1, n:9}
+  ];
+  const bajas = [
+    {dp:'CERVIÑO 1', cod:'HM2K8YD6WR', punt:3, txt:'El aire no enfriaba bien.'},
+    {dp:'MARCELO T. 2', cod:'HM9F3QT7XB', punt:3, txt:'Ruido de la calle toda la noche.'},
+    {dp:'MENDOZA 1', cod:'HM6P9LC4VZ', punt:4, txt:'Faltaban toallas.'}
+  ];
+  return `
+  <div class="hdr"><div><h1>Dashboard</h1>
+    <p class="sub">Julio 2026 · vista general</p></div></div>
+
+  <div class="grid4 mb">
+    <div class="stat"><div class="lbl">Ocupación media</div><div class="n">77%</div></div>
+    <div class="stat"><div class="lbl">Puntaje medio</div><div class="n">4.7</div></div>
+    <div class="stat"><div class="lbl">Reseñas del mes</div><div class="n">62</div></div>
+    <div class="stat" style="background:var(--warn-bg);border-color:#EBDCC0">
+      <div class="lbl" style="color:var(--text-warning)">Puntajes bajos</div>
+      <div class="n" style="color:var(--text-warning)">3</div></div>
+  </div>
+
+  <div class="dayh"><h2>Ocupación por departamento</h2></div>
+  <div class="card mb">
+    ${ocup.map(o=>`
+      <div class="sec" style="display:flex;align-items:center;gap:12px">
+        <span style="width:110px;font-size:13px;font-weight:500;flex-shrink:0">${esc(o.dp)}</span>
+        <div style="flex:1;background:var(--paper);border-radius:5px;height:9px;overflow:hidden">
+          <div style="height:100%;width:${o.pct}%;background:${o.pct>=80?'var(--brand)':o.pct>=65?'#9DC3B6':'var(--warn)'}"></div>
+        </div>
+        <span style="width:38px;text-align:right;font-size:13px;font-weight:600">${o.pct}%</span>
+      </div>`).join('')}
+  </div>
+
+  <div class="dayh"><h2>Calidad por departamento</h2></div>
+  <p class="sub mb">Promedio de puntaje de Airbnb y cantidad de reseñas.</p>
+  <div class="card mb">
+    <table>
+      <tr><th>Departamento</th><th>Puntaje</th><th>Reseñas</th></tr>
+      ${calidad.map(c=>`<tr>
+        <td><strong>${esc(c.dp)}</strong></td>
+        <td><span class="tag ${c.prom>=4.5?'ok':c.prom>=4.2?'':'wn'}">${c.prom.toFixed(1)} ★</span></td>
+        <td class="mut">${c.n}</td></tr>`).join('')}
+    </table>
+  </div>
+
+  <div class="dayh"><h2>Reseñas bajas para revisar</h2><span class="tag wn">${bajas.length}</span></div>
+  <div class="card mb">
+    ${bajas.map(b=>`
+      <div class="row wn" style="cursor:default">
+        <div class="r1"><strong>${esc(b.dp)}</strong><span class="tag wn">${b.punt} ★</span></div>
+        <div class="r2">${esc(b.txt)} <span class="mut">· ${b.cod}</span></div>
+      </div>`).join('')}
+  </div>
+
+  <div class="help"><span class="i">ℹ</span><span>La calidad se alimenta del Excel de puntajes de Airbnb (código de reserva + puntaje) que se importa desde la sección Calidad. Más adelante el dashboard sumará ingresos, liquidaciones y costos de limpieza.</span></div>`;
+}
+
+/* ===== CALIDAD (import de puntajes) ===== */
+function scCalidad(){
+  return `
+  <div class="hdr"><div><h1>Calidad</h1>
+    <p class="sub">Puntajes de Airbnb por reserva</p></div></div>
+  <div class="card mb" style="border-style:dashed;text-align:center;padding:28px">
+    <div style="font-size:26px;color:var(--text-3)">↥</div>
+    <p style="font-weight:600;margin-top:8px">Importar Excel de puntajes</p>
+    <p class="sub" style="margin:4px auto 14px;max-width:340px">Un archivo con dos columnas: código de reserva y puntaje. El sistema los cruza con las reservas existentes.</p>
+    <button class="btn pri">Elegir archivo</button>
+  </div>
+  <div class="help mb"><span class="i">ℹ</span><span>Solo hace falta código de reserva y puntaje. Opcionalmente, un comentario. Lo que no cruza con una reserva conocida se informa aparte.</span></div>
+
+  <div class="dayh"><h2>Últimos puntajes cargados</h2></div>
+  <div class="card">
+    ${[['ARENALES 5','HM2A9K3L2P',5],['BORGES 1','HMQ8ZT4RB1',5],['CIUDAD 1','HMK4X9W2VD',4],
+       ['CERVIÑO 1','HM5R2YT9WC',3],['MENDOZA 1','HM6P9LC4VZ',4]]
+      .map(([dp,cod,pt])=>`<div class="row ${pt<=3?'wn':''}" style="cursor:default">
+        <div class="r1"><strong>${dp}</strong><span class="tag ${pt>=5?'ok':pt>=4?'':'wn'}">${pt} ★</span></div>
+        <div class="r2 mono mut">${cod}</div></div>`).join('')}
+  </div>`;
+}
+
+
+/* ===== VISTA DE EQUIDAD (Gobernanta) ===== */
+const EQUIDAD = [
+  {p:'Anto',    lm:11, amb:26, $:214000, zonas:{'Palermo':5,'Recoleta':4,'Belgrano':2}},
+  {p:'Ludmila', lm:9,  amb:19, $:172000, zonas:{'Tribunales':5,'Recoleta':3,'Palermo':1}},
+  {p:'Trini',   lm:10, amb:24, $:196000, zonas:{'Palermo':6,'Belgrano':3,'Recoleta':1}},
+  {p:'Mili',    lm:6,  amb:8,  $:96000,  zonas:{'Palermo':4,'Recoleta':2}},
+  {p:'Sabri',   lm:7,  amb:17, $:138000, zonas:{'Belgrano':4,'Palermo':3}},
+  {p:'Erika',   lm:5,  amb:12, $:104000, zonas:{'Recoleta':3,'Tribunales':2}},
+  {p:'Patricia',lm:8,  amb:20, $:158000, zonas:{'Palermo':4,'Belgrano':3,'Tribunales':1}}
+];
+function scEquidad(){
+  const tot = EQUIDAD.reduce((a,x)=>({lm:a.lm+x.lm, amb:a.amb+x.amb, $:a.$+x.$}),{lm:0,amb:0,$:0});
+  const maxLm = Math.max(...EQUIDAD.map(x=>x.lm));
+  const prom = (tot.lm/EQUIDAD.length);
+  return `
+  <div class="hdr"><div><h1>Distribución de limpiezas</h1>
+    <p class="sub">Reparto por persona · para equilibrar la carga</p></div></div>
+
+  <div class="flexb mb" style="justify-content:space-between">
+    <div class="flexb" style="gap:6px">
+      <button class="btn" onclick="alert('Semana anterior')">‹</button>
+      <div class="selbtn" style="cursor:default;min-width:210px;justify-content:center">
+        Vie 18/07 → Jue 24/07</div>
+      <button class="btn" onclick="alert('Semana siguiente')">›</button>
+    </div>
+    <button class="btn" onclick="alert('Elegí un rango de fechas cualquiera para una excepción.')">Rango libre</button>
+  </div>
+  <div class="help mb"><span class="i">ℹ</span><span>La semana de pago va de viernes a jueves. Se paga el viernes lo hecho en ese período. Para casos especiales, usá «Rango libre».</span></div>
+
+  <div class="grid3 mb">
+    <div class="stat"><div class="lbl">Limpiezas</div><div class="n">${tot.lm}</div></div>
+    <div class="stat"><div class="lbl">Personas activas</div><div class="n">${EQUIDAD.length}</div></div>
+    <div class="stat"><div class="lbl">Promedio c/u</div><div class="n">${prom.toFixed(1)}</div></div>
+  </div>
+
+  <div class="card mb">
+    ${EQUIDAD.slice().sort((a,b)=>b.lm-a.lm).map(x=>{
+      const desv = x.lm - prom;
+      const col = desv>=2?'var(--warn)':desv<=-2?'var(--text-accent)':'var(--brand)';
+      return `<div class="sec">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="width:74px;font-weight:600;font-size:13px;flex-shrink:0">${x.p}</span>
+          <div style="flex:1;min-width:0">
+            <div style="background:var(--paper);border-radius:5px;height:9px;overflow:hidden">
+              <div style="height:100%;width:${x.lm/maxLm*100}%;background:${col}"></div>
+            </div>
+          </div>
+          <span style="width:30px;text-align:right;font-weight:600;font-size:13px">${x.lm}</span>
+        </div>
+        <div class="flexb" style="margin-top:7px;margin-left:86px;gap:6px">
+          <span class="tag">${x.amb} ambientes</span>
+          <span class="tag">${money(x.$)}</span>
+          ${Object.entries(x.zonas).map(([z,n])=>`<span class="tag" style="font-size:10px">${z} ${n}</span>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div class="help"><span class="i">ℹ</span><span>La barra muestra cantidad de limpiezas. Verde: cerca del promedio · Ámbar: bastante por encima · Azul: por debajo. Los ambientes y las zonas ayudan a repartir según esfuerzo y traslado, no solo cantidad.</span></div>`;
+}
+
+/* ============ RENDER ============ */
+function render(){
+  // sidebar
+  side.innerHTML = NAV.map(n => n.g
+    ? `<div class="grp">${n.g}</div>`
+    : `<a class="${S.screen===n.id?'on':''}" onclick="go('${n.id}')" tabindex="0">
+         <span style="width:15px;text-align:center">${n.ic}</span>${n.t}
+         ${n.badge?`<span class="dot">${contarAlertas()}</span>`:''}</a>`).join('');
+
+  mnav.innerHTML = MNAV.map(n=>`
+    <button class="${S.screen===n.id?'on':''}" onclick="go('${n.id}')" style="position:relative">
+      <span class="ic">${n.ic}</span>${n.t}
+      ${n.badge&&contarAlertas()?`<span class="mdot"></span>`:''}</button>`).join('');
+
+  const F = {dash:scDashboard, calidad:scCalidad, equidad:scEquidad, hoy:scHoy, inout:scInOut, limp:scLimp, mislimp:scMisLimpiezas, alertas:scAlertas, accesos:scAccesos,
+             deptos:scDeptos, import:scImport, export:scExport, config:scConfig};
+  view.innerHTML = (F[S.screen]||scHoy)();
+
+  overlay.innerHTML = '';
+  if(S.drawer){
+    const {k,i} = S.drawer;
+    const body = k==='ci'?dwCheckin(i) : k==='co'?dwCheckout(i) : dwDepto(i);
+    overlay.innerHTML = `<div class="ov" onclick="if(event.target===this)closeDw()">
+      <div class="dw">${body}</div></div>`;
+  }
+}
+document.addEventListener('click',()=>{ if(S.pop){ S.pop=null; render(); } });
+render();
+</script>
+</body>
+</html>

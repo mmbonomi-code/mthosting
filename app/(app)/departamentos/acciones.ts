@@ -41,9 +41,16 @@ function datosDepartamento(fd: FormData) {
     barrio: texto(fd, "barrio"),
     ambientes: texto(fd, "ambientes") as Ambientes | null,
     habitaciones: entero(fd, "habitaciones"),
+    banos: entero(fd, "banos"),
     capacidad: entero(fd, "capacidad"),
+    comision_pct: (() => {
+      const valor = texto(fd, "comision_pct");
+      return valor === null ? null : Number.parseFloat(valor);
+    })(),
     wifi_ssid: texto(fd, "wifi_ssid"),
     wifi_pass: texto(fd, "wifi_pass"),
+    airbnb_user: texto(fd, "airbnb_user"),
+    airbnb_pass: texto(fd, "airbnb_pass"),
     url_publicacion: texto(fd, "url_publicacion"),
     url_mapa: texto(fd, "url_mapa"),
     ical_url: texto(fd, "ical_url"),
@@ -163,5 +170,110 @@ export async function alternarAlias(
     .from("listing_alias")
     .update({ activo })
     .eq("id", aliasId);
+  revalidatePath(`/departamentos/${deptoId}`);
+}
+
+// --- Distribución: camas por ambiente ---
+
+type TipoCama = Database["public"]["Enums"]["tipo_cama"];
+
+export async function agregarCama(
+  deptoId: string,
+  _estadoPrevio: EstadoFormulario,
+  fd: FormData,
+): Promise<EstadoFormulario> {
+  const ambiente = texto(fd, "ambiente");
+  const tipoCama = texto(fd, "tipo_cama") as TipoCama | null;
+  const cantidad = entero(fd, "cantidad") ?? 1;
+
+  if (!ambiente || !tipoCama) {
+    return { error: "Indicá el ambiente y el tipo de cama." };
+  }
+
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase.from("distribucion_depto").insert({
+    depto_id: deptoId,
+    ambiente,
+    tipo_cama: tipoCama,
+    cantidad,
+  });
+
+  if (error) return { error: "No se pudo agregar. Probá de nuevo." };
+
+  revalidatePath(`/departamentos/${deptoId}`);
+  return null;
+}
+
+/** Las filas de distribución son datos maestros de la ficha, no operativos:
+ *  quitar una cama mal cargada es una corrección, no una baja. */
+export async function quitarCama(filaId: string, deptoId: string) {
+  const supabase = await crearClienteServidor();
+  await supabase.from("distribucion_depto").delete().eq("id", filaId);
+  revalidatePath(`/departamentos/${deptoId}`);
+}
+
+// --- Inventario del departamento ---
+
+export async function agregarInventario(
+  deptoId: string,
+  _estadoPrevio: EstadoFormulario,
+  fd: FormData,
+): Promise<EstadoFormulario> {
+  const nombreItem = texto(fd, "item_nombre");
+  const cantidad = entero(fd, "cantidad") ?? 1;
+  const notas = texto(fd, "notas");
+
+  if (!nombreItem) {
+    return { error: "Escribí qué ítem querés agregar (ej.: Plancha, AAC…)." };
+  }
+
+  const supabase = await crearClienteServidor();
+
+  // Busca el ítem en el catálogo; si no existe, lo crea.
+  const { data: existente } = await supabase
+    .from("item_catalogo")
+    .select("id")
+    .ilike("nombre", nombreItem)
+    .maybeSingle();
+
+  let itemId = existente?.id;
+  if (!itemId) {
+    const { data: creado, error: errorCatalogo } = await supabase
+      .from("item_catalogo")
+      .insert({ nombre: nombreItem })
+      .select("id")
+      .single();
+    if (errorCatalogo) {
+      return { error: "No se pudo crear el ítem en el catálogo." };
+    }
+    itemId = creado.id;
+  }
+
+  // Si el depto ya tiene ese ítem, actualiza la cantidad; si no, lo agrega.
+  const { data: filaExistente } = await supabase
+    .from("inventario_depto")
+    .select("id")
+    .eq("depto_id", deptoId)
+    .eq("item_id", itemId)
+    .maybeSingle();
+
+  const { error } = filaExistente
+    ? await supabase
+        .from("inventario_depto")
+        .update({ cantidad, notas })
+        .eq("id", filaExistente.id)
+    : await supabase
+        .from("inventario_depto")
+        .insert({ depto_id: deptoId, item_id: itemId, cantidad, notas });
+
+  if (error) return { error: "No se pudo guardar el inventario." };
+
+  revalidatePath(`/departamentos/${deptoId}`);
+  return null;
+}
+
+export async function quitarInventario(filaId: string, deptoId: string) {
+  const supabase = await crearClienteServidor();
+  await supabase.from("inventario_depto").delete().eq("id", filaId);
   revalidatePath(`/departamentos/${deptoId}`);
 }

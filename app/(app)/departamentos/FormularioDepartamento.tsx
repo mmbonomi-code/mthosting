@@ -26,9 +26,13 @@ type Valores = {
   barrio?: string | null;
   ambientes?: string | null;
   habitaciones?: number | null;
+  banos?: number | null;
   capacidad?: number | null;
+  comision_pct?: number | null;
   wifi_ssid?: string | null;
   wifi_pass?: string | null;
+  airbnb_user?: string | null;
+  airbnb_pass?: string | null;
   url_publicacion?: string | null;
   url_mapa?: string | null;
   ical_url?: string | null;
@@ -196,6 +200,15 @@ export default function FormularioDepartamento({
             className={clsEntrada}
           />
         </Campo>
+        <Campo etiqueta="Baños">
+          <input
+            name="banos"
+            type="number"
+            min={0}
+            defaultValue={valores.banos ?? ""}
+            className={clsEntrada}
+          />
+        </Campo>
         <Campo etiqueta="Capacidad (personas)">
           <input
             name="capacidad"
@@ -281,6 +294,34 @@ export default function FormularioDepartamento({
             name="ical_url"
             type="url"
             defaultValue={valores.ical_url ?? ""}
+            className={clsEntrada}
+          />
+        </Campo>
+        <Campo etiqueta="Comisión de MTHosting (%)">
+          <input
+            name="comision_pct"
+            type="number"
+            step="0.1"
+            min={0}
+            max={100}
+            defaultValue={valores.comision_pct ?? ""}
+            className={clsEntrada}
+          />
+        </Campo>
+        <div className="hidden sm:block" />
+        <Campo etiqueta="Usuario de Airbnb">
+          <input
+            name="airbnb_user"
+            defaultValue={valores.airbnb_user ?? ""}
+            autoComplete="off"
+            className={clsEntrada}
+          />
+        </Campo>
+        <Campo etiqueta="Contraseña de Airbnb">
+          <input
+            name="airbnb_pass"
+            defaultValue={valores.airbnb_pass ?? ""}
+            autoComplete="off"
             className={clsEntrada}
           />
         </Campo>

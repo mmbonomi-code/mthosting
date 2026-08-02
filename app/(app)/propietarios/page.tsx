@@ -8,7 +8,7 @@ export default async function ListaPropietarios() {
 
   const { data: propietarios } = await supabase
     .from("propietarios")
-    .select("id, nombre, contacto, comision_pct, acuerdo_pago, activo")
+    .select("id, nombre, contacto, acuerdo_pago, activo")
     .order("nombre");
 
   return (
@@ -47,9 +47,6 @@ export default async function ListaPropietarios() {
                   <span className="block truncate text-sm text-slate-500">
                     {[
                       prop.contacto,
-                      prop.comision_pct !== null
-                        ? `${prop.comision_pct}%`
-                        : null,
                       prop.acuerdo_pago
                         ? ETIQUETA_ACUERDO_PAGO[prop.acuerdo_pago]
                         : null,

@@ -299,9 +299,11 @@ export type Database = {
           airbnb_pass: string | null
           airbnb_user: string | null
           ambientes: Database["public"]["Enums"]["ambientes_tipo"] | null
+          banos: number | null
           barrio: string | null
           capacidad: number | null
           codigo: string
+          comision_pct: number | null
           created_at: string
           direccion: string | null
           encargado_nombre: string | null
@@ -331,9 +333,11 @@ export type Database = {
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
+          banos?: number | null
           barrio?: string | null
           capacidad?: number | null
           codigo: string
+          comision_pct?: number | null
           created_at?: string
           direccion?: string | null
           encargado_nombre?: string | null
@@ -363,9 +367,11 @@ export type Database = {
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
+          banos?: number | null
           barrio?: string | null
           capacidad?: number | null
           codigo?: string
+          comision_pct?: number | null
           created_at?: string
           direccion?: string | null
           encargado_nombre?: string | null
@@ -403,29 +409,35 @@ export type Database = {
       distribucion_depto: {
         Row: {
           activo: boolean
+          ambiente: string | null
+          cantidad: number
           created_at: string
           depto_id: string
           id: string
           notas: string | null
-          persona_id: string
+          tipo_cama: Database["public"]["Enums"]["tipo_cama"] | null
           updated_at: string
         }
         Insert: {
           activo?: boolean
+          ambiente?: string | null
+          cantidad?: number
           created_at?: string
           depto_id: string
           id?: string
           notas?: string | null
-          persona_id: string
+          tipo_cama?: Database["public"]["Enums"]["tipo_cama"] | null
           updated_at?: string
         }
         Update: {
           activo?: boolean
+          ambiente?: string | null
+          cantidad?: number
           created_at?: string
           depto_id?: string
           id?: string
           notas?: string | null
-          persona_id?: string
+          tipo_cama?: Database["public"]["Enums"]["tipo_cama"] | null
           updated_at?: string
         }
         Relationships: [
@@ -434,13 +446,6 @@ export type Database = {
             columns: ["depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "distribucion_depto_persona_id_fkey"
-            columns: ["persona_id"]
-            isOneToOne: false
-            referencedRelation: "personas"
             referencedColumns: ["id"]
           },
         ]
@@ -1341,11 +1346,11 @@ export type Database = {
         Row: {
           activo: boolean
           acuerdo_pago: Database["public"]["Enums"]["acuerdo_pago"] | null
-          comision_pct: number | null
           contacto: string | null
           created_at: string
           cuenta_cobro: string | null
           datos_bancarios: string | null
+          fecha_nacimiento: string | null
           id: string
           nombre: string
           updated_at: string
@@ -1353,11 +1358,11 @@ export type Database = {
         Insert: {
           activo?: boolean
           acuerdo_pago?: Database["public"]["Enums"]["acuerdo_pago"] | null
-          comision_pct?: number | null
           contacto?: string | null
           created_at?: string
           cuenta_cobro?: string | null
           datos_bancarios?: string | null
+          fecha_nacimiento?: string | null
           id?: string
           nombre: string
           updated_at?: string
@@ -1365,11 +1370,11 @@ export type Database = {
         Update: {
           activo?: boolean
           acuerdo_pago?: Database["public"]["Enums"]["acuerdo_pago"] | null
-          comision_pct?: number | null
           contacto?: string | null
           created_at?: string
           cuenta_cobro?: string | null
           datos_bancarios?: string | null
+          fecha_nacimiento?: string | null
           id?: string
           nombre?: string
           updated_at?: string
@@ -1759,6 +1764,7 @@ export type Database = {
         | "limpieza"
         | "propietario"
       self_checkout_tipo: "siempre" | "solo_multiples" | "no"
+      tipo_cama: "king" | "queen" | "twin" | "sillon_cama" | "otra"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1935,6 +1941,7 @@ export const Constants = {
         "propietario",
       ],
       self_checkout_tipo: ["siempre", "solo_multiples", "no"],
+      tipo_cama: ["king", "queen", "twin", "sillon_cama", "otra"],
     },
   },
 } as const

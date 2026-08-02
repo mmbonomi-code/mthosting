@@ -5,10 +5,20 @@ import {
   ETIQUETA_AMBIENTES,
   ETIQUETA_CANAL,
   ETIQUETA_SELF_CHECKOUT,
+  ETIQUETA_TIPO_CAMA,
 } from "@/lib/etiquetas";
 import BotonCopiar from "@/app/componentes/BotonCopiar";
 import FormularioAlias from "./FormularioAlias";
-import { agregarAlias, alternarAlias } from "../acciones";
+import FormularioCama from "./FormularioCama";
+import FormularioInventario from "./FormularioInventario";
+import {
+  agregarAlias,
+  agregarCama,
+  agregarInventario,
+  alternarAlias,
+  quitarCama,
+  quitarInventario,
+} from "../acciones";
 
 function Dato({
   etiqueta,
@@ -72,11 +82,27 @@ export default async function FichaDepartamento({
 
   if (!depto) notFound();
 
-  const { data: aliases } = await supabase
-    .from("listing_alias")
-    .select("id, canal, nombre_listing, activo")
-    .eq("depto_id", id)
-    .order("created_at");
+  const [{ data: aliases }, { data: camas }, { data: inventario }, { data: catalogo }] =
+    await Promise.all([
+      supabase
+        .from("listing_alias")
+        .select("id, canal, nombre_listing, activo")
+        .eq("depto_id", id)
+        .order("created_at"),
+      supabase
+        .from("distribucion_depto")
+        .select("id, ambiente, tipo_cama, cantidad")
+        .eq("depto_id", id)
+        .order("created_at"),
+      supabase
+        .from("inventario_depto")
+        .select("id, cantidad, notas, item:item_catalogo(nombre)")
+        .eq("depto_id", id)
+        .order("created_at"),
+      supabase.from("item_catalogo").select("nombre").order("nombre"),
+    ]);
+
+  const totalCamas = (camas ?? []).reduce((suma, c) => suma + (c.cantidad ?? 0), 0);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -119,6 +145,7 @@ export default async function FichaDepartamento({
         <Dato etiqueta="Capacidad">
           {depto.capacidad ? `${depto.capacidad} personas` : "—"}
         </Dato>
+        <Dato etiqueta="Baños">{depto.banos ?? "—"}</Dato>
         <div className="col-span-2 sm:col-span-3">
           <Dato etiqueta="Wifi">
             {depto.wifi_ssid ? (
@@ -193,14 +220,121 @@ export default async function FichaDepartamento({
               </a>
             )}
           </Dato>
-          <div className="sm:col-span-2">
-            <Dato etiqueta="Credenciales de Airbnb">
-              <span className="text-sm text-slate-500">
-                Solo administración — se habilita con el cifrado, más adelante.
+          <Dato etiqueta="Comisión de MTHosting">
+            {depto.comision_pct !== null ? `${depto.comision_pct}%` : "—"}
+          </Dato>
+          <Dato etiqueta="Usuario de Airbnb">
+            {depto.airbnb_user && (
+              <span className="flex items-center gap-2">
+                <span className="font-mono">{depto.airbnb_user}</span>
+                <BotonCopiar texto={depto.airbnb_user} />
               </span>
+            )}
+          </Dato>
+          <div className="sm:col-span-2">
+            <Dato etiqueta="Contraseña de Airbnb">
+              {depto.airbnb_pass && (
+                <span className="flex items-center gap-2">
+                  <span className="font-mono">{depto.airbnb_pass}</span>
+                  <BotonCopiar texto={depto.airbnb_pass} />
+                </span>
+              )}
             </Dato>
           </div>
         </dl>
+      </Acordeon>
+
+      <Acordeon
+        titulo="Ambientes y camas"
+        resumen={
+          totalCamas > 0
+            ? `${totalCamas} ${totalCamas === 1 ? "cama" : "camas"}`
+            : "Sin cargar"
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-2">
+            {(camas ?? []).map((cama) => (
+              <li
+                key={cama.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-slate-200">
+                    {cama.ambiente}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {cama.cantidad} ×{" "}
+                    {cama.tipo_cama ? ETIQUETA_TIPO_CAMA[cama.tipo_cama] : "—"}
+                  </span>
+                </span>
+                <form action={quitarCama.bind(null, cama.id, id)}>
+                  <button
+                    type="submit"
+                    className="shrink-0 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700"
+                  >
+                    Quitar
+                  </button>
+                </form>
+              </li>
+            ))}
+            {(camas ?? []).length === 0 && (
+              <li className="text-sm text-slate-500">
+                Todavía no hay camas cargadas. Es lo que usa Fase 2 para
+                calcular qué sábanas llevar.
+              </li>
+            )}
+          </ul>
+          <FormularioCama accion={agregarCama.bind(null, id)} />
+        </div>
+      </Acordeon>
+
+      <Acordeon
+        titulo="Inventario"
+        resumen={
+          (inventario ?? []).length > 0
+            ? `${(inventario ?? []).length} ítems`
+            : "Sin cargar"
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-2">
+            {(inventario ?? []).map((fila) => (
+              <li
+                key={fila.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-slate-200">
+                    {fila.cantidad} × {fila.item?.nombre}
+                  </span>
+                  {fila.notas && (
+                    <span className="block truncate text-xs text-slate-500">
+                      {fila.notas}
+                    </span>
+                  )}
+                </span>
+                <form action={quitarInventario.bind(null, fila.id, id)}>
+                  <button
+                    type="submit"
+                    className="shrink-0 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700"
+                  >
+                    Quitar
+                  </button>
+                </form>
+              </li>
+            ))}
+            {(inventario ?? []).length === 0 && (
+              <li className="text-sm text-slate-500">
+                Todavía no hay ítems cargados (AAC, plancha, secador…).
+              </li>
+            )}
+          </ul>
+          <FormularioInventario
+            accion={agregarInventario.bind(null, id)}
+            sugerencias={(catalogo ?? []).map((i) => i.nombre)}
+          />
+        </div>
       </Acordeon>
 
       <Acordeon

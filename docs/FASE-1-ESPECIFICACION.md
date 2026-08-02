@@ -47,9 +47,10 @@ las duplicaba.
 | modalidad_pago | enum | por_limpieza / sueldo_mensual / ambas |
 | activo | bool | al desactivar sale de los desplegables, el histórico queda |
 
-**propietarios** — nombre, contacto, comision_pct, acuerdo_pago (enum:
+**propietarios** — nombre, contacto, fecha_nacimiento, acuerdo_pago (enum:
 cobra_todo_mth / cobra_cada_uno / solo_comision), cuenta_cobro,
-datos_bancarios, activo.
+datos_bancarios, activo. *(Ajuste 01/08/2026: la comisión se movió a
+departamentos — es por departamento, no por propietario.)*
 
 **departamentos**
 
@@ -62,9 +63,10 @@ datos_bancarios, activo.
 | direccion | text | completa, con piso y depto |
 | barrio | text | para agrupar limpiezas por zona |
 | ambientes | enum | monoambiente / dos / tres / cuatro — driver de tarifa |
-| habitaciones, capacidad | int | |
+| habitaciones, banos, capacidad | int | |
+| comision_pct | numeric | comisión de MTHosting por este depto (ajuste 01/08/2026) |
 | wifi_ssid, wifi_pass | text | consultables desde el celular (§3.1) |
-| airbnb_user, airbnb_pass | text | CIFRADOS, solo rol admin |
+| airbnb_user, airbnb_pass | text | texto plano por decisión del dueño (01/08/2026), solo rol admin |
 | url_publicacion, url_mapa | text | |
 | ical_url | text nullable | calendario iCal de Airbnb. Ver §2.12 |
 | encargado_nombre, encargado_telefono | text | editables, dentro de "Propiedad" |

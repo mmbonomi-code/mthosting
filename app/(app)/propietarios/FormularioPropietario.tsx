@@ -15,7 +15,7 @@ import {
 type Valores = {
   nombre?: string | null;
   contacto?: string | null;
-  comision_pct?: number | null;
+  fecha_nacimiento?: string | null;
   acuerdo_pago?: string | null;
   cuenta_cobro?: string | null;
   datos_bancarios?: string | null;
@@ -59,14 +59,11 @@ export default function FormularioPropietario({
         />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className={clsEtiqueta}>Comisión (%)</span>
+        <span className={clsEtiqueta}>Fecha de nacimiento</span>
         <input
-          name="comision_pct"
-          type="number"
-          step="0.1"
-          min={0}
-          max={100}
-          defaultValue={valores.comision_pct ?? ""}
+          name="fecha_nacimiento"
+          type="date"
+          defaultValue={valores.fecha_nacimiento ?? ""}
           className={clsEntrada}
         />
       </label>

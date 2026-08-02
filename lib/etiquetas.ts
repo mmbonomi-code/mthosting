@@ -24,6 +24,14 @@ export const ETIQUETA_ESTADO_DEPTO: Record<string, string> = {
   suspendido: "Suspendido",
 };
 
+export const ETIQUETA_TIPO_CAMA: Record<string, string> = {
+  king: "King",
+  queen: "Queen",
+  twin: "Twin (individual)",
+  sillon_cama: "Sillón cama",
+  otra: "Otra",
+};
+
 export const ETIQUETA_CANAL: Record<string, string> = {
   airbnb: "Airbnb",
   booking: "Booking",

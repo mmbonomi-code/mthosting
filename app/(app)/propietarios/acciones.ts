@@ -15,11 +15,10 @@ function texto(fd: FormData, campo: string): string | null {
 }
 
 function datosPropietario(fd: FormData) {
-  const comision = texto(fd, "comision_pct");
   return {
     nombre: String(fd.get("nombre") ?? "").trim(),
     contacto: texto(fd, "contacto"),
-    comision_pct: comision === null ? null : Number.parseFloat(comision),
+    fecha_nacimiento: texto(fd, "fecha_nacimiento"),
     acuerdo_pago: texto(fd, "acuerdo_pago") as AcuerdoPago | null,
     cuenta_cobro: texto(fd, "cuenta_cobro"),
     datos_bancarios: texto(fd, "datos_bancarios"),

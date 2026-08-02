@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import type { EstadoFormulario } from "../acciones";
-import { TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
+import { PAGO_POR_TIPO, TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
 import {
   clsAreaTexto,
   clsBotonPrimario,
@@ -61,6 +61,7 @@ export default function FormularioNuevaLimpieza({
           {Object.entries(TIPOS_LIMPIEZA).map(([valor, etiqueta]) => (
             <option key={valor} value={valor}>
               {etiqueta}
+              {PAGO_POR_TIPO[valor] ? ` — se paga ${PAGO_POR_TIPO[valor]}` : ""}
             </option>
           ))}
         </select>

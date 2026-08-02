@@ -1795,6 +1795,7 @@ export type Database = {
         | "cancelada"
       limpieza_tipo:
         | "inicial"
+        | "profunda"
         | "repaso"
         | "normal"
         | "cambio_blancos"
@@ -1969,6 +1970,7 @@ export const Constants = {
       ],
       limpieza_tipo: [
         "inicial",
+        "profunda",
         "repaso",
         "normal",
         "cambio_blancos",

@@ -15,10 +15,75 @@ function texto(fd: FormData, campo: string): string | null {
   return valor === "" ? null : valor;
 }
 
+type LimpiezaParaMonto = {
+  fecha: string;
+  tipo: string;
+  depto_id: string;
+  depto: { ambientes: string | null } | null;
+};
+
+/** Resuelve la tarifa vigente a la fecha y aplica las reglas de pago. */
+async function calcularMonto(
+  supabase: Awaited<ReturnType<typeof crearClienteServidor>>,
+  limpieza: LimpiezaParaMonto,
+) {
+  const [{ data: tarifas }, { data: feriados }] = await Promise.all([
+    supabase
+      .from("tarifas")
+      .select("id, ambientes, depto_id, monto, moneda, vigente_desde, vigente_hasta")
+      .lte("vigente_desde", limpieza.fecha),
+    supabase.from("feriados").select("fecha"),
+  ]);
+
+  return congelarMonto(
+    (tarifas ?? []) as Tarifa[],
+    new Set((feriados ?? []).map((f) => f.fecha)),
+    {
+      deptoId: limpieza.depto_id,
+      ambientes: limpieza.depto?.ambientes ?? null,
+      fecha: limpieza.fecha,
+      tipo: limpieza.tipo,
+    },
+  );
+}
+
+/**
+ * Recalcula el monto de una limpieza ya asignada. Es una acción EXPLÍCITA
+ * de una persona: el sistema nunca recalcula solo (spec §3.2). Sirve cuando
+ * cambió el tipo o la fecha después de asignarla, o cuando se cargaron las
+ * tarifas más tarde.
+ */
+export async function recalcularMonto(limpiezaId: string) {
+  const supabase = await crearClienteServidor();
+
+  const { data: limpieza } = await supabase
+    .from("limpiezas")
+    .select("id, fecha, tipo, depto_id, depto:departamentos(ambientes)")
+    .eq("id", limpiezaId)
+    .maybeSingle();
+  if (!limpieza) return;
+
+  const congelado = await calcularMonto(supabase, limpieza);
+
+  await supabase
+    .from("limpiezas")
+    .update({
+      monto_pactado: congelado.monto_pactado,
+      moneda: congelado.moneda,
+      tarifa_id: congelado.tarifa_id,
+      pago_doble: congelado.pago_doble,
+    })
+    .eq("id", limpiezaId);
+
+  revalidatePath(`/limpiezas/${limpiezaId}`);
+  revalidatePath("/limpiezas");
+}
+
 /**
  * Asigna un responsable y CONGELA el monto (spec §3.2): se resuelve la
- * tarifa vigente a la fecha de la limpieza, se calcula el pago doble
- * (domingo o feriado) y el resultado no se recalcula nunca más.
+ * tarifa vigente a la fecha de la limpieza, se aplican las reglas de pago
+ * (doble por inicial, profunda, domingo o feriado; 50% en repasos) y el
+ * resultado no se recalcula solo nunca más.
  */
 export async function asignarResponsable(
   limpiezaId: string,
@@ -48,28 +113,12 @@ export async function asignarResponsable(
 
   const { data: limpieza } = await supabase
     .from("limpiezas")
-    .select("id, fecha, depto_id, monto_pactado, depto:departamentos(ambientes)")
+    .select("id, fecha, tipo, depto_id, monto_pactado, depto:departamentos(ambientes)")
     .eq("id", limpiezaId)
     .maybeSingle();
   if (!limpieza) return { error: "No se encontró la limpieza." };
 
-  const [{ data: tarifas }, { data: feriados }] = await Promise.all([
-    supabase
-      .from("tarifas")
-      .select("id, ambientes, depto_id, monto, moneda, vigente_desde, vigente_hasta")
-      .lte("vigente_desde", limpieza.fecha),
-    supabase.from("feriados").select("fecha"),
-  ]);
-
-  const congelado = congelarMonto(
-    (tarifas ?? []) as Tarifa[],
-    new Set((feriados ?? []).map((f) => f.fecha)),
-    {
-      deptoId: limpieza.depto_id,
-      ambientes: limpieza.depto?.ambientes ?? null,
-      fecha: limpieza.fecha,
-    },
-  );
+  const congelado = await calcularMonto(supabase, limpieza);
 
   const { error } = await supabase
     .from("limpiezas")

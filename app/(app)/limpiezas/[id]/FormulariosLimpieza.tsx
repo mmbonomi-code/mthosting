@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import type { EstadoFormulario } from "../acciones";
-import { TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
+import { PAGO_POR_TIPO, TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
 import { clsAreaTexto, clsBotonPrimario, clsEntrada, clsEtiqueta } from "@/lib/ui";
 
 export type PersonaOpcion = { id: string; nombre: string };
@@ -84,6 +84,7 @@ export function FormularioEditar({
           {Object.entries(TIPOS_LIMPIEZA).map(([valor, etiqueta]) => (
             <option key={valor} value={valor}>
               {etiqueta}
+              {PAGO_POR_TIPO[valor] ? ` — se paga ${PAGO_POR_TIPO[valor]}` : ""}
             </option>
           ))}
         </select>

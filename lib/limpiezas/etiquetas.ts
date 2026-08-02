@@ -3,10 +3,18 @@ export const TIPOS_LIMPIEZA: Record<string, string> = {
   normal: "Normal (salida)",
   repaso: "Repaso",
   inicial: "Inicial",
+  profunda: "Profunda",
   cambio_blancos: "Cambio de blancos",
   con_huespedes: "Con huéspedes",
   desmantelar: "Desmantelar",
   propietario: "Propietario",
+};
+
+/** Cómo se paga cada tipo, para mostrarlo al elegirlo. */
+export const PAGO_POR_TIPO: Record<string, string> = {
+  repaso: "50%",
+  inicial: "doble",
+  profunda: "doble",
 };
 
 export const ESTADOS_LIMPIEZA: Record<string, string> = {

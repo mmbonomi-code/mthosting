@@ -15,6 +15,7 @@ import {
   cancelarLimpieza,
   editarLimpieza,
   reactivarLimpieza,
+  recalcularMonto,
 } from "../acciones";
 
 function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
@@ -181,10 +182,27 @@ export default async function FichaLimpieza({
           personas={personas ?? []}
           asignadoA={limpieza.responsable?.id ?? null}
         />
-        {limpieza.monto_pactado === null && limpieza.responsable && (
-          <p className="text-xs text-amber-400">
-            Sin monto: todavía no hay tarifas cargadas para este departamento.
-          </p>
+        {limpieza.responsable && (
+          <div className="flex flex-wrap items-center gap-3">
+            {limpieza.monto_pactado === null && (
+              <p className="text-xs text-amber-400">
+                Sin monto: no hay valores cargados para este departamento a esa
+                fecha.
+              </p>
+            )}
+            <form action={recalcularMonto.bind(null, id)}>
+              <button
+                type="submit"
+                className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700"
+              >
+                Recalcular monto
+              </button>
+            </form>
+            <span className="text-xs text-slate-600">
+              El monto se congela al asignar; recalculalo si cambiaste el tipo o
+              la fecha.
+            </span>
+          </div>
         )}
         {anterior && (
           <p className="text-xs text-slate-500">

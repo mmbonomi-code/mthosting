@@ -1,40 +1,84 @@
 import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { ETIQUETA_AMBIENTES } from "@/lib/etiquetas";
-import { clsBotonPrimario, clsEntrada } from "@/lib/ui";
+import { clsBotonPrimario } from "@/lib/ui";
+import FiltrosDepartamentos from "./FiltrosDepartamentos";
+import type { Database } from "@/lib/database.types";
 
 const POR_PAGINA = 50;
+
+type Ambientes = Database["public"]["Enums"]["ambientes_tipo"];
+type EstadoDepto = Database["public"]["Enums"]["depto_estado"];
 
 export default async function ListaDepartamentos({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; pagina?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    estado?: string;
+    ambientes?: string;
+    camas?: string;
+    huespedes?: string;
+    pagina?: string;
+  }>;
 }) {
-  const { q = "", pagina = "1" } = await searchParams;
-  const numeroPagina = Math.max(1, Number.parseInt(pagina, 10) || 1);
+  const params = await searchParams;
+
+  const filtros = {
+    q: (params.q ?? "").trim(),
+    estado: params.estado ?? "",
+    ambientes: params.ambientes ?? "",
+    camas: params.camas ?? "",
+    huespedes: params.huespedes ?? "",
+  };
+  const hayFiltros = Object.values(filtros).some((v) => v !== "");
+
+  const numeroPagina = Math.max(1, Number.parseInt(params.pagina ?? "1", 10) || 1);
   const desde = (numeroPagina - 1) * POR_PAGINA;
 
   const supabase = await crearClienteServidor();
 
   let consulta = supabase
     .from("departamentos")
-    .select("id, codigo, nombre_interno, direccion, barrio, ambientes, capacidad, estado, activo", {
-      count: "exact",
-    })
+    .select(
+      "id, codigo, nombre_interno, direccion, barrio, ambientes, capacidad, total_camas, estado, activo",
+      { count: "exact" },
+    )
     .order("codigo")
     .range(desde, desde + POR_PAGINA - 1);
 
-  const busqueda = q.trim();
-  if (busqueda) {
-    const patron = `%${busqueda}%`;
+  if (filtros.q) {
+    const patron = `%${filtros.q}%`;
     consulta = consulta.or(
       `codigo.ilike.${patron},nombre_interno.ilike.${patron},barrio.ilike.${patron},direccion.ilike.${patron}`,
     );
+  }
+  if (filtros.estado) {
+    consulta = consulta.eq("estado", filtros.estado as EstadoDepto);
+  }
+  if (filtros.ambientes) {
+    consulta = consulta.eq("ambientes", filtros.ambientes as Ambientes);
+  }
+  if (filtros.camas) {
+    consulta = consulta.gte("total_camas", Number.parseInt(filtros.camas, 10));
+  }
+  if (filtros.huespedes) {
+    consulta = consulta.gte("capacidad", Number.parseInt(filtros.huespedes, 10));
   }
 
   const { data: departamentos, count } = await consulta;
   const total = count ?? 0;
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+
+  /** Conserva los filtros al cambiar de página. */
+  const urlPagina = (pagina: number) => {
+    const qs = new URLSearchParams();
+    for (const [clave, valor] of Object.entries(filtros)) {
+      if (valor) qs.set(clave, valor);
+    }
+    qs.set("pagina", String(pagina));
+    return `/departamentos?${qs}`;
+  };
 
   return (
     <main className="flex flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -43,6 +87,7 @@ export default async function ListaDepartamentos({
           Departamentos
           <span className="ml-2 text-base font-normal text-slate-500">
             {total}
+            {hayFiltros && " encontrados"}
           </span>
         </h1>
         <Link
@@ -53,22 +98,23 @@ export default async function ListaDepartamentos({
         </Link>
       </div>
 
-      <form className="flex gap-2" action="/departamentos" method="get">
-        <input
-          type="search"
-          name="q"
-          defaultValue={busqueda}
-          placeholder="Buscar por código, nombre, barrio o dirección…"
-          className={clsEntrada}
-        />
-      </form>
+      <FiltrosDepartamentos filtros={filtros} hayFiltros={hayFiltros} />
 
       {(departamentos ?? []).length === 0 ? (
-        <p className="py-12 text-center text-slate-500">
-          {busqueda
-            ? "No se encontró ningún departamento con esa búsqueda."
-            : "Todavía no hay departamentos cargados."}
-        </p>
+        <div className="py-12 text-center">
+          <p className="text-slate-500">
+            {hayFiltros
+              ? "Ningún departamento coincide con esa búsqueda."
+              : "Todavía no hay departamentos cargados."}
+          </p>
+          {filtros.huespedes && (
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
+              La capacidad de huéspedes todavía no está cargada en los
+              departamentos migrados desde Ninox, así que este filtro no
+              devuelve resultados por ahora.
+            </p>
+          )}
+        </div>
       ) : (
         <ul className="flex flex-col gap-2">
           {(departamentos ?? []).map((depto) => (
@@ -89,8 +135,15 @@ export default async function ListaDepartamentos({
                   </span>
                 </span>
                 <span className="hidden text-sm text-slate-400 sm:block">
-                  {depto.ambientes ? ETIQUETA_AMBIENTES[depto.ambientes] : ""}
-                  {depto.capacidad ? ` · ${depto.capacidad} pers.` : ""}
+                  {[
+                    depto.ambientes ? ETIQUETA_AMBIENTES[depto.ambientes] : null,
+                    depto.total_camas
+                      ? `${depto.total_camas} ${depto.total_camas === 1 ? "cama" : "camas"}`
+                      : null,
+                    depto.capacidad ? `${depto.capacidad} pers.` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
                 {depto.estado === "suspendido" && (
                   <span className="rounded-full bg-amber-950 px-2.5 py-0.5 text-xs font-medium text-amber-300">
@@ -112,7 +165,7 @@ export default async function ListaDepartamentos({
         <nav className="flex items-center justify-center gap-4 py-2 text-sm">
           {numeroPagina > 1 && (
             <Link
-              href={`/departamentos?q=${encodeURIComponent(busqueda)}&pagina=${numeroPagina - 1}`}
+              href={urlPagina(numeroPagina - 1)}
               className="text-slate-300 hover:text-white"
             >
               ← Anterior
@@ -123,7 +176,7 @@ export default async function ListaDepartamentos({
           </span>
           {numeroPagina < totalPaginas && (
             <Link
-              href={`/departamentos?q=${encodeURIComponent(busqueda)}&pagina=${numeroPagina + 1}`}
+              href={urlPagina(numeroPagina + 1)}
               className="text-slate-300 hover:text-white"
             >
               Siguiente →

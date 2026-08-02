@@ -66,10 +66,9 @@ departamentos — es por departamento, no por propietario.)*
 | habitaciones, capacidad | int | |
 | camas_king, camas_queen, camas_twin, sillon_cama | int | cantidades. Ver `FASE-1-INVENTARIO-DEPARTAMENTOS.md` |
 | total_camas | int **derivado** | suma de las cuatro anteriores. Nunca se carga a mano |
-| bano_1, bano_2, bano_3 | text nullable | existe + detalle. Vacío = no existe |
-| cantidad_banos | int **derivado** | cuántos de los tres están cargados |
+| *baños* | tabla `banos_depto` | lista: tipo (completo con bañera / ducha / toilette) + detalle |
 | comision_pct | numeric | comisión de MTHosting por este depto (ajuste 01/08/2026) |
-| wifi_ssid, wifi_pass | text | consultables desde el celular (§3.1) |
+| wifi_ssid, wifi_pass, wifi_velocidad | text | consultables desde el celular (§3.1) |
 | airbnb_user, airbnb_pass | text | texto plano por decisión del dueño (01/08/2026), solo rol admin |
 | url_publicacion, url_mapa | text | |
 | ical_url | text nullable | calendario iCal de Airbnb. Ver §2.12 |

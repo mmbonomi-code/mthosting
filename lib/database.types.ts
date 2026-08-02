@@ -174,6 +174,44 @@ export type Database = {
         }
         Relationships: []
       }
+      banos_depto: {
+        Row: {
+          created_at: string
+          depto_id: string
+          detalle: string | null
+          id: string
+          orden: number
+          tipo: Database["public"]["Enums"]["tipo_bano"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          depto_id: string
+          detalle?: string | null
+          id?: string
+          orden?: number
+          tipo: Database["public"]["Enums"]["tipo_bano"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          depto_id?: string
+          detalle?: string | null
+          id?: string
+          orden?: number
+          tipo?: Database["public"]["Enums"]["tipo_bano"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banos_depto_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bloqueos: {
         Row: {
           activo: boolean
@@ -299,14 +337,10 @@ export type Database = {
           airbnb_pass: string | null
           airbnb_user: string | null
           ambientes: Database["public"]["Enums"]["ambientes_tipo"] | null
-          bano_1: string | null
-          bano_2: string | null
-          bano_3: string | null
           barrio: string | null
           camas_king: number
           camas_queen: number
           camas_twin: number
-          cantidad_banos: number | null
           capacidad: number | null
           codigo: string
           comision_pct: number | null
@@ -335,20 +369,17 @@ export type Database = {
           url_publicacion: string | null
           wifi_pass: string | null
           wifi_ssid: string | null
+          wifi_velocidad: string | null
         }
         Insert: {
           activo?: boolean
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
-          bano_1?: string | null
-          bano_2?: string | null
-          bano_3?: string | null
           barrio?: string | null
           camas_king?: number
           camas_queen?: number
           camas_twin?: number
-          cantidad_banos?: number | null
           capacidad?: number | null
           codigo: string
           comision_pct?: number | null
@@ -377,20 +408,17 @@ export type Database = {
           url_publicacion?: string | null
           wifi_pass?: string | null
           wifi_ssid?: string | null
+          wifi_velocidad?: string | null
         }
         Update: {
           activo?: boolean
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
-          bano_1?: string | null
-          bano_2?: string | null
-          bano_3?: string | null
           barrio?: string | null
           camas_king?: number
           camas_queen?: number
           camas_twin?: number
-          cantidad_banos?: number | null
           capacidad?: number | null
           codigo?: string
           comision_pct?: number | null
@@ -419,6 +447,7 @@ export type Database = {
           url_publicacion?: string | null
           wifi_pass?: string | null
           wifi_ssid?: string | null
+          wifi_velocidad?: string | null
         }
         Relationships: [
           {
@@ -1792,6 +1821,7 @@ export type Database = {
         | "limpieza"
         | "propietario"
       self_checkout_tipo: "siempre" | "solo_multiples" | "no"
+      tipo_bano: "completo_banera" | "completo_ducha" | "toilette"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1968,6 +1998,7 @@ export const Constants = {
         "propietario",
       ],
       self_checkout_tipo: ["siempre", "solo_multiples", "no"],
+      tipo_bano: ["completo_banera", "completo_ducha", "toilette"],
     },
   },
 } as const

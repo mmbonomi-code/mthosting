@@ -5,6 +5,7 @@ import {
   ETIQUETA_AMBIENTES,
   ETIQUETA_CANAL,
   ETIQUETA_SELF_CHECKOUT,
+  ETIQUETA_TIPO_BANO,
 } from "@/lib/etiquetas";
 import BotonCopiar from "@/app/componentes/BotonCopiar";
 import FormularioAlias from "./FormularioAlias";
@@ -72,7 +73,7 @@ export default async function FichaDepartamento({
 
   if (!depto) notFound();
 
-  const [{ data: aliases }, { data: catalogo }, { data: inventario }] =
+  const [{ data: aliases }, { data: catalogo }, { data: inventario }, { data: banos }] =
     await Promise.all([
       supabase
         .from("listing_alias")
@@ -89,6 +90,11 @@ export default async function FichaDepartamento({
         .from("inventario_depto")
         .select("item_id, tiene, detalle")
         .eq("depto_id", id),
+      supabase
+        .from("banos_depto")
+        .select("id, tipo, detalle")
+        .eq("depto_id", id)
+        .order("orden"),
     ]);
 
   const porItem = new Map((inventario ?? []).map((fila) => [fila.item_id, fila]));
@@ -113,7 +119,7 @@ export default async function FichaDepartamento({
     { etiqueta: "Sillón cama", cantidad: depto.sillon_cama },
   ].filter((c) => (c.cantidad ?? 0) > 0);
 
-  const banos = [depto.bano_1, depto.bano_2, depto.bano_3].filter(Boolean);
+  const cantidadBanos = (banos ?? []).length;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -176,6 +182,11 @@ export default async function FichaDepartamento({
                     </span>
                     <BotonCopiar texto={depto.wifi_pass} />
                   </>
+                )}
+                {depto.wifi_velocidad && (
+                  <span className="text-sm text-slate-500">
+                    {depto.wifi_velocidad}
+                  </span>
                 )}
               </span>
             ) : (
@@ -265,8 +276,8 @@ export default async function FichaDepartamento({
       <Acordeon
         titulo="Ambientes y camas"
         resumen={
-          depto.total_camas
-            ? `${depto.total_camas} ${depto.total_camas === 1 ? "cama" : "camas"} · ${depto.cantidad_banos} ${depto.cantidad_banos === 1 ? "baño" : "baños"}`
+          depto.total_camas || cantidadBanos
+            ? `${depto.total_camas} ${depto.total_camas === 1 ? "cama" : "camas"} · ${cantidadBanos} ${cantidadBanos === 1 ? "baño" : "baños"}`
             : "Sin cargar"
         }
       >
@@ -283,12 +294,15 @@ export default async function FichaDepartamento({
             </Dato>
           </div>
           <div className="sm:col-span-2">
-            <Dato etiqueta={`Baños (${depto.cantidad_banos})`}>
-              {banos.length > 0 ? (
+            <Dato etiqueta={`Baños (${cantidadBanos})`}>
+              {cantidadBanos > 0 ? (
                 <ul className="flex flex-col gap-0.5">
-                  {banos.map((detalle, indice) => (
-                    <li key={indice}>
-                      Baño {indice + 1}: {detalle}
+                  {(banos ?? []).map((bano) => (
+                    <li key={bano.id}>
+                      {ETIQUETA_TIPO_BANO[bano.tipo]}
+                      {bano.detalle && (
+                        <span className="text-slate-500"> — {bano.detalle}</span>
+                      )}
                     </li>
                   ))}
                 </ul>

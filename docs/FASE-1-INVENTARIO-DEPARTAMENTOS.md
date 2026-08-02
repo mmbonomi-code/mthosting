@@ -26,15 +26,13 @@ Camas y baños son **cantidades**, no sí/no. Se cargan con un número por tipo.
 | Camas Queen | int | cantidad |
 | Camas Twin | int | cantidad |
 | Sillón cama | int | cantidad |
-| Baño 1 | texto/bool | existe + detalle (ej: "completo con ducha") |
-| Baño 2 | texto/bool | existe + detalle |
-| Baño 3 | texto/bool | existe + detalle |
+| Baños | lista | se agregan los que haga falta; cada uno con **tipo** (completo con bañera / completo con ducha / toilette) y detalle opcional. *(Ajuste 01/08/2026: eran tres campos de texto fijos; pasaron a la tabla `banos_depto`.)* |
 
 **Total de camas: NO se carga a mano.** Se calcula sumando king + queen +
 twin + sillón cama. Es un campo derivado, nunca editable.
 
-**Cantidad de baños:** se deriva de cuántos de baño 1/2/3 están cargados. Se
-usa en la vista de limpieza para el pie de baño (uno por baño).
+**Cantidad de baños:** se deriva de cuántos baños tenga cargados. Se usa en la
+vista de limpieza para el pie de baño (uno por baño).
 
 ### 1.2 Equipamiento (tiene / no tiene + detalle)
 
@@ -77,7 +75,6 @@ Agrupados como se muestran en la ficha. El grupo es solo para ordenar la UI.
 - Plancha
 - Tabla de planchar
 - Aspiradora
-- Laundry (servicio de lavandería cercano)
 
 ### Otros
 - TV
@@ -86,13 +83,17 @@ Agrupados como se muestran en la ficha. El grupo es solo para ordenar la UI.
 - Basura (dónde se tira)
 - Secador de pelo
 - Frazadas
-- Estacionamiento
-- Velocidad de wifi
 
 ### Edificio (amenities del edificio, no del depto)
 - Pileta
 - Gimnasio
 - Sauna
+- Laundry (servicio de lavandería cercano)
+- Estacionamiento
+
+*(Ajuste 01/08/2026: Laundry y Estacionamiento se movieron a este grupo. La
+velocidad de wifi dejó de ser un ítem: es un campo del departamento, al lado
+de la clave de wifi.)*
 
 ---
 

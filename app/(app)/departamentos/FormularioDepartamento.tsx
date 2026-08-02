@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import type { EstadoFormulario } from "./acciones";
+import CamposBanos, { type BanoCargado } from "./CamposBanos";
 import {
   ETIQUETA_AMBIENTES,
   ETIQUETA_SELF_CHECKOUT,
@@ -31,12 +32,10 @@ type Valores = {
   camas_queen?: number | null;
   camas_twin?: number | null;
   sillon_cama?: number | null;
-  bano_1?: string | null;
-  bano_2?: string | null;
-  bano_3?: string | null;
   comision_pct?: number | null;
   wifi_ssid?: string | null;
   wifi_pass?: string | null;
+  wifi_velocidad?: string | null;
   airbnb_user?: string | null;
   airbnb_pass?: string | null;
   url_publicacion?: string | null;
@@ -113,6 +112,7 @@ function Casilla({
 export default function FormularioDepartamento({
   accion,
   valores = {},
+  banos = [],
   propietarios,
   urlCancelar,
 }: {
@@ -121,6 +121,7 @@ export default function FormularioDepartamento({
     fd: FormData,
   ) => Promise<EstadoFormulario>;
   valores?: Valores;
+  banos?: BanoCargado[];
   propietarios: PropietarioOpcion[];
   urlCancelar: string;
 }) {
@@ -263,33 +264,7 @@ export default function FormularioDepartamento({
       </Seccion>
 
       <Seccion titulo="Baños">
-        <Campo etiqueta="Baño 1" ancho>
-          <input
-            name="bano_1"
-            defaultValue={valores.bano_1 ?? ""}
-            placeholder="Ej.: completo con ducha — dejar vacío si no existe"
-            className={clsEntrada}
-          />
-        </Campo>
-        <Campo etiqueta="Baño 2" ancho>
-          <input
-            name="bano_2"
-            defaultValue={valores.bano_2 ?? ""}
-            placeholder="Dejar vacío si no existe"
-            className={clsEntrada}
-          />
-        </Campo>
-        <Campo etiqueta="Baño 3" ancho>
-          <input
-            name="bano_3"
-            defaultValue={valores.bano_3 ?? ""}
-            placeholder="Dejar vacío si no existe"
-            className={clsEntrada}
-          />
-        </Campo>
-        <p className="text-xs text-slate-500 sm:col-span-2">
-          La cantidad de baños se cuenta sola, según cuáles estén cargados.
-        </p>
+        <CamposBanos iniciales={banos} />
       </Seccion>
 
       <Seccion titulo="Wifi">
@@ -304,6 +279,14 @@ export default function FormularioDepartamento({
           <input
             name="wifi_pass"
             defaultValue={valores.wifi_pass ?? ""}
+            className={clsEntrada}
+          />
+        </Campo>
+        <Campo etiqueta="Velocidad del wifi">
+          <input
+            name="wifi_velocidad"
+            defaultValue={valores.wifi_velocidad ?? ""}
+            placeholder="Ej.: 300 Mbps"
             className={clsEntrada}
           />
         </Campo>

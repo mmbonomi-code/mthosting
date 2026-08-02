@@ -46,15 +46,13 @@ function datosDepartamento(fd: FormData) {
     camas_queen: entero(fd, "camas_queen") ?? 0,
     camas_twin: entero(fd, "camas_twin") ?? 0,
     sillon_cama: entero(fd, "sillon_cama") ?? 0,
-    bano_1: texto(fd, "bano_1"),
-    bano_2: texto(fd, "bano_2"),
-    bano_3: texto(fd, "bano_3"),
     comision_pct: (() => {
       const valor = texto(fd, "comision_pct");
       return valor === null ? null : Number.parseFloat(valor);
     })(),
     wifi_ssid: texto(fd, "wifi_ssid"),
     wifi_pass: texto(fd, "wifi_pass"),
+    wifi_velocidad: texto(fd, "wifi_velocidad"),
     airbnb_user: texto(fd, "airbnb_user"),
     airbnb_pass: texto(fd, "airbnb_pass"),
     url_publicacion: texto(fd, "url_publicacion"),
@@ -71,6 +69,36 @@ function datosDepartamento(fd: FormData) {
     observacion: texto(fd, "observacion"),
     activo: marcado(fd, "activo"),
   };
+}
+
+type TipoBano = Database["public"]["Enums"]["tipo_bano"];
+
+/**
+ * Los baños llegan como listas paralelas (`bano_tipo` / `bano_detalle`), una
+ * entrada por fila del formulario. Se reemplaza la lista completa: es la
+ * forma natural de editar una lista dinámica y no deja filas huérfanas.
+ */
+async function guardarBanos(
+  supabase: Awaited<ReturnType<typeof crearClienteServidor>>,
+  deptoId: string,
+  fd: FormData,
+) {
+  const tipos = fd.getAll("bano_tipo").map(String);
+  const detalles = fd.getAll("bano_detalle").map(String);
+
+  const filas = tipos
+    .map((tipo, indice) => ({
+      depto_id: deptoId,
+      tipo: tipo as TipoBano,
+      detalle: detalles[indice]?.trim() || null,
+      orden: indice + 1,
+    }))
+    .filter((fila) => fila.tipo);
+
+  await supabase.from("banos_depto").delete().eq("depto_id", deptoId);
+  if (filas.length > 0) {
+    await supabase.from("banos_depto").insert(filas);
+  }
 }
 
 export async function crearDepartamento(
@@ -96,6 +124,8 @@ export async function crearDepartamento(
     }
     return { error: "No se pudo guardar. Probá de nuevo." };
   }
+
+  await guardarBanos(supabase, data.id, fd);
 
   revalidatePath("/departamentos");
   redirect(`/departamentos/${data.id}`);
@@ -124,6 +154,8 @@ export async function actualizarDepartamento(
     }
     return { error: "No se pudo guardar. Probá de nuevo." };
   }
+
+  await guardarBanos(supabase, id, fd);
 
   revalidatePath("/departamentos");
   revalidatePath(`/departamentos/${id}`);

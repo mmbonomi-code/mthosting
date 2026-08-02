@@ -19,11 +19,18 @@ export default async function EditarDepartamento({
 
   if (!depto) notFound();
 
-  const { data: propietarios } = await supabase
-    .from("propietarios")
-    .select("id, nombre")
-    .eq("activo", true)
-    .order("nombre");
+  const [{ data: propietarios }, { data: banos }] = await Promise.all([
+    supabase
+      .from("propietarios")
+      .select("id, nombre")
+      .eq("activo", true)
+      .order("nombre"),
+    supabase
+      .from("banos_depto")
+      .select("tipo, detalle")
+      .eq("depto_id", id)
+      .order("orden"),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
@@ -33,6 +40,7 @@ export default async function EditarDepartamento({
       <FormularioDepartamento
         accion={actualizarDepartamento.bind(null, id)}
         valores={depto}
+        banos={banos ?? []}
         propietarios={propietarios ?? []}
         urlCancelar={`/departamentos/${id}`}
       />

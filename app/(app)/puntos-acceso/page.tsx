@@ -1,0 +1,77 @@
+import Link from "next/link";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { METODOS_ACCESO } from "@/lib/eventos/etiquetas";
+import { clsBotonPrimario } from "@/lib/ui";
+
+export default async function PuntosAcceso() {
+  const supabase = await crearClienteServidor();
+
+  const { data: puntos } = await supabase
+    .from("puntos_acceso")
+    .select("id, metodo, ubicacion, identificador, sirve_checkin, sirve_checkout, activo")
+    .order("activo", { ascending: false })
+    .order("ubicacion");
+
+  return (
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">
+            Puntos de acceso
+            <span className="ml-2 text-base font-normal text-slate-500">
+              {(puntos ?? []).length}
+            </span>
+          </h1>
+          <p className="text-sm text-slate-400">
+            Candados, sobres y valijas. Un mismo punto puede servir a varios
+            departamentos.
+          </p>
+        </div>
+        <Link href="/puntos-acceso/nuevo" className={`${clsBotonPrimario} flex items-center`}>
+          + Nuevo
+        </Link>
+      </div>
+
+      {(puntos ?? []).length === 0 ? (
+        <p className="py-12 text-center text-slate-500">
+          Todavía no hay puntos de acceso cargados.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {(puntos ?? []).map((p) => (
+            <li key={p.id}>
+              <Link
+                href={`/puntos-acceso/${p.id}/editar`}
+                className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 transition-colors hover:border-slate-600"
+              >
+                <span className="w-24 shrink-0 text-sm text-slate-400">
+                  {METODOS_ACCESO[p.metodo]}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-slate-200">
+                    {p.ubicacion}
+                    {p.identificador && (
+                      <span className="ml-2 font-mono text-sm text-slate-400">
+                        {p.identificador}
+                      </span>
+                    )}
+                  </span>
+                  <span className="block text-xs text-slate-500">
+                    {[p.sirve_checkin ? "entrada" : null, p.sirve_checkout ? "salida" : null]
+                      .filter(Boolean)
+                      .join(" · ") || "no se usa"}
+                  </span>
+                </span>
+                {!p.activo && (
+                  <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+                    Inactivo
+                  </span>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
+  );
+}

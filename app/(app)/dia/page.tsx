@@ -1,0 +1,321 @@
+import Link from "next/link";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { formatearFechaAR, hoyAR } from "@/lib/fechas";
+import { formatearHora } from "@/lib/limpiezas/etiquetas";
+import BuscadorDia from "./BuscadorDia";
+import NavegadorFecha from "./NavegadorFecha";
+
+const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+function nombreDelDia(fechaISO: string): string {
+  const [a, m, d] = fechaISO.split("-").map(Number);
+  return DIAS[new Date(Date.UTC(a, m - 1, d)).getUTCDay()];
+}
+
+const CAMPOS = `
+  id, tipo, fecha_coordinada, hora_coordinada, estado, late_checkout, acceso_dejado,
+  punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(ubicacion, identificador),
+  punto_devolucion:puntos_acceso!eventos_estadia_punto_devolucion_id_fkey(ubicacion, identificador),
+  responsable:personas!eventos_estadia_responsable_id_fkey(nombre),
+  responsable_devolucion:personas!eventos_estadia_responsable_devolucion_id_fkey(nombre),
+  reserva:reservas!inner(
+    id, codigo_reserva, huesped_nombre, huesped_contacto, noches, adultos, ninos, bebes,
+    fecha_checkin, fecha_checkout, cancelada, descartada, registro_hecho, aviso_seguridad_hecho,
+    depto:departamentos(codigo, nombre_interno, direccion, barrio, requiere_registro, requiere_aviso_seguridad)
+  )
+`;
+
+type Evento = {
+  id: string;
+  tipo: "checkin" | "checkout";
+  fecha_coordinada: string | null;
+  hora_coordinada: string | null;
+  estado: string;
+  late_checkout: boolean;
+  acceso_dejado: boolean;
+  punto: { ubicacion: string | null; identificador: string | null } | null;
+  punto_devolucion: { ubicacion: string | null; identificador: string | null } | null;
+  responsable: { nombre: string } | null;
+  responsable_devolucion: { nombre: string } | null;
+  reserva: {
+    id: string;
+    codigo_reserva: string;
+    huesped_nombre: string | null;
+    huesped_contacto: string | null;
+    noches: number | null;
+    adultos: number | null;
+    ninos: number | null;
+    bebes: number | null;
+    fecha_checkin: string | null;
+    fecha_checkout: string | null;
+    cancelada: boolean;
+    descartada: boolean;
+    registro_hecho: boolean;
+    aviso_seguridad_hecho: boolean;
+    depto: {
+      codigo: string;
+      nombre_interno: string;
+      direccion: string | null;
+      barrio: string | null;
+      requiere_registro: boolean;
+      requiere_aviso_seguridad: boolean;
+    } | null;
+  } | null;
+};
+
+/** La fecha que manda para el día operativo: la coordinada si existe. */
+function fechaOperativa(e: Evento): string | null {
+  if (e.fecha_coordinada) return e.fecha_coordinada;
+  return e.tipo === "checkin"
+    ? (e.reserva?.fecha_checkin ?? null)
+    : (e.reserva?.fecha_checkout ?? null);
+}
+
+function Fila({ evento }: { evento: Evento }) {
+  const r = evento.reserva!;
+  const esLlegada = evento.tipo === "checkin";
+  const acceso = esLlegada
+    ? (evento.punto ?? evento.responsable)
+    : (evento.punto_devolucion ?? evento.responsable_devolucion);
+  const textoAcceso = acceso
+    ? "nombre" in acceso
+      ? acceso.nombre
+      : [acceso.ubicacion, acceso.identificador].filter(Boolean).join(" ")
+    : null;
+  const hora = formatearHora(evento.hora_coordinada);
+  const movido =
+    evento.fecha_coordinada &&
+    evento.fecha_coordinada !== (esLlegada ? r.fecha_checkin : r.fecha_checkout);
+
+  return (
+    <li>
+      <Link
+        href={`/dia/${evento.id}`}
+        className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 transition-colors hover:border-y-slate-600 hover:border-r-slate-600 ${
+          evento.estado === "hecho" ? "border-l-emerald-600" : "border-l-slate-700"
+        }`}
+      >
+        <span className="w-14 shrink-0 text-base font-semibold tabular-nums text-white">
+          {hora ?? "—"}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-medium text-slate-100">
+            {r.huesped_nombre ?? "Sin nombre"}
+          </span>
+          <span className="block truncate text-sm text-slate-400">
+            {r.depto?.codigo}
+            {r.depto?.barrio && ` · ${r.depto.barrio}`}
+            {r.noches && ` · ${r.noches} noches`}
+          </span>
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          {textoAcceso ? (
+            <span className="max-w-40 truncate text-sm text-slate-300">{textoAcceso}</span>
+          ) : (
+            <span className="text-sm text-amber-400">Sin coordinar</span>
+          )}
+          <span className="flex gap-1">
+            {evento.late_checkout && (
+              <span className="rounded-full bg-amber-950 px-2 py-0.5 text-xs text-amber-300">
+                Late
+              </span>
+            )}
+            {movido && (
+              <span className="rounded-full bg-sky-950 px-2 py-0.5 text-xs text-sky-300">
+                Movido
+              </span>
+            )}
+            {r.cancelada && (
+              <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs text-red-300">
+                Cancelada
+              </span>
+            )}
+            {evento.estado === "hecho" && (
+              <span className="rounded-full bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
+                Hecho
+              </span>
+            )}
+          </span>
+        </span>
+      </Link>
+    </li>
+  );
+}
+
+export default async function DelDia({
+  searchParams,
+}: {
+  searchParams: Promise<{ fecha?: string; q?: string }>;
+}) {
+  const params = await searchParams;
+  const hoy = hoyAR();
+  const fecha = params.fecha ?? hoy;
+  const q = (params.q ?? "").trim();
+
+  const supabase = await crearClienteServidor();
+
+  let eventos: Evento[] = [];
+
+  if (q) {
+    // Búsqueda libre: no importa el día, importa encontrar la reserva.
+    const patron = `%${q}%`;
+    const { data: reservas } = await supabase
+      .from("reservas")
+      .select("id")
+      .or(
+        `codigo_reserva.ilike.${patron},huesped_nombre.ilike.${patron},huesped_contacto.ilike.${patron}`,
+      )
+      .eq("descartada", false)
+      .limit(40);
+
+    const { data: porDepto } = await supabase
+      .from("departamentos")
+      .select("id")
+      .or(`codigo.ilike.${patron},nombre_interno.ilike.${patron}`)
+      .limit(20);
+
+    const idsReserva = (reservas ?? []).map((r) => r.id);
+    const idsDepto = (porDepto ?? []).map((d) => d.id);
+
+    if (idsReserva.length > 0 || idsDepto.length > 0) {
+      let consulta = supabase.from("eventos_estadia").select(CAMPOS).limit(80);
+      if (idsDepto.length > 0 && idsReserva.length > 0) {
+        const { data: masReservas } = await supabase
+          .from("reservas")
+          .select("id")
+          .in("depto_id", idsDepto)
+          .eq("descartada", false)
+          .gte("fecha_checkout", hoy)
+          .limit(40);
+        consulta = consulta.in("reserva_id", [
+          ...new Set([...idsReserva, ...(masReservas ?? []).map((r) => r.id)]),
+        ]);
+      } else if (idsDepto.length > 0) {
+        const { data: masReservas } = await supabase
+          .from("reservas")
+          .select("id")
+          .in("depto_id", idsDepto)
+          .eq("descartada", false)
+          .gte("fecha_checkout", hoy)
+          .limit(40);
+        consulta = consulta.in("reserva_id", (masReservas ?? []).map((r) => r.id));
+      } else {
+        consulta = consulta.in("reserva_id", idsReserva);
+      }
+      const { data } = await consulta;
+      eventos = ((data ?? []) as unknown as Evento[]).filter((e) => !e.reserva?.descartada);
+    }
+  } else {
+    // El día: lo que pasa por fecha de reserva y lo que se movió acá.
+    const [{ data: porReserva }, { data: porCoordinada }] = await Promise.all([
+      supabase
+        .from("eventos_estadia")
+        .select(CAMPOS)
+        .or(`fecha_checkin.eq.${fecha},fecha_checkout.eq.${fecha}`, {
+          referencedTable: "reservas",
+        })
+        .neq("estado", "cancelado"),
+      supabase
+        .from("eventos_estadia")
+        .select(CAMPOS)
+        .eq("fecha_coordinada", fecha)
+        .neq("estado", "cancelado"),
+    ]);
+
+    const todos = new Map<string, Evento>();
+    for (const e of [...(porReserva ?? []), ...(porCoordinada ?? [])] as unknown as Evento[]) {
+      if (!e.reserva || e.reserva.descartada) continue;
+      // Un evento coordinado para otro día no pertenece a este.
+      if (fechaOperativa(e) !== fecha) continue;
+      todos.set(e.id, e);
+    }
+    eventos = [...todos.values()];
+  }
+
+  const ordenar = (a: Evento, b: Evento) =>
+    (a.hora_coordinada ?? "99").localeCompare(b.hora_coordinada ?? "99") ||
+    (a.reserva?.depto?.codigo ?? "").localeCompare(b.reserva?.depto?.codigo ?? "");
+
+  const llegadas = eventos.filter((e) => e.tipo === "checkin").sort(ordenar);
+  const salidas = eventos.filter((e) => e.tipo === "checkout").sort(ordenar);
+
+  const pendientes = eventos.filter((e) => e.estado !== "hecho").length;
+
+  return (
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
+      <BuscadorDia q={q} fecha={fecha} />
+
+      {q ? (
+        <p className="text-sm text-slate-400">
+          {eventos.length} resultado{eventos.length === 1 ? "" : "s"} para
+          &ldquo;{q}&rdquo;
+        </p>
+      ) : (
+        <>
+          <NavegadorFecha fecha={fecha} />
+          <div>
+            <h1 className="text-xl font-semibold capitalize tracking-tight text-white">
+              {nombreDelDia(fecha)} {formatearFechaAR(fecha)}
+              {fecha === hoy && (
+                <span className="ml-2 rounded-full bg-slate-700 px-2 py-0.5 align-middle text-xs font-normal text-slate-200">
+                  hoy
+                </span>
+              )}
+            </h1>
+            <p className="text-sm text-slate-400">
+              {llegadas.length} llegada{llegadas.length === 1 ? "" : "s"} ·{" "}
+              {salidas.length} salida{salidas.length === 1 ? "" : "s"}
+              {pendientes > 0 && ` · ${pendientes} sin cerrar`}
+            </p>
+          </div>
+        </>
+      )}
+
+      {eventos.length === 0 ? (
+        <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
+          <p className="text-slate-300">
+            {q ? "No se encontró nada con esa búsqueda." : "No hay movimientos este día."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="flex flex-col gap-2">
+            <h2 className="border-b border-slate-800 pb-1 font-medium text-white">
+              Llegadas
+              <span className="ml-2 text-sm font-normal text-slate-500">
+                {llegadas.length}
+              </span>
+            </h2>
+            {llegadas.length === 0 ? (
+              <p className="py-3 text-sm text-slate-600">Sin llegadas.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {llegadas.map((e) => (
+                  <Fila key={e.id} evento={e} />
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <h2 className="border-b border-slate-800 pb-1 font-medium text-white">
+              Salidas
+              <span className="ml-2 text-sm font-normal text-slate-500">
+                {salidas.length}
+              </span>
+            </h2>
+            {salidas.length === 0 ? (
+              <p className="py-3 text-sm text-slate-600">Sin salidas.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {salidas.map((e) => (
+                  <Fila key={e.id} evento={e} />
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      )}
+    </main>
+  );
+}

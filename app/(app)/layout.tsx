@@ -10,11 +10,18 @@ export default async function LayoutApp({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: persona } = await supabase
-    .from("personas")
-    .select("nombre")
-    .eq("profile_id", user!.id)
-    .maybeSingle();
+  const [{ data: persona }, { count: sinAsignar }] = await Promise.all([
+    supabase
+      .from("personas")
+      .select("nombre")
+      .eq("profile_id", user!.id)
+      .maybeSingle(),
+    supabase
+      .from("reservas")
+      .select("id", { count: "exact", head: true })
+      .is("depto_id", null)
+      .eq("descartada", false),
+  ]);
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-slate-900">
@@ -41,17 +48,23 @@ export default async function LayoutApp({
         </div>
         <nav className="flex gap-1 overflow-x-auto px-2 pb-2 sm:px-4">
           {[
-            { href: "/", texto: "Inicio" },
-            { href: "/departamentos", texto: "Departamentos" },
-            { href: "/propietarios", texto: "Propietarios" },
-            { href: "/importar", texto: "Importar" },
+            { href: "/", texto: "Inicio", pendientes: 0 },
+            { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
+            { href: "/propietarios", texto: "Propietarios", pendientes: 0 },
+            { href: "/importar", texto: "Importar", pendientes: 0 },
+            { href: "/bandeja", texto: "Sin asignar", pendientes: sinAsignar ?? 0 },
           ].map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+              className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
             >
               {item.texto}
+              {item.pendientes > 0 && (
+                <span className="rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-slate-900">
+                  {item.pendientes}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

@@ -72,6 +72,17 @@ export default function FormularioImportar() {
             <Contador etiqueta="Reaparecidas" valor={estado.resumen.descartadas_reaparecidas} destacado />
           </div>
 
+          <div>
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Limpiezas
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              <Contador etiqueta="Generadas" valor={estado.resumen.limpiezas_generadas} />
+              <Contador etiqueta="Movidas de fecha" valor={estado.resumen.limpiezas_movidas} destacado />
+              <Contador etiqueta="Canceladas" valor={estado.resumen.limpiezas_canceladas} destacado />
+            </div>
+          </div>
+
           {estado.resumen.anomalias.length > 0 && (
             <div className="rounded-xl border border-amber-900 bg-amber-950/40 px-4 py-3">
               <h3 className="text-sm font-semibold text-amber-300">

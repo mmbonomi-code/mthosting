@@ -21,9 +21,10 @@ const clave = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ANUNCIO = "Tranquilo y familiar en recoleta";
 const ARCHIVO = "reservations - 2026-08-02T084540.299.csv";
 
-const s = createClient<Database>(url!, clave!, { auth: { persistSession: false } });
-
+// Se crea recién dentro del describe: sin credenciales el archivo se saltea
+// entero en vez de romper al cargarse.
 describe.skipIf(!url || !clave)("bandeja de reservas sin asignar (base dev)", () => {
+  const s = createClient<Database>(url!, clave!, { auth: { persistSession: false } });
   let deptoOriginal: string | null = null;
 
   afterAll(async () => {

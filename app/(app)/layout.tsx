@@ -49,6 +49,7 @@ export default async function LayoutApp({
         <nav className="flex gap-1 overflow-x-auto px-2 pb-2 sm:px-4">
           {[
             { href: "/", texto: "Inicio", pendientes: 0 },
+            { href: "/limpiezas", texto: "Limpiezas", pendientes: 0 },
             { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
             { href: "/propietarios", texto: "Propietarios", pendientes: 0 },
             { href: "/importar", texto: "Importar", pendientes: 0 },

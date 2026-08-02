@@ -8,6 +8,8 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../database.types";
 import { consolidarLote, decidirUpsert, type ReservaExistente } from "./lote";
+import { generarLimpiezas } from "../limpiezas/generar";
+import { hoyAR } from "../fechas";
 
 type Cliente = SupabaseClient<Database>;
 // El upsert usa el tipo de inserción: exige codigo_reserva y las NOT NULL.
@@ -22,6 +24,9 @@ export type ResumenImportacion = {
   sin_asignar: number;
   canceladas_detectadas: number;
   descartadas_reaparecidas: number;
+  limpiezas_generadas: number;
+  limpiezas_movidas: number;
+  limpiezas_canceladas: number;
   anomalias: string[];
   advertencias: string[];
 };
@@ -83,6 +88,9 @@ export async function ejecutarImportacion(
     sin_asignar: 0,
     canceladas_detectadas: 0,
     descartadas_reaparecidas: 0,
+    limpiezas_generadas: 0,
+    limpiezas_movidas: 0,
+    limpiezas_canceladas: 0,
     anomalias: [],
     advertencias,
   };
@@ -155,6 +163,17 @@ export async function ejecutarImportacion(
       .upsert(paraActualizar.slice(i, i + 500), { onConflict: "codigo_reserva" });
     if (error) throw new Error(`No se pudieron actualizar las reservas: ${error.message}`);
   }
+
+  // Con las reservas ya guardadas, se generan sus eventos y sus limpiezas.
+  const limpiezas = await generarLimpiezas(
+    supabase,
+    filas.map((f) => f.codigo_reserva),
+    hoyAR(),
+  );
+  resumen.limpiezas_generadas = limpiezas.generadas;
+  resumen.limpiezas_movidas = limpiezas.movidas;
+  resumen.limpiezas_canceladas = limpiezas.canceladas;
+  resumen.anomalias.push(...limpiezas.anomalias);
 
   await supabase
     .from("importaciones")

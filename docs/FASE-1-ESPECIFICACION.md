@@ -305,8 +305,15 @@ marca de cancelación, NO se revierte; se registra como anomalía.
 - Upsert por `codigo_reserva`.
 - **Nunca sobrescribir un valor existente con uno vacío.** Airbnb borra el
   contacto al cancelar; el sistema conserva lo anterior. Regla genérica.
+- **En una fila cancelada, el nombre y el contacto del huésped no se
+  actualizan nunca** (decisión del dueño, 02/08/2026): al cancelar, Airbnb
+  además de borrar el teléfono recorta el nombre ("Nicolas Astruc" →
+  "Nicolas"), y ese dato degradado no debe pisar el que ya se tenía.
 - `raw` e `import_id` sí se actualizan siempre.
 - Re-importar un archivo idéntico produce cero cambios.
+- *(Validado 02/08/2026 contra 1.014 archivos reales: Ganancias siempre usa
+  coma decimal y punto de miles; existen montos NEGATIVOS —penalidad por
+  cancelación del anfitrión— y Ganancias/Reservada vacías en exports viejos.)*
 
 ### 2.6 Lote múltiple
 

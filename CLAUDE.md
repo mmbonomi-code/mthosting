@@ -3,7 +3,9 @@
 Sistema de gestión operativa para MTHosting: co-hosting de alquiler temporario
 (50+ departamentos en CABA, reservas de Airbnb). Reemplaza un sistema existente
 en Ninox. El plan completo está en `docs/PLAN-FASES.md`; la especificación de la
-fase actual en `docs/FASE-1-ESPECIFICACION.md`. Leer ambos antes de construir.
+fase actual en `docs/FASE-1-ESPECIFICACION.md`, con el detalle de inventario y
+distribución en `docs/FASE-1-INVENTARIO-DEPARTAMENTOS.md`. Leer antes de
+construir.
 
 ## Stack
 

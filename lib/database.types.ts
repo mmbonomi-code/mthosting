@@ -299,8 +299,14 @@ export type Database = {
           airbnb_pass: string | null
           airbnb_user: string | null
           ambientes: Database["public"]["Enums"]["ambientes_tipo"] | null
-          banos: number | null
+          bano_1: string | null
+          bano_2: string | null
+          bano_3: string | null
           barrio: string | null
+          camas_king: number
+          camas_queen: number
+          camas_twin: number
+          cantidad_banos: number | null
           capacidad: number | null
           codigo: string
           comision_pct: number | null
@@ -321,6 +327,8 @@ export type Database = {
           requiere_aviso_seguridad: boolean
           requiere_registro: boolean
           self_checkout: Database["public"]["Enums"]["self_checkout_tipo"]
+          sillon_cama: number
+          total_camas: number | null
           trabajo_verificado: boolean
           updated_at: string
           url_mapa: string | null
@@ -333,8 +341,14 @@ export type Database = {
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
-          banos?: number | null
+          bano_1?: string | null
+          bano_2?: string | null
+          bano_3?: string | null
           barrio?: string | null
+          camas_king?: number
+          camas_queen?: number
+          camas_twin?: number
+          cantidad_banos?: number | null
           capacidad?: number | null
           codigo: string
           comision_pct?: number | null
@@ -355,6 +369,8 @@ export type Database = {
           requiere_aviso_seguridad?: boolean
           requiere_registro?: boolean
           self_checkout?: Database["public"]["Enums"]["self_checkout_tipo"]
+          sillon_cama?: number
+          total_camas?: number | null
           trabajo_verificado?: boolean
           updated_at?: string
           url_mapa?: string | null
@@ -367,8 +383,14 @@ export type Database = {
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
-          banos?: number | null
+          bano_1?: string | null
+          bano_2?: string | null
+          bano_3?: string | null
           barrio?: string | null
+          camas_king?: number
+          camas_queen?: number
+          camas_twin?: number
+          cantidad_banos?: number | null
           capacidad?: number | null
           codigo?: string
           comision_pct?: number | null
@@ -389,6 +411,8 @@ export type Database = {
           requiere_aviso_seguridad?: boolean
           requiere_registro?: boolean
           self_checkout?: Database["public"]["Enums"]["self_checkout_tipo"]
+          sillon_cama?: number
+          total_camas?: number | null
           trabajo_verificado?: boolean
           updated_at?: string
           url_mapa?: string | null
@@ -409,35 +433,29 @@ export type Database = {
       distribucion_depto: {
         Row: {
           activo: boolean
-          ambiente: string | null
-          cantidad: number
           created_at: string
           depto_id: string
           id: string
           notas: string | null
-          tipo_cama: Database["public"]["Enums"]["tipo_cama"] | null
+          persona_id: string | null
           updated_at: string
         }
         Insert: {
           activo?: boolean
-          ambiente?: string | null
-          cantidad?: number
           created_at?: string
           depto_id: string
           id?: string
           notas?: string | null
-          tipo_cama?: Database["public"]["Enums"]["tipo_cama"] | null
+          persona_id?: string | null
           updated_at?: string
         }
         Update: {
           activo?: boolean
-          ambiente?: string | null
-          cantidad?: number
           created_at?: string
           depto_id?: string
           id?: string
           notas?: string | null
-          tipo_cama?: Database["public"]["Enums"]["tipo_cama"] | null
+          persona_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -446,6 +464,13 @@ export type Database = {
             columns: ["depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribucion_depto_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
             referencedColumns: ["id"]
           },
         ]
@@ -687,30 +712,30 @@ export type Database = {
       }
       inventario_depto: {
         Row: {
-          cantidad: number
           created_at: string
           depto_id: string
+          detalle: string | null
           id: string
           item_id: string
-          notas: string | null
+          tiene: boolean
           updated_at: string
         }
         Insert: {
-          cantidad?: number
           created_at?: string
           depto_id: string
+          detalle?: string | null
           id?: string
           item_id: string
-          notas?: string | null
+          tiene?: boolean
           updated_at?: string
         }
         Update: {
-          cantidad?: number
           created_at?: string
           depto_id?: string
+          detalle?: string | null
           id?: string
           item_id?: string
-          notas?: string | null
+          tiene?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -737,6 +762,7 @@ export type Database = {
           created_at: string
           id: string
           nombre: string
+          orden: number
           updated_at: string
         }
         Insert: {
@@ -745,6 +771,7 @@ export type Database = {
           created_at?: string
           id?: string
           nombre: string
+          orden?: number
           updated_at?: string
         }
         Update: {
@@ -753,6 +780,7 @@ export type Database = {
           created_at?: string
           id?: string
           nombre?: string
+          orden?: number
           updated_at?: string
         }
         Relationships: []
@@ -1764,7 +1792,6 @@ export type Database = {
         | "limpieza"
         | "propietario"
       self_checkout_tipo: "siempre" | "solo_multiples" | "no"
-      tipo_cama: "king" | "queen" | "twin" | "sillon_cama" | "otra"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1941,7 +1968,6 @@ export const Constants = {
         "propietario",
       ],
       self_checkout_tipo: ["siempre", "solo_multiples", "no"],
-      tipo_cama: ["king", "queen", "twin", "sillon_cama", "otra"],
     },
   },
 } as const

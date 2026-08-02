@@ -26,8 +26,14 @@ type Valores = {
   barrio?: string | null;
   ambientes?: string | null;
   habitaciones?: number | null;
-  banos?: number | null;
   capacidad?: number | null;
+  camas_king?: number | null;
+  camas_queen?: number | null;
+  camas_twin?: number | null;
+  sillon_cama?: number | null;
+  bano_1?: string | null;
+  bano_2?: string | null;
+  bano_3?: string | null;
   comision_pct?: number | null;
   wifi_ssid?: string | null;
   wifi_pass?: string | null;
@@ -177,7 +183,7 @@ export default function FormularioDepartamento({
             className={clsEntrada}
           />
         </Campo>
-        <Campo etiqueta="Ambientes">
+        <Campo etiqueta="Ambientes (para limpieza)" ancho>
           <select
             name="ambientes"
             defaultValue={valores.ambientes ?? ""}
@@ -190,6 +196,9 @@ export default function FormularioDepartamento({
               </option>
             ))}
           </select>
+          <span className="text-xs text-slate-500">
+            De acá sale el valor de cada limpieza de este departamento.
+          </span>
         </Campo>
         <Campo etiqueta="Habitaciones">
           <input
@@ -197,15 +206,6 @@ export default function FormularioDepartamento({
             type="number"
             min={0}
             defaultValue={valores.habitaciones ?? ""}
-            className={clsEntrada}
-          />
-        </Campo>
-        <Campo etiqueta="Baños">
-          <input
-            name="banos"
-            type="number"
-            min={0}
-            defaultValue={valores.banos ?? ""}
             className={clsEntrada}
           />
         </Campo>
@@ -218,6 +218,78 @@ export default function FormularioDepartamento({
             className={clsEntrada}
           />
         </Campo>
+      </Seccion>
+
+      <Seccion titulo="Camas">
+        <Campo etiqueta="King">
+          <input
+            name="camas_king"
+            type="number"
+            min={0}
+            defaultValue={valores.camas_king ?? 0}
+            className={clsEntrada}
+          />
+        </Campo>
+        <Campo etiqueta="Queen">
+          <input
+            name="camas_queen"
+            type="number"
+            min={0}
+            defaultValue={valores.camas_queen ?? 0}
+            className={clsEntrada}
+          />
+        </Campo>
+        <Campo etiqueta="Twin (individual)">
+          <input
+            name="camas_twin"
+            type="number"
+            min={0}
+            defaultValue={valores.camas_twin ?? 0}
+            className={clsEntrada}
+          />
+        </Campo>
+        <Campo etiqueta="Sillón cama">
+          <input
+            name="sillon_cama"
+            type="number"
+            min={0}
+            defaultValue={valores.sillon_cama ?? 0}
+            className={clsEntrada}
+          />
+        </Campo>
+        <p className="text-xs text-slate-500 sm:col-span-2">
+          El total de camas se calcula solo: es la suma de estas cuatro.
+        </p>
+      </Seccion>
+
+      <Seccion titulo="Baños">
+        <Campo etiqueta="Baño 1" ancho>
+          <input
+            name="bano_1"
+            defaultValue={valores.bano_1 ?? ""}
+            placeholder="Ej.: completo con ducha — dejar vacío si no existe"
+            className={clsEntrada}
+          />
+        </Campo>
+        <Campo etiqueta="Baño 2" ancho>
+          <input
+            name="bano_2"
+            defaultValue={valores.bano_2 ?? ""}
+            placeholder="Dejar vacío si no existe"
+            className={clsEntrada}
+          />
+        </Campo>
+        <Campo etiqueta="Baño 3" ancho>
+          <input
+            name="bano_3"
+            defaultValue={valores.bano_3 ?? ""}
+            placeholder="Dejar vacío si no existe"
+            className={clsEntrada}
+          />
+        </Campo>
+        <p className="text-xs text-slate-500 sm:col-span-2">
+          La cantidad de baños se cuenta sola, según cuáles estén cargados.
+        </p>
       </Seccion>
 
       <Seccion titulo="Wifi">

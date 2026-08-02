@@ -5,20 +5,10 @@ import {
   ETIQUETA_AMBIENTES,
   ETIQUETA_CANAL,
   ETIQUETA_SELF_CHECKOUT,
-  ETIQUETA_TIPO_CAMA,
 } from "@/lib/etiquetas";
 import BotonCopiar from "@/app/componentes/BotonCopiar";
 import FormularioAlias from "./FormularioAlias";
-import FormularioCama from "./FormularioCama";
-import FormularioInventario from "./FormularioInventario";
-import {
-  agregarAlias,
-  agregarCama,
-  agregarInventario,
-  alternarAlias,
-  quitarCama,
-  quitarInventario,
-} from "../acciones";
+import { agregarAlias, alternarAlias } from "../acciones";
 
 function Dato({
   etiqueta,
@@ -82,7 +72,7 @@ export default async function FichaDepartamento({
 
   if (!depto) notFound();
 
-  const [{ data: aliases }, { data: camas }, { data: inventario }, { data: catalogo }] =
+  const [{ data: aliases }, { data: catalogo }, { data: inventario }] =
     await Promise.all([
       supabase
         .from("listing_alias")
@@ -90,19 +80,40 @@ export default async function FichaDepartamento({
         .eq("depto_id", id)
         .order("created_at"),
       supabase
-        .from("distribucion_depto")
-        .select("id, ambiente, tipo_cama, cantidad")
-        .eq("depto_id", id)
-        .order("created_at"),
+        .from("item_catalogo")
+        .select("id, nombre, categoria, orden")
+        .eq("activo", true)
+        .order("categoria")
+        .order("orden"),
       supabase
         .from("inventario_depto")
-        .select("id, cantidad, notas, item:item_catalogo(nombre)")
-        .eq("depto_id", id)
-        .order("created_at"),
-      supabase.from("item_catalogo").select("nombre").order("nombre"),
+        .select("item_id, tiene, detalle")
+        .eq("depto_id", id),
     ]);
 
-  const totalCamas = (camas ?? []).reduce((suma, c) => suma + (c.cantidad ?? 0), 0);
+  const porItem = new Map((inventario ?? []).map((fila) => [fila.item_id, fila]));
+
+  // Ítems del catálogo agrupados por categoría, con lo cargado de este depto.
+  const grupos = (catalogo ?? []).reduce<
+    Record<string, { nombre: string; tiene: boolean; detalle: string | null }[]>
+  >((acumulado, item) => {
+    const clave = item.categoria ?? "Otros";
+    (acumulado[clave] ??= []).push({
+      nombre: item.nombre,
+      tiene: porItem.get(item.id)?.tiene ?? false,
+      detalle: porItem.get(item.id)?.detalle ?? null,
+    });
+    return acumulado;
+  }, {});
+
+  const camas = [
+    { etiqueta: "King", cantidad: depto.camas_king },
+    { etiqueta: "Queen", cantidad: depto.camas_queen },
+    { etiqueta: "Twin", cantidad: depto.camas_twin },
+    { etiqueta: "Sillón cama", cantidad: depto.sillon_cama },
+  ].filter((c) => (c.cantidad ?? 0) > 0);
+
+  const banos = [depto.bano_1, depto.bano_2, depto.bano_3].filter(Boolean);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -125,12 +136,20 @@ export default async function FichaDepartamento({
           </div>
           <p className="text-slate-400">{depto.nombre_interno}</p>
         </div>
-        <Link
-          href={`/departamentos/${id}/editar`}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
-        >
-          Editar
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/departamentos/${id}/equipamiento`}
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+          >
+            Equipamiento
+          </Link>
+          <Link
+            href={`/departamentos/${id}/editar`}
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+          >
+            Editar
+          </Link>
+        </div>
       </div>
 
       {/* Bloque fijo: lo más consultado (§3.5.quater) */}
@@ -145,7 +164,6 @@ export default async function FichaDepartamento({
         <Dato etiqueta="Capacidad">
           {depto.capacidad ? `${depto.capacidad} personas` : "—"}
         </Dato>
-        <Dato etiqueta="Baños">{depto.banos ?? "—"}</Dato>
         <div className="col-span-2 sm:col-span-3">
           <Dato etiqueta="Wifi">
             {depto.wifi_ssid ? (
@@ -247,95 +265,73 @@ export default async function FichaDepartamento({
       <Acordeon
         titulo="Ambientes y camas"
         resumen={
-          totalCamas > 0
-            ? `${totalCamas} ${totalCamas === 1 ? "cama" : "camas"}`
+          depto.total_camas
+            ? `${depto.total_camas} ${depto.total_camas === 1 ? "cama" : "camas"} · ${depto.cantidad_banos} ${depto.cantidad_banos === 1 ? "baño" : "baños"}`
             : "Sin cargar"
         }
       >
-        <div className="flex flex-col gap-3">
-          <ul className="flex flex-col gap-2">
-            {(camas ?? []).map((cama) => (
-              <li
-                key={cama.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-slate-200">
-                    {cama.ambiente}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    {cama.cantidad} ×{" "}
-                    {cama.tipo_cama ? ETIQUETA_TIPO_CAMA[cama.tipo_cama] : "—"}
-                  </span>
-                </span>
-                <form action={quitarCama.bind(null, cama.id, id)}>
-                  <button
-                    type="submit"
-                    className="shrink-0 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700"
-                  >
-                    Quitar
-                  </button>
-                </form>
-              </li>
-            ))}
-            {(camas ?? []).length === 0 && (
-              <li className="text-sm text-slate-500">
-                Todavía no hay camas cargadas. Es lo que usa Fase 2 para
-                calcular qué sábanas llevar.
-              </li>
-            )}
-          </ul>
-          <FormularioCama accion={agregarCama.bind(null, id)} />
-        </div>
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <Dato etiqueta="Ambientes (para limpieza)">
+            {depto.ambientes ? ETIQUETA_AMBIENTES[depto.ambientes] : "—"}
+          </Dato>
+          <Dato etiqueta="Habitaciones">{depto.habitaciones ?? "—"}</Dato>
+          <div className="sm:col-span-2">
+            <Dato etiqueta={`Camas (total: ${depto.total_camas})`}>
+              {camas.length > 0
+                ? camas.map((c) => `${c.cantidad} ${c.etiqueta}`).join(" · ")
+                : "Sin cargar"}
+            </Dato>
+          </div>
+          <div className="sm:col-span-2">
+            <Dato etiqueta={`Baños (${depto.cantidad_banos})`}>
+              {banos.length > 0 ? (
+                <ul className="flex flex-col gap-0.5">
+                  {banos.map((detalle, indice) => (
+                    <li key={indice}>
+                      Baño {indice + 1}: {detalle}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                "Sin cargar"
+              )}
+            </Dato>
+          </div>
+        </dl>
       </Acordeon>
 
-      <Acordeon
-        titulo="Inventario"
-        resumen={
-          (inventario ?? []).length > 0
-            ? `${(inventario ?? []).length} ítems`
-            : "Sin cargar"
-        }
-      >
-        <div className="flex flex-col gap-3">
-          <ul className="flex flex-col gap-2">
-            {(inventario ?? []).map((fila) => (
-              <li
-                key={fila.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-slate-200">
-                    {fila.cantidad} × {fila.item?.nombre}
+      {Object.entries(grupos).map(([categoria, items]) => {
+        const conQue = items.filter((i) => i.tiene);
+        return (
+          <Acordeon
+            key={categoria}
+            titulo={categoria}
+            resumen={`${conQue.length} / ${items.length}`}
+          >
+            <ul className="flex flex-col gap-1.5">
+              {items.map((item) => (
+                <li
+                  key={item.nombre}
+                  className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+                >
+                  <span
+                    className={
+                      item.tiene ? "text-slate-200" : "text-slate-600"
+                    }
+                  >
+                    {item.tiene ? "✓" : "—"} {item.nombre}
                   </span>
-                  {fila.notas && (
-                    <span className="block truncate text-xs text-slate-500">
-                      {fila.notas}
+                  {item.detalle && (
+                    <span className="text-sm text-slate-500">
+                      {item.detalle}
                     </span>
                   )}
-                </span>
-                <form action={quitarInventario.bind(null, fila.id, id)}>
-                  <button
-                    type="submit"
-                    className="shrink-0 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700"
-                  >
-                    Quitar
-                  </button>
-                </form>
-              </li>
-            ))}
-            {(inventario ?? []).length === 0 && (
-              <li className="text-sm text-slate-500">
-                Todavía no hay ítems cargados (AAC, plancha, secador…).
-              </li>
-            )}
-          </ul>
-          <FormularioInventario
-            accion={agregarInventario.bind(null, id)}
-            sugerencias={(catalogo ?? []).map((i) => i.nombre)}
-          />
-        </div>
-      </Acordeon>
+                </li>
+              ))}
+            </ul>
+          </Acordeon>
+        );
+      })}
 
       <Acordeon
         titulo="Requisitos de ingreso"

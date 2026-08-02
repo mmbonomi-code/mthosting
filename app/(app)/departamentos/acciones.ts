@@ -41,8 +41,14 @@ function datosDepartamento(fd: FormData) {
     barrio: texto(fd, "barrio"),
     ambientes: texto(fd, "ambientes") as Ambientes | null,
     habitaciones: entero(fd, "habitaciones"),
-    banos: entero(fd, "banos"),
     capacidad: entero(fd, "capacidad"),
+    camas_king: entero(fd, "camas_king") ?? 0,
+    camas_queen: entero(fd, "camas_queen") ?? 0,
+    camas_twin: entero(fd, "camas_twin") ?? 0,
+    sillon_cama: entero(fd, "sillon_cama") ?? 0,
+    bano_1: texto(fd, "bano_1"),
+    bano_2: texto(fd, "bano_2"),
+    bano_3: texto(fd, "bano_3"),
     comision_pct: (() => {
       const valor = texto(fd, "comision_pct");
       return valor === null ? null : Number.parseFloat(valor);
@@ -173,107 +179,62 @@ export async function alternarAlias(
   revalidatePath(`/departamentos/${deptoId}`);
 }
 
-// --- Distribución: camas por ambiente ---
+// --- Equipamiento: tiene / no tiene + detalle, contra el catálogo de ítems ---
 
-type TipoCama = Database["public"]["Enums"]["tipo_cama"];
-
-export async function agregarCama(
+/**
+ * Guarda el equipamiento del departamento. Los campos llegan como
+ * `tiene_<itemId>` (casilla) y `detalle_<itemId>` (texto libre).
+ * Se guarda la fila solo si el ítem está marcado o tiene detalle cargado:
+ * un ítem nunca marcado no ensucia la tabla con filas vacías.
+ */
+export async function guardarEquipamiento(
   deptoId: string,
   _estadoPrevio: EstadoFormulario,
   fd: FormData,
 ): Promise<EstadoFormulario> {
-  const ambiente = texto(fd, "ambiente");
-  const tipoCama = texto(fd, "tipo_cama") as TipoCama | null;
-  const cantidad = entero(fd, "cantidad") ?? 1;
-
-  if (!ambiente || !tipoCama) {
-    return { error: "Indicá el ambiente y el tipo de cama." };
-  }
-
-  const supabase = await crearClienteServidor();
-  const { error } = await supabase.from("distribucion_depto").insert({
-    depto_id: deptoId,
-    ambiente,
-    tipo_cama: tipoCama,
-    cantidad,
-  });
-
-  if (error) return { error: "No se pudo agregar. Probá de nuevo." };
-
-  revalidatePath(`/departamentos/${deptoId}`);
-  return null;
-}
-
-/** Las filas de distribución son datos maestros de la ficha, no operativos:
- *  quitar una cama mal cargada es una corrección, no una baja. */
-export async function quitarCama(filaId: string, deptoId: string) {
-  const supabase = await crearClienteServidor();
-  await supabase.from("distribucion_depto").delete().eq("id", filaId);
-  revalidatePath(`/departamentos/${deptoId}`);
-}
-
-// --- Inventario del departamento ---
-
-export async function agregarInventario(
-  deptoId: string,
-  _estadoPrevio: EstadoFormulario,
-  fd: FormData,
-): Promise<EstadoFormulario> {
-  const nombreItem = texto(fd, "item_nombre");
-  const cantidad = entero(fd, "cantidad") ?? 1;
-  const notas = texto(fd, "notas");
-
-  if (!nombreItem) {
-    return { error: "Escribí qué ítem querés agregar (ej.: Plancha, AAC…)." };
-  }
-
   const supabase = await crearClienteServidor();
 
-  // Busca el ítem en el catálogo; si no existe, lo crea.
-  const { data: existente } = await supabase
-    .from("item_catalogo")
-    .select("id")
-    .ilike("nombre", nombreItem)
-    .maybeSingle();
+  const { data: items } = await supabase.from("item_catalogo").select("id");
+  if (!items) return { error: "No se pudo leer el catálogo de ítems." };
 
-  let itemId = existente?.id;
-  if (!itemId) {
-    const { data: creado, error: errorCatalogo } = await supabase
-      .from("item_catalogo")
-      .insert({ nombre: nombreItem })
-      .select("id")
-      .single();
-    if (errorCatalogo) {
-      return { error: "No se pudo crear el ítem en el catálogo." };
+  const aGuardar: {
+    depto_id: string;
+    item_id: string;
+    tiene: boolean;
+    detalle: string | null;
+  }[] = [];
+  const aBorrar: string[] = [];
+
+  for (const item of items) {
+    const tiene = fd.get(`tiene_${item.id}`) === "on";
+    const detalle = texto(fd, `detalle_${item.id}`);
+    if (tiene || detalle !== null) {
+      aGuardar.push({
+        depto_id: deptoId,
+        item_id: item.id,
+        tiene,
+        detalle,
+      });
+    } else {
+      aBorrar.push(item.id);
     }
-    itemId = creado.id;
   }
 
-  // Si el depto ya tiene ese ítem, actualiza la cantidad; si no, lo agrega.
-  const { data: filaExistente } = await supabase
-    .from("inventario_depto")
-    .select("id")
-    .eq("depto_id", deptoId)
-    .eq("item_id", itemId)
-    .maybeSingle();
+  if (aGuardar.length > 0) {
+    const { error } = await supabase
+      .from("inventario_depto")
+      .upsert(aGuardar, { onConflict: "depto_id,item_id" });
+    if (error) return { error: "No se pudo guardar el equipamiento." };
+  }
 
-  const { error } = filaExistente
-    ? await supabase
-        .from("inventario_depto")
-        .update({ cantidad, notas })
-        .eq("id", filaExistente.id)
-    : await supabase
-        .from("inventario_depto")
-        .insert({ depto_id: deptoId, item_id: itemId, cantidad, notas });
-
-  if (error) return { error: "No se pudo guardar el inventario." };
+  if (aBorrar.length > 0) {
+    await supabase
+      .from("inventario_depto")
+      .delete()
+      .eq("depto_id", deptoId)
+      .in("item_id", aBorrar);
+  }
 
   revalidatePath(`/departamentos/${deptoId}`);
-  return null;
-}
-
-export async function quitarInventario(filaId: string, deptoId: string) {
-  const supabase = await crearClienteServidor();
-  await supabase.from("inventario_depto").delete().eq("id", filaId);
-  revalidatePath(`/departamentos/${deptoId}`);
+  redirect(`/departamentos/${deptoId}`);
 }

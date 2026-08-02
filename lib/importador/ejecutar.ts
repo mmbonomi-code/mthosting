@@ -96,6 +96,9 @@ export async function ejecutarImportacion(
   };
 
   const paraInsertar = [];
+  /** Cancelaciones que aparecen EN ESTE lote: son las que alertan si la
+   *  estadía está en curso (una cancelación vieja no tiene a nadie adentro). */
+  const cancelacionesNuevas = new Set<string>();
   // Las actualizaciones van en UN solo upsert por tanda (no fila por fila:
   // un lote grande actualizado de a uno supera el límite de tiempo de Vercel).
   // Para eso cada fila lleva el juego COMPLETO de campos gestionados, con el
@@ -111,10 +114,14 @@ export async function ejecutarImportacion(
       resumen.nuevas++;
       if (decision.datos.depto_id === null) resumen.sin_asignar++;
       if (decision.datos.cancelada) resumen.canceladas_detectadas++;
+      // Una reserva que nace cancelada nunca tuvo a nadie adentro.
       paraInsertar.push({ ...decision.datos, raw: fila.raw, import_id: importacion.id });
     } else {
       resumen[decision.tipo === "actualizada" ? "actualizadas" : "sin_cambios"]++;
-      if (decision.cancelacionDetectada) resumen.canceladas_detectadas++;
+      if (decision.cancelacionDetectada) {
+        resumen.canceladas_detectadas++;
+        cancelacionesNuevas.add(fila.codigo_reserva);
+      }
       if (decision.reaparecida) resumen.descartadas_reaparecidas++;
       resumen.anomalias.push(...decision.anomalias);
 
@@ -169,6 +176,7 @@ export async function ejecutarImportacion(
     supabase,
     filas.map((f) => f.codigo_reserva),
     hoyAR(),
+    cancelacionesNuevas,
   );
   resumen.limpiezas_generadas = limpiezas.generadas;
   resumen.limpiezas_movidas = limpiezas.movidas;

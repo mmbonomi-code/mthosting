@@ -52,6 +52,7 @@ export default async function LayoutApp({
             { href: "/limpiezas", texto: "Limpiezas", pendientes: 0 },
             { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
             { href: "/propietarios", texto: "Propietarios", pendientes: 0 },
+            { href: "/personas", texto: "Personas", pendientes: 0 },
             { href: "/importar", texto: "Importar", pendientes: 0 },
             { href: "/bandeja", texto: "Sin asignar", pendientes: sinAsignar ?? 0 },
           ].map((item) => (

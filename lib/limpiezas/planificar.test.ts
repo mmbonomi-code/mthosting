@@ -45,6 +45,7 @@ function planificar(entrada: Partial<EntradaPlanificar>) {
     eventos: entrada.eventos ?? [],
     limpiezas: entrada.limpiezas ?? [],
     hoy: entrada.hoy ?? HOY,
+    cancelacionesNuevas: entrada.cancelacionesNuevas,
   });
 }
 
@@ -242,10 +243,28 @@ describe("cancelaciones", () => {
       contexto: [],
       limpiezas: [limpieza({ fecha: "2026-08-10" })],
       hoy: HOY, // 02/08: la estadía está en curso
+      cancelacionesNuevas: new Set([r.codigo_reserva]),
     });
     expect(plan.canceladas).toBe(0);
     expect(plan.limpiezasAActualizar).toHaveLength(0);
     expect(plan.anomalias.join(" ")).toMatch(/fecha real de salida/i);
+  });
+
+  it("una cancelación vieja cuyas fechas incluyen hoy no alerta: no hay nadie adentro", () => {
+    const r = reserva({
+      cancelada: true,
+      fecha_checkin: "2026-07-30",
+      fecha_checkout: "2026-08-10",
+    });
+    const plan = planificar({
+      reservas: [r],
+      contexto: [],
+      limpiezas: [limpieza({ fecha: "2026-08-10" })],
+      hoy: HOY,
+      // No viene en cancelacionesNuevas: ya estaba cancelada de antes.
+    });
+    expect(plan.anomalias).toHaveLength(0);
+    expect(plan.canceladas).toBe(1);
   });
 
   it("cancelar no toca una limpieza que ya está hecha: alerta", () => {

@@ -109,6 +109,12 @@ export type EntradaPlanificar = {
   limpiezas: LimpiezaExistente[];
   /** Fecha de hoy en Buenos Aires (`yyyy-mm-dd`). */
   hoy: string;
+  /**
+   * Códigos de reserva cuya cancelación se detecta EN ESTA importación.
+   * Solo esas alertan si la estadía está en curso: una reserva cancelada
+   * hace meses, aunque sus fechas incluyan hoy, no tiene a nadie adentro.
+   */
+  cancelacionesNuevas?: ReadonlySet<string>;
 };
 
 /** Fecha `yyyy-mm-dd` → `yyyy-mm-ddT00:00:00`, que es lo que espera la columna. */
@@ -123,6 +129,7 @@ export function planificarLimpiezas({
   eventos,
   limpiezas,
   hoy,
+  cancelacionesNuevas = new Set<string>(),
 }: EntradaPlanificar): Plan {
   const plan: Plan = {
     eventosNuevos: [],
@@ -205,7 +212,8 @@ export function planificarLimpiezas({
 
     if (reserva.cancelada) {
       const enCurso = fecha_checkin <= hoy && hoy <= fecha_checkout;
-      if (enCurso) {
+      const reciencancelada = cancelacionesNuevas.has(reserva.codigo_reserva);
+      if (enCurso && reciencancelada) {
         // El huésped está adentro: la limpieza se mantiene y alguien tiene
         // que cargar cuándo se va realmente.
         plan.anomalias.push(

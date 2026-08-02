@@ -2,16 +2,8 @@ import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR, sumarDias } from "@/lib/fechas";
 import { ETIQUETA_AMBIENTES } from "@/lib/etiquetas";
-
-const ETIQUETA_TIPO: Record<string, string> = {
-  inicial: "Inicial",
-  repaso: "Repaso",
-  normal: "Salida",
-  cambio_blancos: "Cambio de blancos",
-  con_huespedes: "Con huéspedes",
-  desmantelar: "Desmantelar",
-  propietario: "Propietario",
-};
+import { TIPOS_LIMPIEZA, formatearHora } from "@/lib/limpiezas/etiquetas";
+import { clsBotonPrimario } from "@/lib/ui";
 
 const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
@@ -37,7 +29,7 @@ export default async function Limpiezas({
   const { data: limpiezas } = await supabase
     .from("limpiezas")
     .select(
-      "id, fecha, tipo, urgente, estado, prox_checkin, depto:departamentos(codigo, nombre_interno, barrio, ambientes), responsable:personas(nombre), reserva:reservas(codigo_reserva, huesped_nombre, noches)",
+      "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, depto_id, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, codigo_reserva, huesped_nombre)",
     )
     .gte("fecha", desde)
     .lte("fecha", hasta)
@@ -45,7 +37,43 @@ export default async function Limpiezas({
     .order("fecha")
     .order("urgente", { ascending: false });
 
-  // Agrupadas por día, que es como se trabaja.
+  // Horarios coordinados: la salida de cada reserva y la llegada del próximo
+  // huésped del mismo departamento. Se muestran cuando existen (Paso 6).
+  const idsReservas = (limpiezas ?? [])
+    .map((l) => l.reserva?.id)
+    .filter((id): id is string => !!id);
+  const deptos = [...new Set((limpiezas ?? []).map((l) => l.depto_id))];
+
+  const [{ data: eventosSalida }, { data: llegadas }] = await Promise.all([
+    idsReservas.length > 0
+      ? supabase
+          .from("eventos_estadia")
+          .select("reserva_id, hora_coordinada")
+          .eq("tipo", "checkout")
+          .in("reserva_id", idsReservas)
+      : Promise.resolve({ data: [] }),
+    deptos.length > 0
+      ? supabase
+          .from("reservas")
+          .select("depto_id, fecha_checkin, eventos:eventos_estadia(tipo, hora_coordinada)")
+          .in("depto_id", deptos)
+          .eq("cancelada", false)
+          .eq("descartada", false)
+          .gte("fecha_checkin", desde)
+          .lte("fecha_checkin", sumarDias(hasta, 1))
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const horaSalidaPorReserva = new Map(
+    (eventosSalida ?? []).map((e) => [e.reserva_id, e.hora_coordinada]),
+  );
+  const horaLlegadaPorDeptoFecha = new Map(
+    (llegadas ?? []).map((r) => [
+      `${r.depto_id}|${r.fecha_checkin}`,
+      r.eventos?.find((e) => e.tipo === "checkin")?.hora_coordinada ?? null,
+    ]),
+  );
+
   const porDia = new Map<string, NonNullable<typeof limpiezas>>();
   for (const l of limpiezas ?? []) {
     if (!porDia.has(l.fecha)) porDia.set(l.fecha, []);
@@ -69,7 +97,7 @@ export default async function Limpiezas({
             {sinResponsable > 0 && ` · ${sinResponsable} sin responsable`}
           </p>
         </div>
-        <div className="flex gap-2 text-sm">
+        <div className="flex flex-wrap gap-2 text-sm">
           <Link
             href={`/limpiezas?desde=${sumarDias(desde, -dias)}&dias=${dias}`}
             className="rounded-lg border border-slate-700 px-3 py-2 text-slate-300 hover:bg-slate-800"
@@ -87,6 +115,9 @@ export default async function Limpiezas({
             className="rounded-lg border border-slate-700 px-3 py-2 text-slate-300 hover:bg-slate-800"
           >
             →
+          </Link>
+          <Link href="/limpiezas/nueva" className={`${clsBotonPrimario} flex items-center`}>
+            + Nueva
           </Link>
         </div>
       </div>
@@ -116,53 +147,69 @@ export default async function Limpiezas({
                 )}
               </h2>
               <ul className="flex flex-col gap-2">
-                {delDia.map((l) => (
-                  <li
-                    key={l.id}
-                    className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border-l-4 bg-slate-800/40 px-4 py-3 ${
-                      l.urgente
-                        ? "border-l-red-500 border-y border-r border-y-slate-800 border-r-slate-800"
-                        : "border-l-slate-700 border-y border-r border-y-slate-800 border-r-slate-800"
-                    }`}
-                  >
-                    <span className="w-32 shrink-0 font-mono text-sm font-semibold text-white">
-                      {l.depto?.codigo}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm text-slate-300">
-                        {ETIQUETA_TIPO[l.tipo] ?? l.tipo}
-                        {l.depto?.ambientes && ` · ${ETIQUETA_AMBIENTES[l.depto.ambientes]}`}
-                        {l.depto?.barrio && ` · ${l.depto.barrio}`}
-                      </span>
-                      <span className="block text-xs text-slate-500">
-                        {l.reserva?.huesped_nombre
-                          ? `sale ${l.reserva.huesped_nombre}`
-                          : "sin reserva"}
-                        {l.prox_checkin &&
-                          ` · próximo huésped ${formatearFechaAR(l.prox_checkin.slice(0, 10))}`}
-                      </span>
-                    </span>
-                    {l.urgente && (
-                      <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
-                        Urgente
-                      </span>
-                    )}
-                    <span className="text-sm text-slate-400">
-                      {l.responsable?.nombre ?? (
-                        <span className="text-amber-400">Sin responsable</span>
-                      )}
-                    </span>
-                  </li>
-                ))}
+                {delDia.map((l) => {
+                  const proximo = l.prox_checkin?.slice(0, 10) ?? null;
+                  const mismoDia = proximo === l.fecha;
+                  const horaSalida = formatearHora(
+                    l.hora_checkout ??
+                      (l.reserva ? horaSalidaPorReserva.get(l.reserva.id) : null),
+                  );
+                  const horaLlegada = proximo
+                    ? formatearHora(horaLlegadaPorDeptoFecha.get(`${l.depto_id}|${proximo}`))
+                    : null;
+
+                  return (
+                    <li key={l.id}>
+                      <Link
+                        href={`/limpiezas/${l.id}`}
+                        className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 transition-colors hover:border-y-slate-600 hover:border-r-slate-600 ${
+                          mismoDia ? "border-l-red-500" : "border-l-slate-700"
+                        }`}
+                      >
+                        <span className="w-32 shrink-0 font-mono text-sm font-semibold text-white">
+                          {l.depto?.codigo}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm text-slate-300">
+                            {TIPOS_LIMPIEZA[l.tipo] ?? l.tipo}
+                            {l.depto?.ambientes &&
+                              ` · ${ETIQUETA_AMBIENTES[l.depto.ambientes]}`}
+                            {l.depto?.barrio && ` · ${l.depto.barrio}`}
+                          </span>
+                          <span className="block text-xs text-slate-500">
+                            {horaSalida ? `sale ${horaSalida}` : null}
+                            {horaSalida && (horaLlegada || proximo) ? " → " : null}
+                            {horaLlegada
+                              ? `entra ${horaLlegada}`
+                              : proximo && !mismoDia
+                                ? `próximo huésped ${formatearFechaAR(proximo)}`
+                                : proximo && mismoDia
+                                  ? "entra el mismo día"
+                                  : null}
+                            {!horaSalida && !proximo && l.reserva?.huesped_nombre
+                              ? `sale ${l.reserva.huesped_nombre}`
+                              : null}
+                          </span>
+                        </span>
+                        {mismoDia && (
+                          <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
+                            Check in/out
+                          </span>
+                        )}
+                        <span className="text-sm text-slate-400">
+                          {l.responsable?.nombre ?? (
+                            <span className="text-amber-400">Sin responsable</span>
+                          )}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           ))}
         </div>
       )}
-
-      <p className="text-xs text-slate-600">
-        La asignación de responsables se construye en el Paso 8.
-      </p>
     </main>
   );
 }

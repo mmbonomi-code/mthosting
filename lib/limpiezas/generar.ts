@@ -36,6 +36,7 @@ export async function generarLimpiezas(
   supabase: Cliente,
   codigosReserva: string[],
   hoy: string,
+  cancelacionesNuevas: ReadonlySet<string> = new Set(),
 ): Promise<ResumenLimpiezas> {
   if (codigosReserva.length === 0) {
     return { generadas: 0, movidas: 0, canceladas: 0, anomalias: [] };
@@ -107,6 +108,7 @@ export async function generarLimpiezas(
     eventos,
     limpiezas,
     hoy,
+    cancelacionesNuevas,
   });
 
   // 5. Escribir, siempre en lote.

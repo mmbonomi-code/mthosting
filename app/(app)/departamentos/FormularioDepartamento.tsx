@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { EstadoFormulario } from "./acciones";
 import CamposBanos, { type BanoCargado } from "./CamposBanos";
 import {
+  ETIQUETA_ACUERDO_PAGO,
   ETIQUETA_AMBIENTES,
   ETIQUETA_SELF_CHECKOUT,
 } from "@/lib/etiquetas";
@@ -33,6 +34,7 @@ type Valores = {
   camas_twin?: number | null;
   sillon_cama?: number | null;
   comision_pct?: number | null;
+  acuerdo_pago?: string | null;
   wifi_ssid?: string | null;
   wifi_pass?: string | null;
   wifi_velocidad?: string | null;
@@ -363,7 +365,20 @@ export default function FormularioDepartamento({
             className={clsEntrada}
           />
         </Campo>
-        <div className="hidden sm:block" />
+        <Campo etiqueta="Acuerdo de pago">
+          <select
+            name="acuerdo_pago"
+            defaultValue={valores.acuerdo_pago ?? ""}
+            className={clsEntrada}
+          >
+            <option value="">— Sin definir —</option>
+            {Object.entries(ETIQUETA_ACUERDO_PAGO).map(([valor, etiqueta]) => (
+              <option key={valor} value={valor}>
+                {etiqueta}
+              </option>
+            ))}
+          </select>
+        </Campo>
         <Campo etiqueta="Usuario de Airbnb">
           <input
             name="airbnb_user"

@@ -3,7 +3,6 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import type { EstadoFormulario } from "./acciones";
-import { ETIQUETA_ACUERDO_PAGO } from "@/lib/etiquetas";
 import {
   clsAreaTexto,
   clsBotonPrimario,
@@ -16,7 +15,6 @@ type Valores = {
   nombre?: string | null;
   contacto?: string | null;
   fecha_nacimiento?: string | null;
-  acuerdo_pago?: string | null;
   cuenta_cobro?: string | null;
   datos_bancarios?: string | null;
   activo?: boolean;
@@ -66,21 +64,6 @@ export default function FormularioPropietario({
           defaultValue={valores.fecha_nacimiento ?? ""}
           className={clsEntrada}
         />
-      </label>
-      <label className="flex flex-col gap-1.5">
-        <span className={clsEtiqueta}>Acuerdo de pago</span>
-        <select
-          name="acuerdo_pago"
-          defaultValue={valores.acuerdo_pago ?? ""}
-          className={clsEntrada}
-        >
-          <option value="">— Sin definir —</option>
-          {Object.entries(ETIQUETA_ACUERDO_PAGO).map(([valor, etiqueta]) => (
-            <option key={valor} value={valor}>
-              {etiqueta}
-            </option>
-          ))}
-        </select>
       </label>
       <label className="flex flex-col gap-1.5">
         <span className={clsEtiqueta}>Cuenta de cobro</span>

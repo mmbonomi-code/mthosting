@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import {
+  ETIQUETA_ACUERDO_PAGO,
   ETIQUETA_AMBIENTES,
   ETIQUETA_CANAL,
   ETIQUETA_SELF_CHECKOUT,
@@ -251,6 +252,9 @@ export default async function FichaDepartamento({
           </Dato>
           <Dato etiqueta="Comisión de MTHosting">
             {depto.comision_pct !== null ? `${depto.comision_pct}%` : "—"}
+          </Dato>
+          <Dato etiqueta="Acuerdo de pago">
+            {depto.acuerdo_pago ? ETIQUETA_ACUERDO_PAGO[depto.acuerdo_pago] : "—"}
           </Dato>
           <Dato etiqueta="Usuario de Airbnb">
             {depto.airbnb_user && (

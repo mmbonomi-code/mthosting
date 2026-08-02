@@ -334,6 +334,7 @@ export type Database = {
       departamentos: {
         Row: {
           activo: boolean
+          acuerdo_pago: Database["public"]["Enums"]["acuerdo_pago"] | null
           airbnb_pass: string | null
           airbnb_user: string | null
           ambientes: Database["public"]["Enums"]["ambientes_tipo"] | null
@@ -373,6 +374,7 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
+          acuerdo_pago?: Database["public"]["Enums"]["acuerdo_pago"] | null
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
@@ -412,6 +414,7 @@ export type Database = {
         }
         Update: {
           activo?: boolean
+          acuerdo_pago?: Database["public"]["Enums"]["acuerdo_pago"] | null
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
@@ -1402,7 +1405,6 @@ export type Database = {
       propietarios: {
         Row: {
           activo: boolean
-          acuerdo_pago: Database["public"]["Enums"]["acuerdo_pago"] | null
           contacto: string | null
           created_at: string
           cuenta_cobro: string | null
@@ -1414,7 +1416,6 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
-          acuerdo_pago?: Database["public"]["Enums"]["acuerdo_pago"] | null
           contacto?: string | null
           created_at?: string
           cuenta_cobro?: string | null
@@ -1426,7 +1427,6 @@ export type Database = {
         }
         Update: {
           activo?: boolean
-          acuerdo_pago?: Database["public"]["Enums"]["acuerdo_pago"] | null
           contacto?: string | null
           created_at?: string
           cuenta_cobro?: string | null

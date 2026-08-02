@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import { ETIQUETA_ACUERDO_PAGO } from "@/lib/etiquetas";
 import { clsBotonPrimario } from "@/lib/ui";
 
 export default async function ListaPropietarios() {
@@ -8,7 +7,7 @@ export default async function ListaPropietarios() {
 
   const { data: propietarios } = await supabase
     .from("propietarios")
-    .select("id, nombre, contacto, acuerdo_pago, activo")
+    .select("id, nombre, contacto, activo")
     .order("nombre");
 
   return (
@@ -45,14 +44,7 @@ export default async function ListaPropietarios() {
                     {prop.nombre}
                   </span>
                   <span className="block truncate text-sm text-slate-500">
-                    {[
-                      prop.contacto,
-                      prop.acuerdo_pago
-                        ? ETIQUETA_ACUERDO_PAGO[prop.acuerdo_pago]
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
+                    {prop.contacto}
                   </span>
                 </span>
                 {!prop.activo && (

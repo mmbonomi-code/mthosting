@@ -9,6 +9,7 @@ type Ambientes = Database["public"]["Enums"]["ambientes_tipo"];
 type SelfCheckout = Database["public"]["Enums"]["self_checkout_tipo"];
 type EstadoDepto = Database["public"]["Enums"]["depto_estado"];
 type Canal = Database["public"]["Enums"]["canal_tipo"];
+type AcuerdoPago = Database["public"]["Enums"]["acuerdo_pago"];
 
 export type EstadoFormulario = { error: string } | null;
 
@@ -50,6 +51,7 @@ function datosDepartamento(fd: FormData) {
       const valor = texto(fd, "comision_pct");
       return valor === null ? null : Number.parseFloat(valor);
     })(),
+    acuerdo_pago: texto(fd, "acuerdo_pago") as AcuerdoPago | null,
     wifi_ssid: texto(fd, "wifi_ssid"),
     wifi_pass: texto(fd, "wifi_pass"),
     wifi_velocidad: texto(fd, "wifi_velocidad"),

@@ -8,7 +8,9 @@ import {
   type ResumenImportacion,
 } from "@/lib/importador/ejecutar";
 
-export type { ResumenImportacion };
+// OJO: un archivo "use server" solo puede exportar funciones async.
+// Un `export type { ... }` (re-export) acá se convierte en re-export REAL
+// al empaquetar y rompe en runtime con "X is not defined".
 
 export type EstadoImportacion =
   | { resultado: "ok"; resumen: ResumenImportacion }

@@ -1,6 +1,9 @@
 import { crearClienteServidor } from "@/lib/supabase/server";
 import FormularioImportar from "./FormularioImportar";
 
+// Un lote grande puede tardar: se le da a la función el máximo del plan.
+export const maxDuration = 60;
+
 export default async function PaginaImportar() {
   const supabase = await crearClienteServidor();
 

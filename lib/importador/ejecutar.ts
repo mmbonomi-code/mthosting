@@ -10,7 +10,8 @@ import type { Database } from "../database.types";
 import { consolidarLote, decidirUpsert, type ReservaExistente } from "./lote";
 
 type Cliente = SupabaseClient<Database>;
-type ActualizacionReserva = Database["public"]["Tables"]["reservas"]["Update"];
+// El upsert usa el tipo de inserción: exige codigo_reserva y las NOT NULL.
+type FilaUpsert = Database["public"]["Tables"]["reservas"]["Insert"];
 
 export type ResumenImportacion = {
   archivos: number;
@@ -26,7 +27,7 @@ export type ResumenImportacion = {
 };
 
 const CAMPOS_EXISTENTE =
-  "id, codigo_reserva, cancelada, descartada, datos_completos, depto_id, huesped_nombre, huesped_contacto, adultos, ninos, bebes, noches, fecha_checkin, fecha_checkout, fecha_reservada, listing_nombre_raw, payout_monto";
+  "id, codigo_reserva, canal, origen, cancelada, descartada, datos_completos, depto_id, huesped_nombre, huesped_contacto, adultos, ninos, bebes, noches, fecha_checkin, fecha_checkout, fecha_reservada, listing_nombre_raw, payout_monto";
 
 /**
  * Importa un lote ya leído. Parsea TODO antes de escribir: si un archivo
@@ -87,7 +88,11 @@ export async function ejecutarImportacion(
   };
 
   const paraInsertar = [];
-  const paraActualizar: { id: string; datos: ActualizacionReserva }[] = [];
+  // Las actualizaciones van en UN solo upsert por tanda (no fila por fila:
+  // un lote grande actualizado de a uno supera el límite de tiempo de Vercel).
+  // Para eso cada fila lleva el juego COMPLETO de campos gestionados, con el
+  // valor nuevo si cambió o el ya guardado si no.
+  const paraActualizar: FilaUpsert[] = [];
 
   for (const fila of filas) {
     const existente = existentes.get(fila.codigo_reserva) ?? null;
@@ -111,8 +116,30 @@ export async function ejecutarImportacion(
 
       // raw e import_id se actualizan SIEMPRE, aun sin cambios de datos.
       paraActualizar.push({
-        id: decision.id,
-        datos: { ...decision.cambios, raw: fila.raw, import_id: importacion.id },
+        codigo_reserva: fila.codigo_reserva,
+        // El upsert exige las columnas NOT NULL aunque la fila ya exista:
+        // canal y origen se mandan tal como están guardados, nunca cambian acá.
+        canal: existente!.canal,
+        origen: existente!.origen,
+        huesped_nombre: decision.cambios.huesped_nombre ?? existente!.huesped_nombre,
+        huesped_contacto: decision.cambios.huesped_contacto ?? existente!.huesped_contacto,
+        adultos: decision.cambios.adultos ?? existente!.adultos,
+        ninos: decision.cambios.ninos ?? existente!.ninos,
+        bebes: decision.cambios.bebes ?? existente!.bebes,
+        noches: decision.cambios.noches ?? existente!.noches,
+        fecha_checkin: decision.cambios.fecha_checkin ?? existente!.fecha_checkin,
+        fecha_checkout: decision.cambios.fecha_checkout ?? existente!.fecha_checkout,
+        fecha_reservada: decision.cambios.fecha_reservada ?? existente!.fecha_reservada,
+        listing_nombre_raw:
+          decision.cambios.listing_nombre_raw ?? existente!.listing_nombre_raw,
+        payout_monto: decision.cambios.payout_monto ?? existente!.payout_monto,
+        cancelada: decision.cambios.cancelada ?? existente!.cancelada,
+        descartada: decision.cambios.descartada ?? existente!.descartada,
+        datos_completos:
+          decision.cambios.datos_completos ?? existente!.datos_completos,
+        depto_id: decision.cambios.depto_id ?? existente!.depto_id,
+        raw: fila.raw,
+        import_id: importacion.id,
       });
     }
   }
@@ -122,12 +149,11 @@ export async function ejecutarImportacion(
     if (error) throw new Error(`No se pudieron crear las reservas nuevas: ${error.message}`);
   }
 
-  for (const actualizacion of paraActualizar) {
+  for (let i = 0; i < paraActualizar.length; i += 500) {
     const { error } = await supabase
       .from("reservas")
-      .update(actualizacion.datos)
-      .eq("id", actualizacion.id);
-    if (error) throw new Error(`No se pudo actualizar una reserva: ${error.message}`);
+      .upsert(paraActualizar.slice(i, i + 500), { onConflict: "codigo_reserva" });
+    if (error) throw new Error(`No se pudieron actualizar las reservas: ${error.message}`);
   }
 
   await supabase

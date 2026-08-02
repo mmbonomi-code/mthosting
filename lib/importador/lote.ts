@@ -57,6 +57,8 @@ export function consolidarLote(archivos: ArchivoLote[]): ResultadoLote {
 /** Lo que se necesita saber de una reserva ya guardada para decidir el upsert. */
 export type ReservaExistente = {
   id: string;
+  canal: "airbnb" | "booking" | "directa";
+  origen: "csv" | "ical";
   cancelada: boolean;
   descartada: boolean;
   datos_completos: boolean;

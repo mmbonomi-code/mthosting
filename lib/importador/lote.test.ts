@@ -44,6 +44,8 @@ function fila(parcial: Partial<FilaReserva>): FilaReserva {
 function existente(parcial: Partial<ReservaExistente>): ReservaExistente {
   return {
     id: "id-1",
+    canal: "airbnb",
+    origen: "csv",
     cancelada: false,
     descartada: false,
     datos_completos: true,

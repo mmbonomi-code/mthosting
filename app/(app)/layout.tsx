@@ -44,6 +44,7 @@ export default async function LayoutApp({
             { href: "/", texto: "Inicio" },
             { href: "/departamentos", texto: "Departamentos" },
             { href: "/propietarios", texto: "Propietarios" },
+            { href: "/importar", texto: "Importar" },
           ].map((item) => (
             <Link
               key={item.href}

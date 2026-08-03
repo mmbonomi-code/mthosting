@@ -18,10 +18,12 @@ export default function SelectorHora({
   name,
   defaultValue,
   ancho,
+  onChange,
 }: {
   name: string;
   defaultValue?: string | null;
   ancho?: string;
+  onChange?: (valor: string) => void;
 }) {
   // Una hora vieja que no caiga en la grilla se conserva como opción, para
   // no perderla sin avisar.
@@ -32,6 +34,7 @@ export default function SelectorHora({
     <select
       name={name}
       defaultValue={actual}
+      onChange={(e) => onChange?.(e.target.value)}
       className={`${clsEntrada} ${ancho ?? ""}`}
     >
       <option value="">— Sin hora —</option>

@@ -12,14 +12,13 @@ import {
   type EstadoLimpieza,
 } from "@/lib/eventos/reglas";
 import { faltantesDeEvento } from "@/lib/eventos/faltantes";
+import BotonCopiar from "@/app/componentes/BotonCopiar";
 import Wifi from "@/app/componentes/Wifi";
-import FormularioCoordinar, { type OpcionAcceso } from "./FormularioCoordinar";
-import Interruptor from "./Interruptores";
+import PanelCoordinacion, { type OpcionAcceso } from "./PanelCoordinacion";
 import {
   alternarLateCheckout,
   coordinarEvento,
   marcarAccesoDejado,
-  marcarHecho,
   marcarItem,
 } from "../acciones";
 
@@ -32,7 +31,7 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactN
   );
 }
 
-/** Teléfono sin nada que no sea dígito, para los enlaces de llamada y WhatsApp. */
+/** Teléfono sin nada que no sea dígito, para llamar y para WhatsApp. */
 function soloDigitos(telefono: string | null): string | null {
   if (!telefono) return null;
   const limpio = telefono.replace(/\D/g, "");
@@ -90,7 +89,6 @@ export default async function FichaEvento({
       .eq("activo", true)
       .order("nombre"),
     supabase.from("parametros_operativos").select("clave, valor"),
-    // El otro extremo de la misma estadía, para ver la estadía completa.
     supabase
       .from("eventos_estadia")
       .select("id, tipo, fecha_coordinada, hora_coordinada")
@@ -105,30 +103,44 @@ export default async function FichaEvento({
   let salidaAnterior: { fecha: string; hora: string | null } | null = null;
   let proximaLlegada: { fecha: string; hora: string | null } | null = null;
   let listo = false;
+  let hayEntradaEseDia = false;
 
   if (depto) {
-    const [{ data: previas }, { data: siguientes }] = await Promise.all([
-      supabase
-        .from("reservas")
-        .select("id, fecha_checkout, eventos:eventos_estadia(tipo, fecha_coordinada, hora_coordinada)")
-        .eq("depto_id", depto.id)
-        .eq("cancelada", false)
-        .eq("descartada", false)
-        .lte("fecha_checkout", fechaReserva)
-        .neq("id", r.id)
-        .order("fecha_checkout", { ascending: false })
-        .limit(1),
-      supabase
-        .from("reservas")
-        .select("id, fecha_checkin, eventos:eventos_estadia(tipo, fecha_coordinada, hora_coordinada)")
-        .eq("depto_id", depto.id)
-        .eq("cancelada", false)
-        .eq("descartada", false)
-        .gte("fecha_checkin", fechaReserva)
-        .neq("id", r.id)
-        .order("fecha_checkin")
-        .limit(1),
-    ]);
+    const [{ data: previas }, { data: siguientes }, { count: entradas }] =
+      await Promise.all([
+        supabase
+          .from("reservas")
+          .select("id, fecha_checkout, eventos:eventos_estadia(tipo, fecha_coordinada, hora_coordinada)")
+          .eq("depto_id", depto.id)
+          .eq("cancelada", false)
+          .eq("descartada", false)
+          .lte("fecha_checkout", fechaReserva)
+          .neq("id", r.id)
+          .order("fecha_checkout", { ascending: false })
+          .limit(1),
+        supabase
+          .from("reservas")
+          .select("id, fecha_checkin, eventos:eventos_estadia(tipo, fecha_coordinada, hora_coordinada)")
+          .eq("depto_id", depto.id)
+          .eq("cancelada", false)
+          .eq("descartada", false)
+          .gte("fecha_checkin", fechaReserva)
+          .neq("id", r.id)
+          .order("fecha_checkin")
+          .limit(1),
+        // ¿Entra alguien el mismo día de esta salida? Define si el late
+        // check-out puede mover la limpieza solo o genera conflicto.
+        supabase
+          .from("reservas")
+          .select("id", { count: "exact", head: true })
+          .eq("depto_id", depto.id)
+          .eq("cancelada", false)
+          .eq("descartada", false)
+          .eq("fecha_checkin", fechaReserva)
+          .neq("id", r.id),
+      ]);
+
+    hayEntradaEseDia = (entradas ?? 0) > 0;
 
     const previa = previas?.[0];
     if (previa?.fecha_checkout) {
@@ -176,7 +188,6 @@ export default async function FichaEvento({
 
   const puntoElegido = (puntos ?? []).find((p) => `punto:${p.id}` === accesoActual);
 
-  // --- Selector unificado: puntos que sirven para este evento, más personas ---
   // El que ya está elegido se incluye siempre, aunque hoy no figure como
   // apto para este tipo de evento: si no, el desplegable lo perdería.
   const opciones: OpcionAcceso[] = [
@@ -210,8 +221,6 @@ export default async function FichaEvento({
           ? "Bajan, abren la puerta, uno sube a dejar las llaves y baja."
           : "Dejan las llaves adentro y salen.";
 
-  // Ventana entre la salida de hoy y la llegada siguiente, para no acordar
-  // un horario imposible mientras se coordina.
   const horaSalida = esLlegada
     ? (salidaAnterior?.hora ?? null)
     : (evento.hora_coordinada ?? null);
@@ -230,7 +239,6 @@ export default async function FichaEvento({
 
   const telefono = soloDigitos(r.huesped_contacto);
 
-  // Qué falta para dar el evento por coordinado.
   const faltantes = faltantesDeEvento({
     tipo: esLlegada ? "checkin" : "checkout",
     horaCoordinada: evento.hora_coordinada,
@@ -251,6 +259,56 @@ export default async function FichaEvento({
     avisoHecho: r.aviso_seguridad_hecho,
   });
 
+  // Las casillas que corresponden a este evento, todas dentro del panel.
+  const tildes = esLlegada
+    ? [
+        ...(puntoElegido && METODOS_FISICOS.has(puntoElegido.metodo)
+          ? [
+              {
+                clave: "acceso_dejado",
+                etiqueta: `Dejé ${METODOS_ACCESO[puntoElegido.metodo].toLowerCase()} ${[puntoElegido.ubicacion, puntoElegido.identificador].filter(Boolean).join(" ")}`,
+                detalle: "Confirmación de que el equipo ya lo dejó en el punto de acceso",
+                activo: evento.acceso_dejado,
+                accion: marcarAccesoDejado.bind(null, id),
+              },
+            ]
+          : []),
+        ...(depto?.requiere_registro
+          ? [
+              {
+                clave: "registro",
+                etiqueta: "Registro de huéspedes",
+                activo: r.registro_hecho,
+                accion: marcarItem.bind(null, r.id, "registro_hecho" as const),
+              },
+            ]
+          : []),
+        ...(depto?.requiere_aviso_seguridad
+          ? [
+              {
+                clave: "aviso",
+                etiqueta: "Aviso a seguridad",
+                activo: r.aviso_seguridad_hecho,
+                accion: marcarItem.bind(null, r.id, "aviso_seguridad_hecho" as const),
+              },
+            ]
+          : []),
+      ]
+    : [
+        {
+          clave: "late",
+          etiqueta: "Late check-out",
+          detalle: hayEntradaEseDia
+            ? "Ese día entra otro huésped: la limpieza no se mueve sola."
+            : "Ese día no se puede limpiar: la limpieza se mueve sola al día siguiente.",
+          activo: evento.late_checkout,
+          accion: alternarLateCheckout.bind(null, id),
+          avisoAlActivar: hayEntradaEseDia
+            ? "Atención: hay un huésped entrando ese mismo día. La limpieza NO se movió — hay que resolverlo hablando con alguno de los dos."
+            : null,
+        },
+      ];
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <Link
@@ -260,46 +318,38 @@ export default async function FichaEvento({
         ← Volver al día
       </Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                esLlegada
-                  ? "bg-sky-950 text-sky-300"
-                  : "bg-orange-950 text-orange-300"
-              }`}
-            >
-              {esLlegada ? "Llegada" : "Salida"}
-            </span>
-            {r.cancelada && (
-              <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
-                Cancelada
-              </span>
-            )}
-            {evento.estado === "hecho" && (
-              <span className="rounded-full bg-emerald-950 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
-                Hecho
-              </span>
-            )}
-          </div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">
-            {r.huesped_nombre ?? "Sin nombre"}
-          </h1>
-          <p className="font-mono text-sm text-slate-400">{r.codigo_reserva}</p>
-        </div>
-        <form action={marcarHecho.bind(null, id, evento.estado !== "hecho")}>
-          <button
-            type="submit"
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-              evento.estado === "hecho"
-                ? "border border-slate-700 text-slate-300 hover:bg-slate-800"
-                : "bg-emerald-600 text-white hover:bg-emerald-500"
+      <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              esLlegada ? "bg-sky-950 text-sky-300" : "bg-orange-950 text-orange-300"
             }`}
           >
-            {evento.estado === "hecho" ? "Reabrir" : "Marcar hecho"}
-          </button>
-        </form>
+            {esLlegada ? "Llegada" : "Salida"}
+          </span>
+          {r.cancelada && (
+            <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
+              Cancelada
+            </span>
+          )}
+          {faltantes.length === 0 && (
+            <span className="rounded-full bg-emerald-950 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
+              Coordinado
+            </span>
+          )}
+        </div>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">
+          {r.huesped_nombre ?? "Sin nombre"}
+        </h1>
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
+          <span className="font-mono">{r.codigo_reserva}</span>
+          {r.huesped_contacto && (
+            <span className="flex items-center gap-2">
+              <span className="font-mono text-slate-300">{r.huesped_contacto}</span>
+              <BotonCopiar texto={r.huesped_contacto} />
+            </span>
+          )}
+        </p>
       </div>
 
       {/* Contacto: lo primero que se necesita en la calle */}
@@ -326,19 +376,35 @@ export default async function FichaEvento({
         </p>
       )}
 
-      {/* Alertas */}
       {imposible && (
         <p className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-200">
           <strong>Ventana insuficiente:</strong> con esos horarios no hay tiempo
           material para limpiar. Hay que negociar con uno de los dos huéspedes.
         </p>
       )}
+
+      {/* Coordinación: arriba, con todo adentro y guardado automático */}
+      <PanelCoordinacion
+        guardar={coordinarEvento.bind(null, id)}
+        opciones={opciones}
+        valores={{
+          acceso: accesoActual,
+          fecha_coordinada: evento.fecha_coordinada ?? "",
+          hora_coordinada: evento.hora_coordinada?.slice(0, 5) ?? "",
+          observaciones: evento.observaciones ?? "",
+          fechaReserva,
+        }}
+        tildes={tildes}
+        faltantes={faltantes}
+        avisoSelf={avisoSelf}
+        horaLimiteCheckout={config.hora_limite_checkout ?? "11:00"}
+        esCheckout={!esLlegada}
+      />
+
       {esLlegada && (
         <p
           className={`rounded-lg px-4 py-3 text-sm ${
-            listo
-              ? "bg-emerald-950/60 text-emerald-200"
-              : "bg-slate-800/60 text-slate-300"
+            listo ? "bg-emerald-950/60 text-emerald-200" : "bg-slate-800/60 text-slate-300"
           }`}
         >
           {listo
@@ -348,18 +414,9 @@ export default async function FichaEvento({
       )}
 
       {/* Estadía */}
-      <dl className="grid grid-cols-2 gap-4 rounded-xl border border-slate-700 bg-slate-800/60 p-4 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-4 rounded-xl border border-slate-800 p-4 sm:grid-cols-4">
         <Dato etiqueta={esLlegada ? "Entra (reserva)" : "Sale (reserva)"}>
           {fechaReserva ? formatearFechaAR(fechaReserva) : "—"}
-        </Dato>
-        <Dato etiqueta="Coordinado">
-          {evento.fecha_coordinada
-            ? `${formatearFechaAR(evento.fecha_coordinada)}${
-                formatearHora(evento.hora_coordinada)
-                  ? ` ${formatearHora(evento.hora_coordinada)}`
-                  : ""
-              }`
-            : (formatearHora(evento.hora_coordinada) ?? "sin coordinar")}
         </Dato>
         <Dato etiqueta="Noches">{r.noches}</Dato>
         <Dato etiqueta="Personas">
@@ -371,6 +428,7 @@ export default async function FichaEvento({
             .filter(Boolean)
             .join(" · ") || "—"}
         </Dato>
+        <Dato etiqueta="Estado">{evento.late_checkout ? "Late check-out" : "—"}</Dato>
         <div className="col-span-2 sm:col-span-4">
           <Dato etiqueta={esLlegada ? "Salida anterior" : "Próxima llegada"}>
             {esLlegada
@@ -428,109 +486,28 @@ export default async function FichaEvento({
             </Dato>
           </div>
         </dl>
-      </section>
 
-      {/* Acceso */}
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
-        <h2 className="font-medium text-white">Acceso</h2>
-
-        {depto?.indicaciones_acceso && (
-          <p className="whitespace-pre-wrap text-sm text-slate-400">
-            {depto.indicaciones_acceso}
-          </p>
-        )}
-
-        {depto?.encargado_nombre && (
-          <p className="text-sm text-slate-300">
-            Encargado: {depto.encargado_nombre}
-            {depto.encargado_telefono && (
-              <a
-                href={`tel:${depto.encargado_telefono}`}
-                className="ml-2 underline decoration-slate-600 underline-offset-4"
-              >
-                {depto.encargado_telefono}
-              </a>
-            )}
-          </p>
-        )}
-
-        <FormularioCoordinar
-          accion={coordinarEvento.bind(null, id)}
-          opciones={opciones}
-          valores={{
-            acceso: accesoActual,
-            fecha_coordinada: evento.fecha_coordinada ?? "",
-            hora_coordinada: evento.hora_coordinada?.slice(0, 5) ?? "",
-            observaciones: evento.observaciones ?? "",
-            fechaReserva,
-          }}
-          avisoSelf={avisoSelf}
-        />
-
-        {/* La confirmación de dejar la llave es solo del check-in: en la
-            salida la deja el huésped, no el equipo. */}
-        {esLlegada && puntoElegido && METODOS_FISICOS.has(puntoElegido.metodo) && (
-          <Interruptor
-            etiqueta="Sobre / llave dejada"
-            detalle="Confirmación de que el equipo ya lo dejó en el punto de acceso"
-            activo={evento.acceso_dejado}
-            accion={marcarAccesoDejado.bind(null, id)}
-          />
-        )}
-      </section>
-
-      {/* Pendientes: qué falta exactamente para dar esto por coordinado */}
-      <section className="flex flex-col gap-2 rounded-xl border border-slate-800 p-4">
-        <h2 className="font-medium text-white">Pendientes</h2>
-
-        {faltantes.length === 0 ? (
-          <p className="rounded-lg bg-emerald-950/60 px-3 py-2.5 text-sm font-medium text-emerald-200">
-            ✓ Coordinado: no falta nada.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-1 rounded-lg bg-amber-950/40 px-3 py-2.5">
-            {faltantes.map((f) => (
-              <li key={f} className="text-sm text-amber-200">
-                • {f.charAt(0).toUpperCase() + f.slice(1)}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {esLlegada ? (
-          <>
-            {depto?.requiere_registro ? (
-              <Interruptor
-                etiqueta="Registro de huéspedes"
-                activo={r.registro_hecho}
-                accion={marcarItem.bind(null, r.id, "registro_hecho")}
-              />
-            ) : (
-              <p className="px-3 py-2 text-sm text-slate-600">
-                Registro de huéspedes: no aplica
+        {(depto?.indicaciones_acceso || depto?.encargado_nombre) && (
+          <div className="flex flex-col gap-2 border-t border-slate-800 pt-3">
+            {depto?.encargado_nombre && (
+              <p className="text-sm text-slate-300">
+                Encargado: {depto.encargado_nombre}
+                {depto.encargado_telefono && (
+                  <a
+                    href={`tel:${depto.encargado_telefono}`}
+                    className="ml-2 underline decoration-slate-600 underline-offset-4"
+                  >
+                    {depto.encargado_telefono}
+                  </a>
+                )}
               </p>
             )}
-
-            {depto?.requiere_aviso_seguridad ? (
-              <Interruptor
-                etiqueta="Aviso a seguridad"
-                activo={r.aviso_seguridad_hecho}
-                accion={marcarItem.bind(null, r.id, "aviso_seguridad_hecho")}
-              />
-            ) : (
-              <p className="px-3 py-2 text-sm text-slate-600">
-                Aviso a seguridad: no aplica
+            {depto?.indicaciones_acceso && (
+              <p className="whitespace-pre-wrap text-sm text-slate-400">
+                {depto.indicaciones_acceso}
               </p>
             )}
-          </>
-        ) : (
-          <Interruptor
-            etiqueta="Late check-out"
-            detalle="Ese día el departamento no se puede limpiar. Si no entra nadie, la limpieza se mueve sola al día siguiente."
-            activo={evento.late_checkout}
-            accion={alternarLateCheckout.bind(null, id)}
-            color="alerta"
-          />
+          </div>
         )}
       </section>
 

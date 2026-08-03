@@ -2,6 +2,7 @@ import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
+import { faltantesDeEvento } from "@/lib/eventos/faltantes";
 import BuscadorDia from "./BuscadorDia";
 import NavegadorFecha from "./NavegadorFecha";
 
@@ -14,8 +15,8 @@ function nombreDelDia(fechaISO: string): string {
 
 const CAMPOS = `
   id, tipo, fecha_coordinada, hora_coordinada, estado, late_checkout, acceso_dejado,
-  punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(ubicacion, identificador),
-  punto_devolucion:puntos_acceso!eventos_estadia_punto_devolucion_id_fkey(ubicacion, identificador),
+  punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(metodo, ubicacion, identificador),
+  punto_devolucion:puntos_acceso!eventos_estadia_punto_devolucion_id_fkey(metodo, ubicacion, identificador),
   responsable:personas!eventos_estadia_responsable_id_fkey(nombre),
   responsable_devolucion:personas!eventos_estadia_responsable_devolucion_id_fkey(nombre),
   reserva:reservas!inner(
@@ -33,8 +34,12 @@ type Evento = {
   estado: string;
   late_checkout: boolean;
   acceso_dejado: boolean;
-  punto: { ubicacion: string | null; identificador: string | null } | null;
-  punto_devolucion: { ubicacion: string | null; identificador: string | null } | null;
+  punto: { metodo: string; ubicacion: string | null; identificador: string | null } | null;
+  punto_devolucion: {
+    metodo: string;
+    ubicacion: string | null;
+    identificador: string | null;
+  } | null;
   responsable: { nombre: string } | null;
   responsable_devolucion: { nombre: string } | null;
   reserva: {
@@ -74,25 +79,44 @@ function fechaOperativa(e: Evento): string | null {
 function Fila({ evento }: { evento: Evento }) {
   const r = evento.reserva!;
   const esLlegada = evento.tipo === "checkin";
-  const acceso = esLlegada
-    ? (evento.punto ?? evento.responsable)
-    : (evento.punto_devolucion ?? evento.responsable_devolucion);
-  const textoAcceso = acceso
-    ? "nombre" in acceso
-      ? acceso.nombre
-      : [acceso.ubicacion, acceso.identificador].filter(Boolean).join(" ")
-    : null;
+  const punto = esLlegada ? evento.punto : evento.punto_devolucion;
+  const persona = esLlegada ? evento.responsable : evento.responsable_devolucion;
+  const textoAcceso = punto
+    ? [punto.ubicacion, punto.identificador].filter(Boolean).join(" ")
+    : (persona?.nombre ?? null);
   const hora = formatearHora(evento.hora_coordinada);
   const movido =
     evento.fecha_coordinada &&
     evento.fecha_coordinada !== (esLlegada ? r.fecha_checkin : r.fecha_checkout);
+
+  // Lo que falta se calcula acá: no hace falta entrar a la ficha para saberlo.
+  const faltantes = faltantesDeEvento({
+    tipo: evento.tipo,
+    horaCoordinada: evento.hora_coordinada,
+    acceso: punto
+      ? {
+          clase: "punto",
+          metodo: punto.metodo,
+          ubicacion: punto.ubicacion,
+          identificador: punto.identificador,
+        }
+      : persona
+        ? { clase: "persona" }
+        : null,
+    accesoDejado: evento.acceso_dejado,
+    requiereRegistro: r.depto?.requiere_registro ?? false,
+    registroHecho: r.registro_hecho,
+    requiereAviso: r.depto?.requiere_aviso_seguridad ?? false,
+    avisoHecho: r.aviso_seguridad_hecho,
+  });
+  const coordinado = faltantes.length === 0;
 
   return (
     <li>
       <Link
         href={`/dia/${evento.id}`}
         className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 transition-colors hover:border-y-slate-600 hover:border-r-slate-600 ${
-          evento.estado === "hecho" ? "border-l-emerald-600" : "border-l-slate-700"
+          coordinado ? "border-l-emerald-600" : "border-l-amber-600"
         }`}
       >
         <span className="w-14 shrink-0 text-base font-semibold tabular-nums text-white">
@@ -105,37 +129,36 @@ function Fila({ evento }: { evento: Evento }) {
           <span className="block truncate text-sm text-slate-400">
             {r.depto?.codigo}
             {r.depto?.barrio && ` · ${r.depto.barrio}`}
-            {r.noches && ` · ${r.noches} noches`}
+            {textoAcceso && ` · ${textoAcceso}`}
           </span>
-        </span>
-        <span className="flex shrink-0 flex-col items-end gap-1">
-          {textoAcceso ? (
-            <span className="max-w-40 truncate text-sm text-slate-300">{textoAcceso}</span>
-          ) : (
-            <span className="text-sm text-amber-400">Sin coordinar</span>
+          {/* Los pendientes, a la vista, igual que el "Late" */}
+          {!coordinado && (
+            <span className="mt-0.5 block text-xs text-amber-300">
+              {faltantes.join(" · ")}
+            </span>
           )}
-          <span className="flex gap-1">
-            {evento.late_checkout && (
-              <span className="rounded-full bg-amber-950 px-2 py-0.5 text-xs text-amber-300">
-                Late
-              </span>
-            )}
-            {movido && (
-              <span className="rounded-full bg-sky-950 px-2 py-0.5 text-xs text-sky-300">
-                Movido
-              </span>
-            )}
-            {r.cancelada && (
-              <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs text-red-300">
-                Cancelada
-              </span>
-            )}
-            {evento.estado === "hecho" && (
-              <span className="rounded-full bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
-                Hecho
-              </span>
-            )}
-          </span>
+        </span>
+        <span className="flex shrink-0 flex-wrap justify-end gap-1">
+          {coordinado && (
+            <span className="rounded-full bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
+              Coordinado
+            </span>
+          )}
+          {evento.late_checkout && (
+            <span className="rounded-full bg-amber-950 px-2 py-0.5 text-xs text-amber-300">
+              Late
+            </span>
+          )}
+          {movido && (
+            <span className="rounded-full bg-sky-950 px-2 py-0.5 text-xs text-sky-300">
+              Movido
+            </span>
+          )}
+          {r.cancelada && (
+            <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs text-red-300">
+              Cancelada
+            </span>
+          )}
         </span>
       </Link>
     </li>
@@ -239,7 +262,9 @@ export default async function DelDia({
   const llegadas = eventos.filter((e) => e.tipo === "checkin").sort(ordenar);
   const salidas = eventos.filter((e) => e.tipo === "checkout").sort(ordenar);
 
-  const pendientes = eventos.filter((e) => e.estado !== "hecho").length;
+  const sinCoordinar = eventos.filter(
+    (e) => !e.hora_coordinada || (!e.punto && !e.responsable && !e.punto_devolucion && !e.responsable_devolucion),
+  ).length;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -265,7 +290,7 @@ export default async function DelDia({
             <p className="text-sm text-slate-400">
               {llegadas.length} llegada{llegadas.length === 1 ? "" : "s"} ·{" "}
               {salidas.length} salida{salidas.length === 1 ? "" : "s"}
-              {pendientes > 0 && ` · ${pendientes} sin cerrar`}
+              {sinCoordinar > 0 && ` · ${sinCoordinar} sin coordinar`}
             </p>
           </div>
         </>

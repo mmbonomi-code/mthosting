@@ -21,7 +21,6 @@ function texto(fd: FormData, campo: string): string | null {
  */
 export async function coordinarEvento(
   eventoId: string,
-  _estadoPrevio: EstadoFormulario,
   fd: FormData,
 ): Promise<EstadoFormulario> {
   const supabase = await crearClienteServidor();
@@ -116,19 +115,10 @@ export async function marcarItem(
 export async function marcarAccesoDejado(eventoId: string, valor: boolean) {
   const supabase = await crearClienteServidor();
   await supabase.from("eventos_estadia").update({ acceso_dejado: valor }).eq("id", eventoId);
-  revalidatePath(`/dia/${eventoId}`);
-}
-
-/** Marca el evento como hecho (o lo vuelve a coordinado). */
-export async function marcarHecho(eventoId: string, hecho: boolean) {
-  const supabase = await crearClienteServidor();
-  await supabase
-    .from("eventos_estadia")
-    .update({ estado: hecho ? "hecho" : "coordinado" })
-    .eq("id", eventoId);
   revalidatePath("/dia");
   revalidatePath(`/dia/${eventoId}`);
 }
+
 
 /**
  * Late check-out (spec §2.9): ese día el departamento no se puede limpiar.

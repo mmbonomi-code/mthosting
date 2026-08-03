@@ -8,7 +8,7 @@ import {
   TIPOS_LIMPIEZA,
   formatearHora,
 } from "@/lib/limpiezas/etiquetas";
-import BotonCopiar from "@/app/componentes/BotonCopiar";
+import Wifi from "@/app/componentes/Wifi";
 import { FormularioAsignar, FormularioEditar } from "./FormulariosLimpieza";
 import {
   asignarResponsable,
@@ -70,11 +70,12 @@ export default async function FichaLimpieza({
       .maybeSingle(),
   ]);
 
+  // La hora de salida sale de lo coordinado en el check-out; la cargada a
+  // mano solo se usa cuando la limpieza no tiene reserva.
   const horaSalida =
-    formatearHora(limpieza.hora_checkout) ??
     formatearHora(
       (eventos ?? []).find((e) => e.tipo === "checkout")?.hora_coordinada,
-    );
+    ) ?? formatearHora(limpieza.hora_checkout);
 
   const proximoCheckin = limpieza.prox_checkin?.slice(0, 10) ?? null;
   const esMismoDia = proximoCheckin === limpieza.fecha;
@@ -145,19 +146,10 @@ export default async function FichaLimpieza({
         </Dato>
         <div className="col-span-2 sm:col-span-3">
           <Dato etiqueta="Wifi">
-            {limpieza.depto?.wifi_ssid ? (
-              <span className="flex flex-wrap items-center gap-2">
-                <span>{limpieza.depto.wifi_ssid}</span>
-                {limpieza.depto.wifi_pass && (
-                  <>
-                    <span className="font-mono text-slate-300">
-                      {limpieza.depto.wifi_pass}
-                    </span>
-                    <BotonCopiar texto={limpieza.depto.wifi_pass} />
-                  </>
-                )}
-              </span>
-            ) : null}
+            <Wifi
+              ssid={limpieza.depto?.wifi_ssid ?? null}
+              pass={limpieza.depto?.wifi_pass ?? null}
+            />
           </Dato>
         </div>
       </dl>
@@ -268,7 +260,6 @@ export default async function FichaLimpieza({
           valores={{
             fecha: limpieza.fecha,
             tipo: limpieza.tipo,
-            hora_checkout: limpieza.hora_checkout,
             notas: limpieza.notas,
           }}
         />

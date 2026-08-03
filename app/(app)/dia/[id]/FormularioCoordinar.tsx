@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { EstadoFormulario } from "../acciones";
+import SelectorHora from "@/app/componentes/SelectorHora";
 import { clsAreaTexto, clsBotonPrimario, clsEntrada, clsEtiqueta } from "@/lib/ui";
 
 export type OpcionAcceso = {
@@ -9,6 +10,7 @@ export type OpcionAcceso = {
   etiqueta: string;
   grupo: "Sin persona" | "Personas";
   metodo?: string;
+  instrucciones?: string | null;
 };
 
 /**
@@ -38,11 +40,14 @@ export default function FormularioCoordinar({
     null,
   );
   const [acceso, setAcceso] = useState(valores.acceso);
-  const [fecha, setFecha] = useState(valores.fecha_coordinada);
+  // Por defecto se propone la fecha de la reserva: es lo que se confirma en
+  // la mayoría de los casos.
+  const [fecha, setFecha] = useState(valores.fecha_coordinada || valores.fechaReserva);
 
   const sinPersona = opciones.filter((o) => o.grupo === "Sin persona");
   const personas = opciones.filter((o) => o.grupo === "Personas");
-  const esSelf = opciones.find((o) => o.valor === acceso)?.metodo === "self";
+  const elegida = opciones.find((o) => o.valor === acceso);
+  const esSelf = elegida?.metodo === "self";
   const fechaDistinta = fecha !== "" && fecha !== valores.fechaReserva;
 
   return (
@@ -77,6 +82,13 @@ export default function FormularioCoordinar({
         </select>
       </label>
 
+      {/* Las instrucciones del punto elegido, para leérselas al huésped. */}
+      {elegida?.instrucciones && (
+        <p className="whitespace-pre-wrap rounded-lg bg-slate-800/60 px-3 py-2 text-sm text-slate-300">
+          {elegida.instrucciones}
+        </p>
+      )}
+
       {esSelf && avisoSelf && (
         <div className="rounded-lg bg-amber-950/50 px-3 py-2 text-sm text-amber-200">
           {avisoSelf}
@@ -99,20 +111,13 @@ export default function FormularioCoordinar({
           />
           {fechaDistinta && (
             <span className="text-xs text-sky-300">
-              Distinta a la de la reserva ({valores.fechaReserva}). La limpieza
-              no se mueve.
+              Distinta a la de la reserva. La limpieza no se mueve.
             </span>
           )}
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={clsEtiqueta}>Hora coordinada</span>
-          <input
-            type="time"
-            name="hora_coordinada"
-            step={300}
-            defaultValue={valores.hora_coordinada}
-            className={clsEntrada}
-          />
+          <SelectorHora name="hora_coordinada" defaultValue={valores.hora_coordinada} />
         </label>
       </div>
 

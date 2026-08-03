@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import type { EstadoFormulario } from "../acciones";
 import { PAGO_POR_TIPO, TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
+import SelectorHora from "@/app/componentes/SelectorHora";
 import {
   clsAreaTexto,
   clsBotonPrimario,
@@ -69,7 +70,7 @@ export default function FormularioNuevaLimpieza({
 
       <label className="flex flex-col gap-1.5">
         <span className={clsEtiqueta}>Hora (opcional)</span>
-        <input type="time" name="hora_checkout" step={300} className={clsEntrada} />
+        <SelectorHora name="hora_checkout" />
       </label>
       <div />
 

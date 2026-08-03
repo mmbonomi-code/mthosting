@@ -11,7 +11,8 @@ import {
   ventanaInsuficiente,
   type EstadoLimpieza,
 } from "@/lib/eventos/reglas";
-import BotonCopiar from "@/app/componentes/BotonCopiar";
+import { faltantesDeEvento } from "@/lib/eventos/faltantes";
+import Wifi from "@/app/componentes/Wifi";
 import FormularioCoordinar, { type OpcionAcceso } from "./FormularioCoordinar";
 import Interruptor from "./Interruptores";
 import {
@@ -161,23 +162,6 @@ export default async function FichaEvento({
     }
   }
 
-  // --- Selector unificado: puntos que sirven para este evento, más personas ---
-  const opciones: OpcionAcceso[] = [
-    ...(puntos ?? [])
-      .filter((p) => (esLlegada ? p.sirve_checkin : p.sirve_checkout))
-      .map((p) => ({
-        valor: `punto:${p.id}`,
-        etiqueta: `${METODOS_ACCESO[p.metodo]} — ${[p.ubicacion, p.identificador].filter(Boolean).join(" ")}`,
-        grupo: "Sin persona" as const,
-        metodo: p.metodo,
-      })),
-    ...(personas ?? []).map((p) => ({
-      valor: `persona:${p.id}`,
-      etiqueta: p.nombre,
-      grupo: "Personas" as const,
-    })),
-  ];
-
   const accesoActual = esLlegada
     ? evento.punto_acceso_id
       ? `punto:${evento.punto_acceso_id}`
@@ -190,9 +174,31 @@ export default async function FichaEvento({
         ? `persona:${evento.responsable_devolucion_id}`
         : "";
 
-  const puntoElegido = (puntos ?? []).find(
-    (p) => `punto:${p.id}` === accesoActual,
-  );
+  const puntoElegido = (puntos ?? []).find((p) => `punto:${p.id}` === accesoActual);
+
+  // --- Selector unificado: puntos que sirven para este evento, más personas ---
+  // El que ya está elegido se incluye siempre, aunque hoy no figure como
+  // apto para este tipo de evento: si no, el desplegable lo perdería.
+  const opciones: OpcionAcceso[] = [
+    ...(puntos ?? [])
+      .filter(
+        (p) =>
+          (esLlegada ? p.sirve_checkin : p.sirve_checkout) ||
+          `punto:${p.id}` === accesoActual,
+      )
+      .map((p) => ({
+        valor: `punto:${p.id}`,
+        etiqueta: `${METODOS_ACCESO[p.metodo]} — ${[p.ubicacion, p.identificador].filter(Boolean).join(" ")}`,
+        grupo: "Sin persona" as const,
+        metodo: p.metodo,
+        instrucciones: p.instrucciones,
+      })),
+    ...(personas ?? []).map((p) => ({
+      valor: `persona:${p.id}`,
+      etiqueta: p.nombre,
+      grupo: "Personas" as const,
+    })),
+  ];
 
   const huespedes = (r.adultos ?? 0) + (r.ninos ?? 0);
   const avisoSelf =
@@ -223,6 +229,27 @@ export default async function FichaEvento({
   });
 
   const telefono = soloDigitos(r.huesped_contacto);
+
+  // Qué falta para dar el evento por coordinado.
+  const faltantes = faltantesDeEvento({
+    tipo: esLlegada ? "checkin" : "checkout",
+    horaCoordinada: evento.hora_coordinada,
+    acceso: puntoElegido
+      ? {
+          clase: "punto",
+          metodo: puntoElegido.metodo,
+          ubicacion: puntoElegido.ubicacion,
+          identificador: puntoElegido.identificador,
+        }
+      : accesoActual.startsWith("persona:")
+        ? { clase: "persona" }
+        : null,
+    accesoDejado: evento.acceso_dejado,
+    requiereRegistro: depto?.requiere_registro ?? false,
+    registroHecho: r.registro_hecho,
+    requiereAviso: depto?.requiere_aviso_seguridad ?? false,
+    avisoHecho: r.aviso_seguridad_hecho,
+  });
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -397,17 +424,7 @@ export default async function FichaEvento({
           </Dato>
           <div className="col-span-2 sm:col-span-3">
             <Dato etiqueta="Wifi">
-              {depto?.wifi_ssid ? (
-                <span className="flex flex-wrap items-center gap-2">
-                  <span>{depto.wifi_ssid}</span>
-                  {depto.wifi_pass && (
-                    <>
-                      <span className="font-mono text-slate-300">{depto.wifi_pass}</span>
-                      <BotonCopiar texto={depto.wifi_pass} />
-                    </>
-                  )}
-                </span>
-              ) : null}
+              <Wifi ssid={depto?.wifi_ssid ?? null} pass={depto?.wifi_pass ?? null} />
             </Dato>
           </div>
         </dl>
@@ -416,22 +433,6 @@ export default async function FichaEvento({
       {/* Acceso */}
       <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
         <h2 className="font-medium text-white">Acceso</h2>
-
-        {puntoElegido && (
-          <div className="rounded-lg bg-slate-800/60 px-3 py-2">
-            <p className="text-sm font-medium text-slate-200">
-              {METODOS_ACCESO[puntoElegido.metodo]} —{" "}
-              {[puntoElegido.ubicacion, puntoElegido.identificador]
-                .filter(Boolean)
-                .join(" ")}
-            </p>
-            {puntoElegido.instrucciones && (
-              <p className="mt-1 whitespace-pre-wrap text-sm text-slate-400">
-                {puntoElegido.instrucciones}
-              </p>
-            )}
-          </div>
-        )}
 
         {depto?.indicaciones_acceso && (
           <p className="whitespace-pre-wrap text-sm text-slate-400">
@@ -478,9 +479,23 @@ export default async function FichaEvento({
         )}
       </section>
 
-      {/* Pendientes de la llegada y late check-out */}
+      {/* Pendientes: qué falta exactamente para dar esto por coordinado */}
       <section className="flex flex-col gap-2 rounded-xl border border-slate-800 p-4">
         <h2 className="font-medium text-white">Pendientes</h2>
+
+        {faltantes.length === 0 ? (
+          <p className="rounded-lg bg-emerald-950/60 px-3 py-2.5 text-sm font-medium text-emerald-200">
+            ✓ Coordinado: no falta nada.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1 rounded-lg bg-amber-950/40 px-3 py-2.5">
+            {faltantes.map((f) => (
+              <li key={f} className="text-sm text-amber-200">
+                • {f.charAt(0).toUpperCase() + f.slice(1)}
+              </li>
+            ))}
+          </ul>
+        )}
 
         {esLlegada ? (
           <>

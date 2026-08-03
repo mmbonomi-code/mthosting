@@ -156,12 +156,9 @@ export async function editarLimpieza(
   const supabase = await crearClienteServidor();
   const { error } = await supabase
     .from("limpiezas")
-    .update({
-      fecha,
-      tipo,
-      hora_checkout: texto(fd, "hora_checkout"),
-      notas: texto(fd, "notas"),
-    })
+    // La hora de salida no se edita acá: sale de lo coordinado en el
+    // check-out de la reserva.
+    .update({ fecha, tipo, notas: texto(fd, "notas") })
     .eq("id", limpiezaId);
   if (error) return { error: "No se pudo guardar. Probá de nuevo." };
 

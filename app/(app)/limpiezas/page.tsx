@@ -29,7 +29,7 @@ export default async function Limpiezas({
   const { data: limpiezas } = await supabase
     .from("limpiezas")
     .select(
-      "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, depto_id, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, codigo_reserva, huesped_nombre)",
+      "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, depto_id, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, codigo_reserva, huesped_nombre, noches, fecha_checkout)",
     )
     .gte("fecha", desde)
     .lte("fecha", hasta)
@@ -38,7 +38,7 @@ export default async function Limpiezas({
     .order("urgente", { ascending: false });
 
   // Horarios coordinados: la salida de cada reserva y la llegada del próximo
-  // huésped del mismo departamento. Se muestran cuando existen (Paso 6).
+  // huésped del mismo departamento.
   const idsReservas = (limpiezas ?? [])
     .map((l) => l.reserva?.id)
     .filter((id): id is string => !!id);
@@ -48,7 +48,7 @@ export default async function Limpiezas({
     idsReservas.length > 0
       ? supabase
           .from("eventos_estadia")
-          .select("reserva_id, hora_coordinada")
+          .select("reserva_id, fecha_coordinada, hora_coordinada")
           .eq("tipo", "checkout")
           .in("reserva_id", idsReservas)
       : Promise.resolve({ data: [] }),
@@ -64,8 +64,11 @@ export default async function Limpiezas({
       : Promise.resolve({ data: [] }),
   ]);
 
-  const horaSalidaPorReserva = new Map(
-    (eventosSalida ?? []).map((e) => [e.reserva_id, e.hora_coordinada]),
+  const salidaPorReserva = new Map(
+    (eventosSalida ?? []).map((e) => [
+      e.reserva_id,
+      { fecha: e.fecha_coordinada, hora: e.hora_coordinada },
+    ]),
   );
   const horaLlegadaPorDeptoFecha = new Map(
     (llegadas ?? []).map((r) => [
@@ -94,7 +97,9 @@ export default async function Limpiezas({
           </h1>
           <p className="text-sm text-slate-400">
             {formatearFechaAR(desde)} al {formatearFechaAR(hasta)}
-            {sinResponsable > 0 && ` · ${sinResponsable} sin responsable`}
+            {sinResponsable > 0 && (
+              <span className="text-amber-400"> · {sinResponsable} sin asignar</span>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
@@ -130,84 +135,101 @@ export default async function Limpiezas({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-5">
-          {[...porDia.entries()].map(([fecha, delDia]) => (
-            <section key={fecha} className="flex flex-col gap-2">
-              <h2 className="flex items-baseline gap-2 border-b border-slate-800 pb-1">
-                <span className="font-medium capitalize text-white">
-                  {nombreDelDia(fecha)} {formatearFechaAR(fecha)}
-                </span>
-                <span className="text-sm text-slate-500">
-                  {delDia.length} {delDia.length === 1 ? "limpieza" : "limpiezas"}
-                </span>
-                {fecha === hoy && (
-                  <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-200">
-                    hoy
+        <div className="flex flex-col gap-2">
+          {[...porDia.entries()].map(([fecha, delDia]) => {
+            const faltanAsignar = delDia.filter((l) => !l.responsable).length;
+            return (
+              /* Un día por fila; se despliega para ver sus limpiezas. El de
+                 hoy arranca abierto porque es el que se mira primero. */
+              <details
+                key={fecha}
+                open={fecha === hoy}
+                className="group rounded-xl border border-slate-800 bg-slate-800/30"
+              >
+                <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                  <span className="font-medium capitalize text-white">
+                    {nombreDelDia(fecha)} {formatearFechaAR(fecha)}
                   </span>
-                )}
-              </h2>
-              <ul className="flex flex-col gap-2">
-                {delDia.map((l) => {
-                  const proximo = l.prox_checkin?.slice(0, 10) ?? null;
-                  const mismoDia = proximo === l.fecha;
-                  const horaSalida = formatearHora(
-                    l.hora_checkout ??
-                      (l.reserva ? horaSalidaPorReserva.get(l.reserva.id) : null),
-                  );
-                  const horaLlegada = proximo
-                    ? formatearHora(horaLlegadaPorDeptoFecha.get(`${l.depto_id}|${proximo}`))
-                    : null;
+                  <span className="text-sm text-slate-400">
+                    {delDia.length} {delDia.length === 1 ? "limpieza" : "limpiezas"}
+                  </span>
+                  {faltanAsignar > 0 && (
+                    <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
+                      {faltanAsignar} sin asignar
+                    </span>
+                  )}
+                  {fecha === hoy && (
+                    <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-200">
+                      hoy
+                    </span>
+                  )}
+                  <span className="ml-auto text-slate-500 transition-transform group-open:rotate-180">
+                    ▾
+                  </span>
+                </summary>
 
-                  return (
-                    <li key={l.id}>
-                      <Link
-                        href={`/limpiezas/${l.id}`}
-                        className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 transition-colors hover:border-y-slate-600 hover:border-r-slate-600 ${
-                          mismoDia ? "border-l-red-500" : "border-l-slate-700"
-                        }`}
-                      >
-                        <span className="w-32 shrink-0 font-mono text-sm font-semibold text-white">
-                          {l.depto?.codigo}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm text-slate-300">
-                            {TIPOS_LIMPIEZA[l.tipo] ?? l.tipo}
-                            {l.depto?.ambientes &&
-                              ` · ${ETIQUETA_AMBIENTES[l.depto.ambientes]}`}
-                            {l.depto?.barrio && ` · ${l.depto.barrio}`}
+                <ul className="flex flex-col gap-2 border-t border-slate-800 p-3">
+                  {delDia.map((l) => {
+                    const proximo = l.prox_checkin?.slice(0, 10) ?? null;
+                    const mismoDia = proximo === l.fecha;
+                    const salida = l.reserva ? salidaPorReserva.get(l.reserva.id) : null;
+                    // La salida coordinada manda; si no hay, la de la reserva.
+                    const fechaSalida = salida?.fecha ?? l.reserva?.fecha_checkout ?? null;
+                    const horaSalida = formatearHora(salida?.hora ?? l.hora_checkout);
+                    const horaLlegada = proximo
+                      ? formatearHora(horaLlegadaPorDeptoFecha.get(`${l.depto_id}|${proximo}`))
+                      : null;
+                    const salidaOtroDia = fechaSalida && fechaSalida !== l.fecha;
+
+                    return (
+                      <li key={l.id}>
+                        <Link
+                          href={`/limpiezas/${l.id}`}
+                          className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 transition-colors hover:border-y-slate-600 hover:border-r-slate-600 ${
+                            mismoDia ? "border-l-red-500" : "border-l-slate-700"
+                          }`}
+                        >
+                          <span className="w-32 shrink-0 font-mono text-sm font-semibold text-white">
+                            {l.depto?.codigo}
                           </span>
-                          <span className="block text-xs text-slate-500">
-                            {horaSalida ? `sale ${horaSalida}` : null}
-                            {horaSalida && (horaLlegada || proximo) ? " → " : null}
-                            {horaLlegada
-                              ? `entra ${horaLlegada}`
-                              : proximo && !mismoDia
-                                ? `próximo huésped ${formatearFechaAR(proximo)}`
-                                : proximo && mismoDia
-                                  ? "entra el mismo día"
-                                  : null}
-                            {!horaSalida && !proximo && l.reserva?.huesped_nombre
-                              ? `sale ${l.reserva.huesped_nombre}`
-                              : null}
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm text-slate-300">
+                              {TIPOS_LIMPIEZA[l.tipo] ?? l.tipo}
+                              {l.depto?.ambientes &&
+                                ` · ${ETIQUETA_AMBIENTES[l.depto.ambientes]}`}
+                              {l.depto?.barrio && ` · ${l.depto.barrio}`}
+                              {/* Cuántas noches estuvo el huésped que se va:
+                                  la mejor señal de cómo quedó el depto. */}
+                              {l.reserva?.noches ? ` · ${l.reserva.noches} noches` : ""}
+                            </span>
+                            <span className="block text-xs text-slate-500">
+                              {fechaSalida
+                                ? `sale ${salidaOtroDia ? formatearFechaAR(fechaSalida) + " " : ""}${horaSalida ?? "sin hora"}`
+                                : null}
+                              {fechaSalida && proximo ? " → " : null}
+                              {proximo
+                                ? `entra ${mismoDia ? "" : formatearFechaAR(proximo) + " "}${horaLlegada ?? (mismoDia ? "sin hora" : "")}`
+                                : null}
+                            </span>
                           </span>
-                        </span>
-                        {mismoDia && (
-                          <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
-                            Check in/out
-                          </span>
-                        )}
-                        <span className="text-sm text-slate-400">
-                          {l.responsable?.nombre ?? (
-                            <span className="text-amber-400">Sin responsable</span>
+                          {mismoDia && (
+                            <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
+                              Check in/out
+                            </span>
                           )}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))}
+                          <span className="text-sm text-slate-400">
+                            {l.responsable?.nombre ?? (
+                              <span className="text-amber-400">Sin responsable</span>
+                            )}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </details>
+            );
+          })}
         </div>
       )}
     </main>

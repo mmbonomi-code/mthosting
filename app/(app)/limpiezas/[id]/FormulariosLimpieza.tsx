@@ -67,7 +67,6 @@ export function FormularioEditar({
   valores: {
     fecha: string;
     tipo: string;
-    hora_checkout: string | null;
     notas: string | null;
   };
 }) {
@@ -99,17 +98,6 @@ export function FormularioEditar({
           className={clsEntrada}
         />
       </label>
-      <label className="flex flex-col gap-1.5">
-        <span className={clsEtiqueta}>Hora de salida del huésped</span>
-        <input
-          type="time"
-          name="hora_checkout"
-          step={300}
-          defaultValue={valores.hora_checkout?.slice(0, 5) ?? ""}
-          className={clsEntrada}
-        />
-      </label>
-      <div />
       <label className="flex flex-col gap-1.5 sm:col-span-2">
         <span className={clsEtiqueta}>Notas</span>
         <textarea

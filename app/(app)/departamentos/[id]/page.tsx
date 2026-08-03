@@ -9,6 +9,7 @@ import {
   ETIQUETA_TIPO_BANO,
 } from "@/lib/etiquetas";
 import BotonCopiar from "@/app/componentes/BotonCopiar";
+import Wifi from "@/app/componentes/Wifi";
 import FormularioAlias from "./FormularioAlias";
 import { agregarAlias, alternarAlias } from "../acciones";
 
@@ -173,26 +174,11 @@ export default async function FichaDepartamento({
         </Dato>
         <div className="col-span-2 sm:col-span-3">
           <Dato etiqueta="Wifi">
-            {depto.wifi_ssid ? (
-              <span className="flex flex-wrap items-center gap-2">
-                <span>{depto.wifi_ssid}</span>
-                {depto.wifi_pass && (
-                  <>
-                    <span className="font-mono text-slate-300">
-                      {depto.wifi_pass}
-                    </span>
-                    <BotonCopiar texto={depto.wifi_pass} />
-                  </>
-                )}
-                {depto.wifi_velocidad && (
-                  <span className="text-sm text-slate-500">
-                    {depto.wifi_velocidad}
-                  </span>
-                )}
-              </span>
-            ) : (
-              "—"
-            )}
+            <Wifi
+              ssid={depto.wifi_ssid}
+              pass={depto.wifi_pass}
+              velocidad={depto.wifi_velocidad}
+            />
           </Dato>
         </div>
       </dl>

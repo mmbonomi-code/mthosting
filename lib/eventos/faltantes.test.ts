@@ -17,39 +17,35 @@ describe("faltantesDeEvento", () => {
     expect(faltantesDeEvento(base)).toEqual([]);
   });
 
-  it("sin acceso definido pide definirlo", () => {
-    expect(faltantesDeEvento({ ...base, acceso: null })).toEqual([
-      "falta definir cómo entra",
-    ]);
+  it("sin acceso definido pide coordinar", () => {
+    expect(faltantesDeEvento({ ...base, acceso: null })).toEqual(["coordinar"]);
   });
 
-  it("sin horario pide el horario", () => {
+  it("sin horario pide definirlo", () => {
     expect(faltantesDeEvento({ ...base, horaCoordinada: null })).toEqual([
-      "falta el horario",
+      "definir horario",
     ]);
   });
 
-  it("nombra el punto físico que falta dejar", () => {
-    expect(
-      faltantesDeEvento({
-        ...base,
-        acceso: { clase: "punto", metodo: "sobre", ubicacion: "Talcahuano" },
-      }),
-    ).toEqual(["falta dejar el sobre Talcahuano"]);
-
-    expect(
-      faltantesDeEvento({
-        ...base,
-        acceso: { clase: "punto", metodo: "candado", ubicacion: "Kennedy 3", identificador: "#2906" },
-      }),
-    ).toEqual(["falta dejar el candado Kennedy 3 #2906"]);
+  it("nombra la acción según el tipo de punto físico", () => {
+    const casos = [
+      { metodo: "sobre", esperado: "dejar sobre" },
+      { metodo: "candado", esperado: "dejar candado" },
+      { metodo: "valijas", esperado: "dejar valijas" },
+      { metodo: "llaves", esperado: "dejar llaves" },
+    ];
+    for (const caso of casos) {
+      expect(
+        faltantesDeEvento({ ...base, acceso: { clase: "punto", metodo: caso.metodo } }),
+      ).toEqual([caso.esperado]);
+    }
   });
 
   it("una vez dejado el sobre, deja de faltar", () => {
     expect(
       faltantesDeEvento({
         ...base,
-        acceso: { clase: "punto", metodo: "sobre", ubicacion: "Talcahuano" },
+        acceso: { clase: "punto", metodo: "sobre" },
         accesoDejado: true,
       }),
     ).toEqual([]);
@@ -68,7 +64,7 @@ describe("faltantesDeEvento", () => {
   it("pide registro y aviso solo si el departamento los requiere", () => {
     expect(
       faltantesDeEvento({ ...base, requiereRegistro: true, requiereAviso: true }),
-    ).toEqual(["falta el registro", "falta el aviso a seguridad"]);
+    ).toEqual(["registro", "aviso seguridad"]);
 
     expect(
       faltantesDeEvento({
@@ -86,7 +82,7 @@ describe("faltantesDeEvento", () => {
       faltantesDeEvento({
         ...base,
         tipo: "checkout",
-        acceso: { clase: "punto", metodo: "sobre", ubicacion: "Talcahuano" },
+        acceso: { clase: "punto", metodo: "sobre" },
         accesoDejado: false,
       }),
     ).toEqual([]);
@@ -115,11 +111,6 @@ describe("faltantesDeEvento", () => {
         requiereAviso: true,
         avisoHecho: false,
       }),
-    ).toEqual([
-      "falta definir cómo entra",
-      "falta el horario",
-      "falta el registro",
-      "falta el aviso a seguridad",
-    ]);
+    ).toEqual(["coordinar", "definir horario", "registro", "aviso seguridad"]);
   });
 });

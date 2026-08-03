@@ -3,6 +3,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import { faltantesDeEvento } from "@/lib/eventos/faltantes";
+import { describirAcceso } from "@/lib/eventos/etiquetas";
 import BuscadorDia from "./BuscadorDia";
 import NavegadorFecha from "./NavegadorFecha";
 
@@ -81,10 +82,10 @@ function Fila({ evento }: { evento: Evento }) {
   const esLlegada = evento.tipo === "checkin";
   const punto = esLlegada ? evento.punto : evento.punto_devolucion;
   const persona = esLlegada ? evento.responsable : evento.responsable_devolucion;
-  const textoAcceso = punto
-    ? [punto.ubicacion, punto.identificador].filter(Boolean).join(" ")
-    : (persona?.nombre ?? null);
+  const textoAcceso = describirAcceso(punto, persona);
   const hora = formatearHora(evento.hora_coordinada);
+  const fechaEvento =
+    evento.fecha_coordinada ?? (esLlegada ? r.fecha_checkin : r.fecha_checkout);
   const movido =
     evento.fecha_coordinada &&
     evento.fecha_coordinada !== (esLlegada ? r.fecha_checkin : r.fecha_checkout);
@@ -94,12 +95,7 @@ function Fila({ evento }: { evento: Evento }) {
     tipo: evento.tipo,
     horaCoordinada: evento.hora_coordinada,
     acceso: punto
-      ? {
-          clase: "punto",
-          metodo: punto.metodo,
-          ubicacion: punto.ubicacion,
-          identificador: punto.identificador,
-        }
+      ? { clase: "punto", metodo: punto.metodo }
       : persona
         ? { clase: "persona" }
         : null,
@@ -119,17 +115,27 @@ function Fila({ evento }: { evento: Evento }) {
           coordinado ? "border-l-emerald-600" : "border-l-amber-600"
         }`}
       >
-        <span className="w-14 shrink-0 text-base font-semibold tabular-nums text-white">
-          {hora ?? "—"}
+        <span className="w-16 shrink-0">
+          <span className="block text-base font-semibold tabular-nums text-white">
+            {hora ?? "—"}
+          </span>
+          {fechaEvento && (
+            <span className="block text-xs tabular-nums text-slate-500">
+              {formatearFechaAR(fechaEvento).slice(0, 5)}
+            </span>
+          )}
         </span>
         <span className="min-w-0 flex-1">
+          {/* Lo importante: qué departamento y cómo se coordinó el acceso */}
           <span className="block truncate font-medium text-slate-100">
-            {r.huesped_nombre ?? "Sin nombre"}
+            {r.depto?.codigo}
+            {textoAcceso && (
+              <span className="font-normal text-slate-300"> · {textoAcceso}</span>
+            )}
           </span>
           <span className="block truncate text-sm text-slate-400">
-            {r.depto?.codigo}
+            {r.huesped_nombre ?? "Sin nombre"}
             {r.depto?.barrio && ` · ${r.depto.barrio}`}
-            {textoAcceso && ` · ${textoAcceso}`}
           </span>
           {/* Los pendientes, a la vista, igual que el "Late" */}
           {!coordinado && (

@@ -100,13 +100,9 @@ export default function PanelCoordinacion({
           ✓ Coordinado: no falta nada.
         </p>
       ) : (
-        <ul className="flex flex-col gap-1 rounded-lg bg-amber-950/40 px-3 py-2.5">
-          {faltantes.map((f) => (
-            <li key={f} className="text-sm text-amber-200">
-              • {f.charAt(0).toUpperCase() + f.slice(1)}
-            </li>
-          ))}
-        </ul>
+        <p className="rounded-lg bg-amber-950/40 px-3 py-2.5 text-sm text-amber-200">
+          <span className="font-medium">Falta:</span> {faltantes.join(" · ")}
+        </p>
       )}
 
       <form ref={formRef} className="flex flex-col gap-4">

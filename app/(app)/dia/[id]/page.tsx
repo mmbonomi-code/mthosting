@@ -243,12 +243,7 @@ export default async function FichaEvento({
     tipo: esLlegada ? "checkin" : "checkout",
     horaCoordinada: evento.hora_coordinada,
     acceso: puntoElegido
-      ? {
-          clase: "punto",
-          metodo: puntoElegido.metodo,
-          ubicacion: puntoElegido.ubicacion,
-          identificador: puntoElegido.identificador,
-        }
+      ? { clase: "punto", metodo: puntoElegido.metodo }
       : accesoActual.startsWith("persona:")
         ? { clase: "persona" }
         : null,

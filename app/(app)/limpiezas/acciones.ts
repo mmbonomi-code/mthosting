@@ -143,6 +143,60 @@ export async function asignarResponsable(
   return null;
 }
 
+/**
+ * Asignación rápida desde el listado, sin entrar a la ficha. Congela el
+ * monto igual que la asignación normal: es la misma decisión.
+ */
+export async function asignarRapido(limpiezaId: string, personaId: string | null) {
+  const supabase = await crearClienteServidor();
+
+  if (!personaId) {
+    await supabase
+      .from("limpiezas")
+      .update({
+        asignado_a: null,
+        estado: "pendiente",
+        monto_pactado: null,
+        moneda: null,
+        tarifa_id: null,
+      })
+      .eq("id", limpiezaId);
+    revalidatePath("/limpiezas");
+    revalidatePath("/semana");
+    return;
+  }
+
+  const { data: limpieza } = await supabase
+    .from("limpiezas")
+    .select("id, fecha, tipo, depto_id, monto_pactado, depto:departamentos(ambientes)")
+    .eq("id", limpiezaId)
+    .maybeSingle();
+  if (!limpieza) return;
+
+  const congelado = await calcularMonto(supabase, limpieza);
+
+  await supabase
+    .from("limpiezas")
+    .update({
+      asignado_a: personaId,
+      estado: "asignada",
+      // Un monto ya congelado no se pisa.
+      ...(limpieza.monto_pactado === null
+        ? {
+            monto_pactado: congelado.monto_pactado,
+            moneda: congelado.moneda,
+            tarifa_id: congelado.tarifa_id,
+          }
+        : {}),
+      pago_doble: congelado.pago_doble,
+    })
+    .eq("id", limpiezaId);
+
+  revalidatePath("/limpiezas");
+  revalidatePath("/semana");
+  revalidatePath(`/limpiezas/${limpiezaId}`);
+}
+
 /** Edita los datos operativos de la limpieza: tipo, fecha, hora y notas. */
 export async function editarLimpieza(
   limpiezaId: string,

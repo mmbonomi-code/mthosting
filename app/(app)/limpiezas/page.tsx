@@ -3,7 +3,14 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR, sumarDias } from "@/lib/fechas";
 import { ETIQUETA_AMBIENTES } from "@/lib/etiquetas";
 import { TIPOS_LIMPIEZA, formatearHora } from "@/lib/limpiezas/etiquetas";
+import {
+  BORDE_SEMAFORO,
+  cargaPorPersona,
+  semaforoDeLimpieza,
+} from "@/lib/limpiezas/semaforo";
 import { clsBotonPrimario } from "@/lib/ui";
+import SelectorResponsable, { type PersonaOpcion } from "./SelectorResponsable";
+import { asignarRapido } from "./acciones";
 
 const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
@@ -12,6 +19,9 @@ function nombreDelDia(fechaISO: string): string {
   const [a, m, d] = fechaISO.split("-").map(Number);
   return DIAS_SEMANA[new Date(Date.UTC(a, m - 1, d)).getUTCDay()];
 }
+
+const formatearMonto = (monto: number, moneda: string | null) =>
+  `${moneda ?? ""} ${monto.toLocaleString("es-AR")}`.trim();
 
 export default async function Limpiezas({
   searchParams,
@@ -26,16 +36,24 @@ export default async function Limpiezas({
 
   const supabase = await crearClienteServidor();
 
-  const { data: limpiezas } = await supabase
-    .from("limpiezas")
-    .select(
-      "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, depto_id, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, codigo_reserva, huesped_nombre, noches, fecha_checkout)",
-    )
-    .gte("fecha", desde)
-    .lte("fecha", hasta)
-    .neq("estado", "cancelada")
-    .order("fecha")
-    .order("urgente", { ascending: false });
+  const [{ data: limpiezas }, { data: personas }] = await Promise.all([
+    supabase
+      .from("limpiezas")
+      .select(
+        "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, depto_id, asignado_a, monto_pactado, moneda, pago_doble, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, codigo_reserva, huesped_nombre, noches, fecha_checkout)",
+      )
+      .gte("fecha", desde)
+      .lte("fecha", hasta)
+      .neq("estado", "cancelada")
+      .order("fecha")
+      .order("urgente", { ascending: false }),
+    supabase
+      .from("personas")
+      .select("id, nombre")
+      .eq("hace_limpieza", true)
+      .eq("activo", true)
+      .order("nombre"),
+  ]);
 
   // Horarios coordinados: la salida de cada reserva y la llegada del próximo
   // huésped del mismo departamento.
@@ -83,7 +101,9 @@ export default async function Limpiezas({
     porDia.get(l.fecha)!.push(l);
   }
 
-  const sinResponsable = (limpiezas ?? []).filter((l) => !l.responsable).length;
+  const sinResponsable = (limpiezas ?? []).filter((l) => !l.asignado_a).length;
+  const carga = cargaPorPersona(limpiezas ?? []);
+  const opciones: PersonaOpcion[] = personas ?? [];
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -121,11 +141,39 @@ export default async function Limpiezas({
           >
             →
           </Link>
+          <Link
+            href="/semana"
+            className="rounded-lg border border-slate-700 px-3 py-2 text-slate-300 hover:bg-slate-800"
+          >
+            Semana
+          </Link>
           <Link href="/limpiezas/nueva" className={`${clsBotonPrimario} flex items-center`}>
             + Nueva
           </Link>
         </div>
       </div>
+
+      {/* Cuánto lleva cada persona: se mira antes de darle una más a alguien */}
+      {carga.length > 0 && (
+        <div className="flex flex-wrap gap-2 rounded-xl border border-slate-800 bg-slate-800/30 p-3">
+          {carga.map((c) => (
+            <span
+              key={c.personaId}
+              className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm"
+            >
+              <span className="text-slate-200">{c.nombre}</span>
+              <span className="ml-2 text-slate-400">
+                {c.cantidad} {c.cantidad === 1 ? "limpieza" : "limpiezas"}
+              </span>
+              {c.monto > 0 && (
+                <span className="ml-2 text-emerald-300">
+                  {formatearMonto(c.monto, c.moneda)}
+                </span>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
 
       {porDia.size === 0 ? (
         <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
@@ -137,7 +185,7 @@ export default async function Limpiezas({
       ) : (
         <div className="flex flex-col gap-2">
           {[...porDia.entries()].map(([fecha, delDia]) => {
-            const faltanAsignar = delDia.filter((l) => !l.responsable).length;
+            const faltanAsignar = delDia.filter((l) => !l.asignado_a).length;
             return (
               /* Un día por fila; se despliega para ver sus limpiezas. El de
                  hoy arranca abierto porque es el que se mira primero. */
@@ -173,21 +221,26 @@ export default async function Limpiezas({
                     const proximo = l.prox_checkin?.slice(0, 10) ?? null;
                     const mismoDia = proximo === l.fecha;
                     const salida = l.reserva ? salidaPorReserva.get(l.reserva.id) : null;
-                    // La salida coordinada manda; si no hay, la de la reserva.
                     const fechaSalida = salida?.fecha ?? l.reserva?.fecha_checkout ?? null;
                     const horaSalida = formatearHora(salida?.hora ?? l.hora_checkout);
                     const horaLlegada = proximo
                       ? formatearHora(horaLlegadaPorDeptoFecha.get(`${l.depto_id}|${proximo}`))
                       : null;
                     const salidaOtroDia = fechaSalida && fechaSalida !== l.fecha;
+                    const semaforo = semaforoDeLimpieza({
+                      fecha: l.fecha,
+                      hoy,
+                      tieneResponsable: !!l.asignado_a,
+                    });
 
                     return (
-                      <li key={l.id}>
+                      <li
+                        key={l.id}
+                        className={`flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 ${BORDE_SEMAFORO[semaforo]}`}
+                      >
                         <Link
                           href={`/limpiezas/${l.id}`}
-                          className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 transition-colors hover:border-y-slate-600 hover:border-r-slate-600 ${
-                            mismoDia ? "border-l-red-500" : "border-l-slate-700"
-                          }`}
+                          className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1"
                         >
                           <span className="w-32 shrink-0 font-mono text-sm font-semibold text-white">
                             {l.depto?.codigo}
@@ -198,8 +251,6 @@ export default async function Limpiezas({
                               {l.depto?.ambientes &&
                                 ` · ${ETIQUETA_AMBIENTES[l.depto.ambientes]}`}
                               {l.depto?.barrio && ` · ${l.depto.barrio}`}
-                              {/* Cuántas noches estuvo el huésped que se va:
-                                  la mejor señal de cómo quedó el depto. */}
                               {l.reserva?.noches ? ` · ${l.reserva.noches} noches` : ""}
                             </span>
                             <span className="block text-xs text-slate-500">
@@ -212,17 +263,28 @@ export default async function Limpiezas({
                                 : null}
                             </span>
                           </span>
+                        </Link>
+
+                        <span className="flex shrink-0 items-center gap-3">
                           {mismoDia && (
                             <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
                               Check in/out
                             </span>
                           )}
-                          <span className="text-sm text-slate-400">
-                            {l.responsable?.nombre ?? (
-                              <span className="text-amber-400">Sin responsable</span>
-                            )}
-                          </span>
-                        </Link>
+                          {l.monto_pactado !== null && (
+                            <span className="text-sm text-emerald-300">
+                              {formatearMonto(l.monto_pactado, l.moneda)}
+                              {l.pago_doble && (
+                                <span className="ml-1 text-xs text-emerald-500">×2</span>
+                              )}
+                            </span>
+                          )}
+                          <SelectorResponsable
+                            personas={opciones}
+                            asignadoA={l.asignado_a}
+                            accion={asignarRapido.bind(null, l.id)}
+                          />
+                        </span>
                       </li>
                     );
                   })}
@@ -231,6 +293,13 @@ export default async function Limpiezas({
             );
           })}
         </div>
+      )}
+
+      {opciones.length === 0 && (
+        <p className="text-xs text-amber-400">
+          No hay personas que hagan limpieza cargadas: agregalas en Personas
+          para poder asignar.
+        </p>
       )}
     </main>
   );

@@ -51,6 +51,7 @@ export default async function LayoutApp({
             { href: "/", texto: "Inicio", pendientes: 0 },
             { href: "/dia", texto: "Día", pendientes: 0 },
             { href: "/limpiezas", texto: "Limpiezas", pendientes: 0 },
+            { href: "/semana", texto: "Semana", pendientes: 0 },
             { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
             { href: "/propietarios", texto: "Propietarios", pendientes: 0 },
             { href: "/personas", texto: "Personas", pendientes: 0 },

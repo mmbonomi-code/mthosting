@@ -1494,6 +1494,7 @@ export type Database = {
           identificador: string | null
           instrucciones: string | null
           metodo: Database["public"]["Enums"]["metodo_acceso"]
+          orden: number
           sirve_checkin: boolean
           sirve_checkout: boolean
           ubicacion: string | null
@@ -1506,6 +1507,7 @@ export type Database = {
           identificador?: string | null
           instrucciones?: string | null
           metodo: Database["public"]["Enums"]["metodo_acceso"]
+          orden?: number
           sirve_checkin?: boolean
           sirve_checkout?: boolean
           ubicacion?: string | null
@@ -1518,6 +1520,7 @@ export type Database = {
           identificador?: string | null
           instrucciones?: string | null
           metodo?: Database["public"]["Enums"]["metodo_acceso"]
+          orden?: number
           sirve_checkin?: boolean
           sirve_checkout?: boolean
           ubicacion?: string | null

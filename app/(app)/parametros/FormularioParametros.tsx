@@ -29,12 +29,11 @@ export default function FormularioParametros({
 
   return (
     <form action={enviar} className="flex flex-col gap-5">
-      <label className="flex flex-col gap-1.5">
+      <label className="flex flex-col gap-1.5 sm:max-w-56">
         <span className={clsEtiqueta}>Hora límite de check-out</span>
         <SelectorHora
           name="hora_limite_checkout"
           defaultValue={valores.hora_limite_checkout}
-          ancho="sm:w-48"
         />
         <span className="text-xs text-slate-500">
           Pasada esta hora, una salida deja poco tiempo para limpiar: el sistema
@@ -42,12 +41,11 @@ export default function FormularioParametros({
         </span>
       </label>
 
-      <label className="flex flex-col gap-1.5">
+      <label className="flex flex-col gap-1.5 sm:max-w-56">
         <span className={clsEtiqueta}>Hora mínima de check-in</span>
         <SelectorHora
           name="hora_minima_checkin"
           defaultValue={valores.hora_minima_checkin}
-          ancho="sm:w-48"
         />
         <span className="text-xs text-slate-500">
           Si alguien entra antes de esta hora el mismo día que otro sale tarde,

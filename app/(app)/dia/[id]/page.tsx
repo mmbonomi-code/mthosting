@@ -81,6 +81,8 @@ export default async function FichaEvento({
       .from("puntos_acceso")
       .select("id, metodo, ubicacion, identificador, instrucciones, sirve_checkin, sirve_checkout")
       .eq("activo", true)
+      // En el orden que fijó el usuario: primero los que más se usan.
+      .order("orden")
       .order("ubicacion"),
     supabase
       .from("personas")

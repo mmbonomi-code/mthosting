@@ -130,7 +130,7 @@ function Fila({ evento }: { evento: Evento }) {
           <span className="block truncate font-medium text-slate-100">
             {r.depto?.codigo}
             {textoAcceso && (
-              <span className="font-normal text-slate-300"> · {textoAcceso}</span>
+              <span className="font-normal text-emerald-300"> · {textoAcceso}</span>
             )}
           </span>
           <span className="block truncate text-sm text-slate-400">

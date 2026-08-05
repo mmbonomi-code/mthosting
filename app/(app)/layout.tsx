@@ -59,6 +59,7 @@ export default async function LayoutApp({
             { href: "/parametros", texto: "Parámetros", pendientes: 0 },
             { href: "/importar", texto: "Importar", pendientes: 0 },
             { href: "/exportar", texto: "Exportar", pendientes: 0 },
+            { href: "/ical", texto: "Calendarios", pendientes: 0 },
             { href: "/bandeja", texto: "Sin asignar", pendientes: sinAsignar ?? 0 },
           ].map((item) => (
             <Link

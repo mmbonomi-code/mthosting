@@ -351,6 +351,7 @@ export type Database = {
           encargado_telefono: string | null
           estado: Database["public"]["Enums"]["depto_estado"]
           habitaciones: number | null
+          ical_ultima_sync: string | null
           ical_url: string | null
           id: string
           indicaciones_acceso: string | null
@@ -391,6 +392,7 @@ export type Database = {
           encargado_telefono?: string | null
           estado?: Database["public"]["Enums"]["depto_estado"]
           habitaciones?: number | null
+          ical_ultima_sync?: string | null
           ical_url?: string | null
           id?: string
           indicaciones_acceso?: string | null
@@ -431,6 +433,7 @@ export type Database = {
           encargado_telefono?: string | null
           estado?: Database["public"]["Enums"]["depto_estado"]
           habitaciones?: number | null
+          ical_ultima_sync?: string | null
           ical_url?: string | null
           id?: string
           indicaciones_acceso?: string | null

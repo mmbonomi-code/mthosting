@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/ical/sincronizar",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

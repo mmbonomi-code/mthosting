@@ -133,8 +133,15 @@ export function ventanaInsuficiente({
   horaMinimaCheckin: string;
 }): boolean {
   if (!horaSalida || !horaEntrada) return false;
+
+  const salida = horaSalida.slice(0, 5);
+  const entrada = horaEntrada.slice(0, 5);
+
+  // Entrar antes (o justo cuando) sale el anterior es imposible, sin importar
+  // los umbrales: el huésped nuevo llegaría con el viejo todavía adentro.
+  if (entrada <= salida) return true;
+
   return (
-    horaSalida.slice(0, 5) > horaLimiteCheckout.slice(0, 5) &&
-    horaEntrada.slice(0, 5) < horaMinimaCheckin.slice(0, 5)
+    salida > horaLimiteCheckout.slice(0, 5) && entrada < horaMinimaCheckin.slice(0, 5)
   );
 }

@@ -149,13 +149,23 @@ describe("ventanaDisponible", () => {
 describe("ventanaInsuficiente", () => {
   const umbrales = { horaLimiteCheckout: "11:00", horaMinimaCheckin: "12:00" };
 
-  it("salida 11:30 y entrada 12:00 el mismo día: imposible limpiar", () => {
+  it("salida tarde y entrada antes del mínimo: imposible limpiar", () => {
+    expect(
+      ventanaInsuficiente({ horaSalida: "11:30", horaEntrada: "11:45", ...umbrales }),
+    ).toBe(true);
+    // 12:00 no es MENOR a 12:00: entra justo en el mínimo, no alerta.
     expect(
       ventanaInsuficiente({ horaSalida: "11:30", horaEntrada: "12:00", ...umbrales }),
     ).toBe(false);
-    // 12:00 no es MENOR a 12:00; el caso de la spec es entrada anterior al mínimo.
+  });
+
+  it("entrar antes o al mismo tiempo que sale el anterior siempre alerta", () => {
+    // El huésped nuevo llegaría con el viejo todavía adentro.
     expect(
-      ventanaInsuficiente({ horaSalida: "11:30", horaEntrada: "11:45", ...umbrales }),
+      ventanaInsuficiente({ horaSalida: "10:00", horaEntrada: "09:00", ...umbrales }),
+    ).toBe(true);
+    expect(
+      ventanaInsuficiente({ horaSalida: "10:00", horaEntrada: "10:00", ...umbrales }),
     ).toBe(true);
   });
 

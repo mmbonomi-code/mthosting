@@ -26,12 +26,20 @@ export default async function ListaDepartamentos({
 
   const filtros = {
     q: (params.q ?? "").trim(),
-    estado: params.estado ?? "",
+    // Por defecto se muestran solo los activos: es la operación del día a
+    // día. Elegir "Todos los estados" manda `estado=` vacío y los trae todos.
+    estado: params.estado ?? "activo",
     ambientes: params.ambientes ?? "",
     camas: params.camas ?? "",
     huespedes: params.huespedes ?? "",
   };
-  const hayFiltros = Object.values(filtros).some((v) => v !== "");
+  // El filtro por defecto no cuenta como "filtro puesto".
+  const hayFiltros =
+    filtros.q !== "" ||
+    filtros.ambientes !== "" ||
+    filtros.camas !== "" ||
+    filtros.huespedes !== "" ||
+    filtros.estado !== "activo";
 
   const numeroPagina = Math.max(1, Number.parseInt(params.pagina ?? "1", 10) || 1);
   const desde = (numeroPagina - 1) * POR_PAGINA;

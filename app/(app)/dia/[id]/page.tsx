@@ -337,6 +337,9 @@ export default async function FichaEvento({
         </div>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">
           {r.huesped_nombre ?? "Sin nombre"}
+          <span className="ml-3 font-mono text-lg font-normal text-emerald-300">
+            {depto?.codigo}
+          </span>
         </h1>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
           <span className="font-mono">{r.codigo_reserva}</span>
@@ -351,22 +354,14 @@ export default async function FichaEvento({
 
       {/* Contacto: lo primero que se necesita en la calle */}
       {telefono ? (
-        <div className="grid grid-cols-2 gap-3">
-          <a
-            href={`tel:+${telefono}`}
-            className="flex h-12 items-center justify-center gap-2 rounded-xl bg-slate-100 text-base font-semibold text-slate-900 transition-colors hover:bg-white"
-          >
-            Llamar
-          </a>
-          <a
-            href={`https://wa.me/${telefono}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-base font-semibold text-white transition-colors hover:bg-emerald-500"
-          >
-            WhatsApp
-          </a>
-        </div>
+        <a
+          href={`https://wa.me/${telefono}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-base font-semibold text-white transition-colors hover:bg-emerald-500"
+        >
+          WhatsApp
+        </a>
       ) : (
         <p className="rounded-lg bg-slate-800/60 px-3 py-2 text-sm text-slate-400">
           Sin teléfono cargado{r.cancelada && " (Airbnb lo borra al cancelar)"}.
@@ -395,7 +390,14 @@ export default async function FichaEvento({
         faltantes={faltantes}
         avisoSelf={avisoSelf}
         horaLimiteCheckout={config.hora_limite_checkout ?? "11:00"}
+        horaMinimaCheckin={config.hora_minima_checkin ?? "12:00"}
         esCheckout={!esLlegada}
+        horaSalidaMismoDia={
+          // Solo importa si la salida anterior es de ESTE mismo día.
+          esLlegada && salidaAnterior?.fecha === (evento.fecha_coordinada ?? fechaReserva)
+            ? salidaAnterior.hora
+            : null
+        }
       />
 
       {esLlegada && (

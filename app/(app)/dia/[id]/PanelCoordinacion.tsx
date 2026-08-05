@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import SelectorHora from "@/app/componentes/SelectorHora";
+import { ventanaInsuficiente } from "@/lib/eventos/reglas";
 import { clsAreaTexto, clsEntrada, clsEtiqueta } from "@/lib/ui";
 
 export type OpcionAcceso = {
@@ -35,7 +36,9 @@ export default function PanelCoordinacion({
   faltantes,
   avisoSelf,
   horaLimiteCheckout,
+  horaMinimaCheckin,
   esCheckout,
+  horaSalidaMismoDia,
 }: {
   guardar: (fd: FormData) => Promise<{ error: string } | { aviso: string } | null>;
   opciones: OpcionAcceso[];
@@ -50,7 +53,10 @@ export default function PanelCoordinacion({
   faltantes: string[];
   avisoSelf: string | null;
   horaLimiteCheckout: string;
+  horaMinimaCheckin: string;
   esCheckout: boolean;
+  /** Si ese mismo día sale otro huésped del depto, a qué hora. */
+  horaSalidaMismoDia: string | null;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [guardando, iniciar] = useTransition();
@@ -85,6 +91,19 @@ export default function PanelCoordinacion({
   // Un check-out tarde deja sin tiempo para limpiar.
   const salidaTarde = esCheckout && hora !== "" && hora > horaLimiteCheckout.slice(0, 5);
 
+  // Entrada el mismo día que sale otro: se avisa en el momento de elegir la
+  // hora, no después de guardar.
+  const sinTiempo =
+    !esCheckout &&
+    hora !== "" &&
+    horaSalidaMismoDia !== null &&
+    ventanaInsuficiente({
+      horaSalida: horaSalidaMismoDia,
+      horaEntrada: hora,
+      horaLimiteCheckout,
+      horaMinimaCheckin,
+    });
+
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -93,6 +112,14 @@ export default function PanelCoordinacion({
           {guardando ? "Guardando…" : guardado ? "✓ Guardado" : "Se guarda solo"}
         </span>
       </div>
+
+      {sinTiempo && (
+        <p className="rounded-lg bg-red-950 px-3 py-2.5 text-sm text-red-200">
+          <strong>No dan los tiempos:</strong> ese día sale otro huésped a las{" "}
+          {horaSalidaMismoDia?.slice(0, 5)} y no queda margen para limpiar antes
+          de esta llegada. Hay que negociar el horario con alguno de los dos.
+        </p>
+      )}
 
       {/* Qué falta, arriba de todo: es lo primero que hay que ver */}
       {faltantes.length === 0 ? (
@@ -193,6 +220,11 @@ export default function PanelCoordinacion({
               <span className="text-xs text-amber-300">
                 Sale después de las {horaLimiteCheckout.slice(0, 5)}: queda poco
                 tiempo para limpiar.
+              </span>
+            )}
+            {horaSalidaMismoDia && !esCheckout && (
+              <span className="text-xs text-slate-500">
+                Ese día sale otro huésped a las {horaSalidaMismoDia.slice(0, 5)}.
               </span>
             )}
           </label>

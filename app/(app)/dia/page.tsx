@@ -3,6 +3,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import { faltantesDeEvento } from "@/lib/eventos/faltantes";
+import { momentoDeEvento } from "@/lib/eventos/reglas";
 import { describirAcceso } from "@/lib/eventos/etiquetas";
 import BuscadorDia from "./BuscadorDia";
 import NavegadorFecha from "./NavegadorFecha";
@@ -271,8 +272,17 @@ export default async function DelDia({
     );
   }
 
+  // Se ordena por el momento acordado, no por la hora suelta: las 02:00 del
+  // día siguiente van al fondo, no al principio.
+  const momento = (e: Evento) =>
+    momentoDeEvento({
+      fechaCoordinada: e.fecha_coordinada,
+      horaCoordinada: e.hora_coordinada,
+      fechaContractual: fechaOperativa(e),
+    });
+
   const ordenar = (a: Evento, b: Evento) =>
-    (a.hora_coordinada ?? "99").localeCompare(b.hora_coordinada ?? "99") ||
+    momento(a).localeCompare(momento(b)) ||
     (a.reserva?.depto?.codigo ?? "").localeCompare(b.reserva?.depto?.codigo ?? "");
 
   const llegadas = eventos.filter((e) => e.tipo === "checkin").sort(ordenar);

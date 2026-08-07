@@ -2,9 +2,50 @@ import { describe, expect, it } from "vitest";
 import {
   decidirLateCheckout,
   departamentoListo,
+  momentoDeEvento,
   ventanaDisponible,
   ventanaInsuficiente,
 } from "./reglas";
+
+describe("momentoDeEvento", () => {
+  const contractual = "2026-08-08";
+  const clave = (fechaCoordinada: string | null, horaCoordinada: string | null) =>
+    momentoDeEvento({ fechaCoordinada, horaCoordinada, fechaContractual: contractual });
+
+  it("ordena por hora dentro del mismo día", () => {
+    expect([clave(null, "16:00"), clave(null, "02:00"), clave(null, "12:00")].sort()).toEqual([
+      clave(null, "02:00"),
+      clave(null, "12:00"),
+      clave(null, "16:00"),
+    ]);
+  });
+
+  it("las 02:00 del día siguiente van después de las 21:30 de hoy", () => {
+    expect(clave("2026-08-09", "02:00") > clave(null, "21:30")).toBe(true);
+  });
+
+  it("un movimiento adelantado al día anterior va primero", () => {
+    expect(clave("2026-08-07", "23:00") < clave(null, "00:30")).toBe(true);
+  });
+
+  it("sin hora va al fondo de su día, pero antes del día siguiente", () => {
+    expect(clave(null, null) > clave(null, "23:55")).toBe(true);
+    expect(clave(null, null) < clave("2026-08-09", "02:00")).toBe(true);
+  });
+
+  it("tolera los segundos que devuelve Postgres", () => {
+    expect(clave(null, "16:00:00")).toBe(clave(null, "16:00"));
+  });
+
+  it("sin ninguna fecha queda último", () => {
+    const huerfano = momentoDeEvento({
+      fechaCoordinada: null,
+      horaCoordinada: "02:00",
+      fechaContractual: null,
+    });
+    expect(huerfano > clave("2026-08-09", "23:00")).toBe(true);
+  });
+});
 
 describe("departamentoListo", () => {
   it("está listo si se limpió entre la última salida y esta llegada", () => {

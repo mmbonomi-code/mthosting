@@ -35,7 +35,7 @@ describe.skipIf(!url || !clave)("asignación y alta manual (base dev)", () => {
     // Una limpieza real de un departamento con ambientes cargados.
     const { data: limpieza } = await s
       .from("limpiezas")
-      .select("id, fecha, depto_id, depto:departamentos(ambientes)")
+      .select("id, fecha, tipo, depto_id, depto:departamentos(ambientes)")
       .not("depto_id", "is", null)
       .eq("estado", "pendiente")
       .limit(1)
@@ -68,12 +68,18 @@ describe.skipIf(!url || !clave)("asignación y alta manual (base dev)", () => {
     const congelado = congelarMonto(
       (tarifas ?? []) as Tarifa[],
       new Set((feriados ?? []).map((f) => f.fecha)),
-      { deptoId: limpieza!.depto_id, ambientes: ambientes ?? null, fecha: limpieza!.fecha },
+      {
+        deptoId: limpieza!.depto_id,
+        ambientes: ambientes ?? null,
+        fecha: limpieza!.fecha,
+        tipo: limpieza!.tipo,
+      },
     );
     console.log("congelado:", congelado);
     expect(congelado.tarifa_id).toBe(tarifa!.id);
-    // El domingo se guarda duplicado.
-    expect(congelado.monto_pactado).toBe(congelado.pago_doble ? 50000 : 25000);
+    // El domingo se guarda duplicado; un repaso, a la mitad.
+    const factor = (congelado.pago_doble ? 2 : 1) * (limpieza!.tipo === "repaso" ? 0.5 : 1);
+    expect(congelado.monto_pactado).toBe(25000 * factor);
 
     const { error } = await s
       .from("limpiezas")

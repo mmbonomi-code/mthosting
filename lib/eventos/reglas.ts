@@ -46,6 +46,29 @@ export function departamentoListo({
   );
 }
 
+/**
+ * Clave para ordenar los movimientos de un día de más temprano a más tarde.
+ *
+ * El orden se hace por el momento REAL acordado, no por la hora suelta: un
+ * check-in coordinado a las 02:00 del día siguiente sucede después de uno de
+ * las 21:30 de hoy, y tiene que aparecer al final. Lo que todavía no tiene
+ * hora va último dentro de su día, porque no hay con qué ubicarlo.
+ */
+export function momentoDeEvento({
+  fechaCoordinada,
+  horaCoordinada,
+  fechaContractual,
+}: {
+  fechaCoordinada: string | null;
+  horaCoordinada: string | null;
+  /** La fecha que marca Airbnb: check-in o check-out según el tipo. */
+  fechaContractual: string | null;
+}): string {
+  const fecha = fechaCoordinada ?? fechaContractual ?? "9999-12-31";
+  const hora = horaCoordinada ? horaCoordinada.slice(0, 5) : "99:99";
+  return `${fecha} ${hora}`;
+}
+
 export type DecisionLate =
   | { accion: "mover"; nuevaFecha: string; aviso: string }
   | { accion: "conflicto"; motivo: string }

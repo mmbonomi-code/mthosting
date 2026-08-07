@@ -48,7 +48,7 @@ export default async function Semana({
       supabase
         .from("limpiezas")
         .select(
-          "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, depto_id, asignado_a, monto_pactado, moneda, pago_doble, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, noches, fecha_checkout)",
+          "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, depto_id, asignado_a, monto_pactado, moneda, pago_doble, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, noches, fecha_checkout, datos_completos)",
         )
         .gte("fecha", desde)
         .lte("fecha", hasta)
@@ -264,6 +264,13 @@ export default async function Semana({
                             {mismoDia && (
                               <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs font-medium text-red-300">
                                 Check in/out
+                              </span>
+                            )}
+                            {/* Salió del calendario: la reserva todavía no
+                                se confirmó con el archivo de Airbnb. */}
+                            {l.reserva && !l.reserva.datos_completos && (
+                              <span className="rounded-full bg-violet-950 px-2 py-0.5 text-xs font-medium text-violet-300">
+                                Tentativa
                               </span>
                             )}
                             {l.monto_pactado !== null && (

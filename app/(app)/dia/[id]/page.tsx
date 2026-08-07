@@ -53,7 +53,8 @@ export default async function FichaEvento({
        punto_acceso_id, responsable_id, punto_devolucion_id, responsable_devolucion_id,
        reserva:reservas(
          id, codigo_reserva, huesped_nombre, huesped_contacto, noches, adultos, ninos, bebes,
-         fecha_checkin, fecha_checkout, cancelada, registro_hecho, aviso_seguridad_hecho, sobre_ok,
+         fecha_checkin, fecha_checkout, cancelada, datos_completos, origen, raw,
+         registro_hecho, aviso_seguridad_hecho, sobre_ok,
          depto:departamentos(
            id, codigo, nombre_interno, direccion, barrio, ambientes, capacidad, wifi_ssid, wifi_pass,
            encargado_nombre, encargado_telefono, indicaciones_acceso, requiere_registro,
@@ -196,7 +197,9 @@ export default async function FichaEvento({
     ...(puntos ?? [])
       .filter(
         (p) =>
-          (esLlegada ? p.sirve_checkin : p.sirve_checkout) ||
+          ((esLlegada ? p.sirve_checkin : p.sirve_checkout) &&
+            // Si el departamento no permite self, la opción ni aparece.
+            !(p.metodo === "self" && depto?.self_checkout === "no")) ||
           `punto:${p.id}` === accesoActual,
       )
       .map((p) => ({
@@ -214,10 +217,13 @@ export default async function FichaEvento({
   ];
 
   const huespedes = (r.adultos ?? 0) + (r.ninos ?? 0);
+  // El único caso que exige confirmación explícita es el riesgoso: una sola
+  // persona donde el self necesita dos. El resto es solo información.
+  const selfRiesgoso = depto?.self_checkout === "solo_multiples" && huespedes <= 1;
   const avisoSelf =
     depto?.self_checkout === "no"
       ? "Este departamento no permite self check-out."
-      : depto?.self_checkout === "solo_multiples" && huespedes <= 1
+      : selfRiesgoso
         ? "Viene una sola persona: si deja las llaves adentro puede quedar trabada afuera. Con 2 o más, una sostiene el acceso mientras la otra devuelve."
         : depto?.self_checkout === "solo_multiples"
           ? "Bajan, abren la puerta, uno sube a dejar las llaves y baja."
@@ -245,9 +251,9 @@ export default async function FichaEvento({
     tipo: esLlegada ? "checkin" : "checkout",
     horaCoordinada: evento.hora_coordinada,
     acceso: puntoElegido
-      ? { clase: "punto", metodo: puntoElegido.metodo }
+      ? { clase: "punto" as const, metodo: puntoElegido.metodo }
       : accesoActual.startsWith("persona:")
-        ? { clase: "persona" }
+        ? { clase: "persona" as const }
         : null,
     accesoDejado: evento.acceso_dejado,
     requiereRegistro: depto?.requiere_registro ?? false,
@@ -329,6 +335,11 @@ export default async function FichaEvento({
               Cancelada
             </span>
           )}
+          {!r.datos_completos && (
+            <span className="rounded-full bg-violet-950 px-2.5 py-0.5 text-xs font-medium text-violet-300">
+              Tentativa
+            </span>
+          )}
           {faltantes.length === 0 && (
             <span className="rounded-full bg-emerald-950 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
               Coordinado
@@ -364,7 +375,16 @@ export default async function FichaEvento({
         </a>
       ) : (
         <p className="rounded-lg bg-slate-800/60 px-3 py-2 text-sm text-slate-400">
-          Sin teléfono cargado{r.cancelada && " (Airbnb lo borra al cancelar)"}.
+          Sin teléfono cargado
+          {r.cancelada
+            ? " (Airbnb lo borra al cancelar)."
+            : !r.datos_completos
+              ? `. Vino del calendario: solo se conocen los últimos 4 dígitos${
+                  (r.raw as { telefono_ultimos_4?: string } | null)?.telefono_ultimos_4
+                    ? ` (···${(r.raw as { telefono_ultimos_4?: string }).telefono_ultimos_4})`
+                    : ""
+                }. El teléfono completo llega con la próxima importación.`
+              : "."}
         </p>
       )}
 
@@ -389,6 +409,7 @@ export default async function FichaEvento({
         tildes={tildes}
         faltantes={faltantes}
         avisoSelf={avisoSelf}
+        requiereConfirmacionSelf={selfRiesgoso}
         horaLimiteCheckout={config.hora_limite_checkout ?? "11:00"}
         horaMinimaCheckin={config.hora_minima_checkin ?? "12:00"}
         esCheckout={!esLlegada}
@@ -417,6 +438,13 @@ export default async function FichaEvento({
         <Dato etiqueta={esLlegada ? "Entra (reserva)" : "Sale (reserva)"}>
           {fechaReserva ? formatearFechaAR(fechaReserva) : "—"}
         </Dato>
+        {/* En la salida importa desde cuándo está el huésped: da una idea de
+            cómo va a quedar el departamento. */}
+        {!esLlegada && (
+          <Dato etiqueta="Entró">
+            {r.fecha_checkin ? formatearFechaAR(r.fecha_checkin) : "—"}
+          </Dato>
+        )}
         <Dato etiqueta="Noches">{r.noches}</Dato>
         <Dato etiqueta="Personas">
           {[

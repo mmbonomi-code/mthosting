@@ -11,6 +11,13 @@ export const METODOS_ACCESO: Record<string, string> = {
 /** Métodos donde hay una llave física que alguien deja o retira. */
 export const METODOS_FISICOS = new Set(["candado", "sobre", "valijas", "llaves"]);
 
+/**
+ * Métodos donde el equipo tiene que ir a DEJAR algo antes de la llegada, y
+ * por eso se pide confirmación. Las valijas quedan afuera: el huésped las
+ * retira solo del guardado, no hay nada que el equipo deba dejar.
+ */
+export const METODOS_QUE_SE_DEJAN = new Set(["candado", "sobre", "llaves"]);
+
 export const ESTADOS_EVENTO: Record<string, string> = {
   pendiente: "Pendiente",
   coordinado: "Coordinado",

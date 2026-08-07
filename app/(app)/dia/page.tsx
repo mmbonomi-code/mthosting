@@ -15,14 +15,15 @@ function nombreDelDia(fechaISO: string): string {
 }
 
 const CAMPOS = `
-  id, tipo, fecha_coordinada, hora_coordinada, estado, late_checkout, acceso_dejado,
+  id, tipo, fecha_coordinada, hora_coordinada, estado, late_checkout, acceso_dejado, observaciones,
   punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(metodo, ubicacion, identificador),
   punto_devolucion:puntos_acceso!eventos_estadia_punto_devolucion_id_fkey(metodo, ubicacion, identificador),
   responsable:personas!eventos_estadia_responsable_id_fkey(nombre),
   responsable_devolucion:personas!eventos_estadia_responsable_devolucion_id_fkey(nombre),
   reserva:reservas!inner(
     id, codigo_reserva, huesped_nombre, huesped_contacto, noches, adultos, ninos, bebes,
-    fecha_checkin, fecha_checkout, cancelada, descartada, registro_hecho, aviso_seguridad_hecho,
+    fecha_checkin, fecha_checkout, cancelada, descartada, datos_completos, origen,
+    registro_hecho, aviso_seguridad_hecho,
     depto:departamentos(codigo, nombre_interno, direccion, barrio, requiere_registro, requiere_aviso_seguridad)
   )
 `;
@@ -35,6 +36,7 @@ type Evento = {
   estado: string;
   late_checkout: boolean;
   acceso_dejado: boolean;
+  observaciones: string | null;
   punto: { metodo: string; ubicacion: string | null; identificador: string | null } | null;
   punto_devolucion: {
     metodo: string;
@@ -56,6 +58,8 @@ type Evento = {
     fecha_checkout: string | null;
     cancelada: boolean;
     descartada: boolean;
+    datos_completos: boolean;
+    origen: string;
     registro_hecho: boolean;
     aviso_seguridad_hecho: boolean;
     depto: {
@@ -69,9 +73,13 @@ type Evento = {
   } | null;
 };
 
-/** La fecha que manda para el día operativo: la coordinada si existe. */
+/**
+ * El día en el que figura el evento es SIEMPRE el de la reserva de Airbnb.
+ * Coordinar la llegada para otro día no lo mueve de lugar: se sigue
+ * trabajando sobre el día contractual, y la fecha acordada se muestra
+ * aparte con la marca "Movido".
+ */
 function fechaOperativa(e: Evento): string | null {
-  if (e.fecha_coordinada) return e.fecha_coordinada;
   return e.tipo === "checkin"
     ? (e.reserva?.fecha_checkin ?? null)
     : (e.reserva?.fecha_checkout ?? null);
@@ -132,6 +140,13 @@ function Fila({ evento }: { evento: Evento }) {
             {textoAcceso && (
               <span className="font-normal text-emerald-300"> · {textoAcceso}</span>
             )}
+            {/* Hay algo escrito en las observaciones: se avisa acá para que
+                no haya que entrar a cada ficha a buscarlo. */}
+            {evento.observaciones && (
+              <span title={evento.observaciones} className="ml-2 text-sky-300">
+                ✎
+              </span>
+            )}
           </span>
           <span className="block truncate text-sm text-slate-400">
             {r.huesped_nombre ?? "Sin nombre"}
@@ -145,6 +160,13 @@ function Fila({ evento }: { evento: Evento }) {
           )}
         </span>
         <span className="flex shrink-0 flex-wrap justify-end gap-1">
+          {/* Vino del calendario y todavía no la confirmó el archivo de
+              Airbnb: faltan el teléfono y los datos del huésped. */}
+          {!r.datos_completos && (
+            <span className="rounded-full bg-violet-950 px-2 py-0.5 text-xs text-violet-300">
+              Tentativa
+            </span>
+          )}
           {coordinado && (
             <span className="rounded-full bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
               Coordinado
@@ -235,30 +257,18 @@ export default async function DelDia({
       eventos = ((data ?? []) as unknown as Evento[]).filter((e) => !e.reserva?.descartada);
     }
   } else {
-    // El día: lo que pasa por fecha de reserva y lo que se movió acá.
-    const [{ data: porReserva }, { data: porCoordinada }] = await Promise.all([
-      supabase
-        .from("eventos_estadia")
-        .select(CAMPOS)
-        .or(`fecha_checkin.eq.${fecha},fecha_checkout.eq.${fecha}`, {
-          referencedTable: "reservas",
-        })
-        .neq("estado", "cancelado"),
-      supabase
-        .from("eventos_estadia")
-        .select(CAMPOS)
-        .eq("fecha_coordinada", fecha)
-        .neq("estado", "cancelado"),
-    ]);
+    // El día operativo es el de la reserva de Airbnb, siempre.
+    const { data } = await supabase
+      .from("eventos_estadia")
+      .select(CAMPOS)
+      .or(`fecha_checkin.eq.${fecha},fecha_checkout.eq.${fecha}`, {
+        referencedTable: "reservas",
+      })
+      .neq("estado", "cancelado");
 
-    const todos = new Map<string, Evento>();
-    for (const e of [...(porReserva ?? []), ...(porCoordinada ?? [])] as unknown as Evento[]) {
-      if (!e.reserva || e.reserva.descartada) continue;
-      // Un evento coordinado para otro día no pertenece a este.
-      if (fechaOperativa(e) !== fecha) continue;
-      todos.set(e.id, e);
-    }
-    eventos = [...todos.values()];
+    eventos = ((data ?? []) as unknown as Evento[]).filter(
+      (e) => e.reserva && !e.reserva.descartada && fechaOperativa(e) === fecha,
+    );
   }
 
   const ordenar = (a: Evento, b: Evento) =>

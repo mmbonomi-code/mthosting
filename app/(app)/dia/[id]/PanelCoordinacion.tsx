@@ -35,6 +35,7 @@ export default function PanelCoordinacion({
   tildes,
   faltantes,
   avisoSelf,
+  requiereConfirmacionSelf,
   horaLimiteCheckout,
   horaMinimaCheckin,
   esCheckout,
@@ -52,6 +53,8 @@ export default function PanelCoordinacion({
   tildes: Tilde[];
   faltantes: string[];
   avisoSelf: string | null;
+  /** Solo el caso riesgoso pide tildar "confirmo igual". */
+  requiereConfirmacionSelf: boolean;
   horaLimiteCheckout: string;
   horaMinimaCheckin: string;
   esCheckout: boolean;
@@ -172,18 +175,29 @@ export default function PanelCoordinacion({
           </p>
         )}
 
+        {/* Con el self permitido, el texto es solo la instrucción que se le
+            pasa al huésped. La confirmación se pide únicamente en el caso
+            riesgoso: una sola persona donde hacen falta dos. */}
         {esSelf && avisoSelf && (
-          <div className="rounded-lg bg-amber-950/50 px-3 py-2 text-sm text-amber-200">
+          <div
+            className={`rounded-lg px-3 py-2 text-sm ${
+              requiereConfirmacionSelf
+                ? "bg-amber-950/50 text-amber-200"
+                : "bg-slate-900/60 text-slate-300"
+            }`}
+          >
             {avisoSelf}
-            <label className="mt-2 flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="confirmar_self"
-                onChange={guardarAhora}
-                className="size-4 accent-amber-400"
-              />
-              <span className="text-xs">Confirmo igual</span>
-            </label>
+            {requiereConfirmacionSelf && (
+              <label className="mt-2 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="confirmar_self"
+                  onChange={guardarAhora}
+                  className="size-4 accent-amber-400"
+                />
+                <span className="text-xs">Confirmo igual</span>
+              </label>
+            )}
           </div>
         )}
 

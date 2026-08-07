@@ -31,7 +31,6 @@ describe("faltantesDeEvento", () => {
     const casos = [
       { metodo: "sobre", esperado: "dejar sobre" },
       { metodo: "candado", esperado: "dejar candado" },
-      { metodo: "valijas", esperado: "dejar valijas" },
       { metodo: "llaves", esperado: "dejar llaves" },
     ];
     for (const caso of casos) {
@@ -39,6 +38,12 @@ describe("faltantesDeEvento", () => {
         faltantesDeEvento({ ...base, acceso: { clase: "punto", metodo: caso.metodo } }),
       ).toEqual([caso.esperado]);
     }
+  });
+
+  it("las valijas no piden confirmación: no hay nada que el equipo deba dejar", () => {
+    expect(
+      faltantesDeEvento({ ...base, acceso: { clase: "punto", metodo: "valijas" } }),
+    ).toEqual([]);
   });
 
   it("una vez dejado el sobre, deja de faltar", () => {

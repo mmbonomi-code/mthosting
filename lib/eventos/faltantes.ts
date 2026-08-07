@@ -6,7 +6,7 @@
  * la lista queda vacía, el evento está coordinado. Función pura: tiene tests.
  */
 
-import { METODOS_FISICOS } from "./etiquetas";
+import { METODOS_QUE_SE_DEJAN } from "./etiquetas";
 
 export type AccesoElegido = {
   clase: "punto" | "persona";
@@ -17,7 +17,6 @@ export type AccesoElegido = {
 const ACCION_POR_METODO: Record<string, string> = {
   candado: "dejar candado",
   sobre: "dejar sobre",
-  valijas: "dejar valijas",
   llaves: "dejar llaves",
 };
 
@@ -47,7 +46,7 @@ export function faltantesDeEvento({
   } else if (
     tipo === "checkin" &&
     acceso.clase === "punto" &&
-    METODOS_FISICOS.has(acceso.metodo ?? "") &&
+    METODOS_QUE_SE_DEJAN.has(acceso.metodo ?? "") &&
     !accesoDejado
   ) {
     // En el check-out la llave la deja el huésped, no el equipo: no se pide.

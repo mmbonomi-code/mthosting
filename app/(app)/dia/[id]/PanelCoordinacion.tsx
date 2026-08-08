@@ -148,17 +148,15 @@ export default function PanelCoordinacion({
             className={clsEntrada}
           >
             <option value="">— Sin definir —</option>
-            {sinPersona.length > 0 && (
-              <optgroup label="Sin persona">
-                {sinPersona.map((o) => (
-                  <option key={o.valor} value={o.valor}>
-                    {o.etiqueta}
-                  </option>
-                ))}
-              </optgroup>
-            )}
+            {sinPersona.map((o) => (
+              <option key={o.valor} value={o.valor}>
+                {o.etiqueta}
+              </option>
+            ))}
+            {/* Solo aparece si esta coordinación traía una persona suelta de
+                antes de que todo pasara al catálogo de accesos. */}
             {personas.length > 0 && (
-              <optgroup label="Personas">
+              <optgroup label="Cargado antes">
                 {personas.map((o) => (
                   <option key={o.valor} value={o.valor}>
                     {o.etiqueta}

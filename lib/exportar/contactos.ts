@@ -9,11 +9,17 @@
  * inadvertido y rompe el archivo en destino.
  */
 
-/** Todo lo que no sea dígito se descarta: `+55 38 99940-9246` → `553899409246`. */
+import { agregarNueveAR, soloDigitos } from "../telefono";
+
+/**
+ * Todo lo que no sea dígito se descarta: `+55 38 99940-9246` → `553899409246`.
+ * A los argentinos se les completa el 9 que Airbnb no manda, por si quedó
+ * alguno sin corregir en la base: el archivo que sale de acá tiene que servir
+ * para llamar y para WhatsApp.
+ */
 export function normalizarTelefono(contacto: string | null): string | null {
-  if (!contacto) return null;
-  const digitos = contacto.replace(/\D/g, "");
-  return digitos === "" ? null : digitos;
+  const digitos = soloDigitos(contacto);
+  return digitos === null ? null : agregarNueveAR(digitos);
 }
 
 /**

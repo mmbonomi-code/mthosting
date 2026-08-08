@@ -6,6 +6,8 @@
  * (1.014 archivos, 02/08/2026), no solo contra la spec.
  */
 
+import { corregirContactoAR } from "../telefono";
+
 /** Error de parseo: rechaza el archivo entero, nunca "importar lo que se pueda". */
 export class ErrorImportacion extends Error {}
 
@@ -223,7 +225,8 @@ export function parsearArchivoReservas(contenido: string): FilaReserva[] {
       estado_raw: raw["Estado"].trim(),
       cancelada: esCancelada(raw["Estado"]),
       huesped_nombre: textoONulo(raw["Nombre del huésped"]),
-      huesped_contacto: textoONulo(raw["Contacto"]),
+      // Airbnb manda los argentinos sin el 9: se corrige al entrar, no después.
+      huesped_contacto: corregirContactoAR(textoONulo(raw["Contacto"])),
       adultos: enteroONulo(raw["Número de adultos"]),
       ninos: enteroONulo(raw["Número de niños"]),
       bebes: enteroONulo(raw["Número de bebés"]),

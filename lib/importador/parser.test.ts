@@ -189,6 +189,28 @@ describe("parsearArchivoReservas", () => {
     expect(fila.raw["Ganancias"]).toBe(`$${NBSP}206,61`);
   });
 
+  it("al teléfono argentino le agrega el 9 que Airbnb no manda", () => {
+    const csv = armarCSV([
+      "HMCNXQKHP5",
+      "Estadía en curso",
+      "Camila Arguello",
+      "+54 11 4428-2700",
+      "2",
+      "0",
+      "0",
+      "31/7/2026",
+      "3/8/2026",
+      "3",
+      "2026-06-06",
+      "Tranquilo y familiar en recoleta",
+      `$${NBSP}206,61`,
+    ]);
+    const [fila] = parsearArchivoReservas(csv);
+    expect(fila.huesped_contacto).toBe("+54 9 11 4428-2700");
+    // El crudo se guarda tal como vino: la corrección es nuestra, no de Airbnb.
+    expect(fila.raw["Contacto"]).toBe("+54 11 4428-2700");
+  });
+
   it("cancelada con contacto vacío: cancelada=true, contacto null", () => {
     const csv = armarCSV([
       "HMKJ3MSHCN",

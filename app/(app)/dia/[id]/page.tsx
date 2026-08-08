@@ -72,6 +72,26 @@ export default async function FichaEvento({
   const esLlegada = evento.tipo === "checkin";
   const fechaReserva = (esLlegada ? r.fecha_checkin : r.fecha_checkout) ?? "";
 
+  // Quién abre se elige del catálogo de puntos de acceso: las personas están
+  // ahí como "Presencial — Maguie". La lista de personas ya no se ofrece.
+  // Lo único que se sigue leyendo es el responsable de las coordinaciones
+  // viejas, para no perder lo que ya estaba cargado.
+  const accesoActual = esLlegada
+    ? evento.punto_acceso_id
+      ? `punto:${evento.punto_acceso_id}`
+      : evento.responsable_id
+        ? `persona:${evento.responsable_id}`
+        : ""
+    : evento.punto_devolucion_id
+      ? `punto:${evento.punto_devolucion_id}`
+      : evento.responsable_devolucion_id
+        ? `persona:${evento.responsable_devolucion_id}`
+        : "";
+
+  const responsableViejo = accesoActual.startsWith("persona:")
+    ? accesoActual.slice("persona:".length)
+    : null;
+
   const [
     { data: puntos },
     { data: personas },
@@ -85,12 +105,9 @@ export default async function FichaEvento({
       // En el orden que fijó el usuario: primero los que más se usan.
       .order("orden")
       .order("ubicacion"),
-    supabase
-      .from("personas")
-      .select("id, nombre")
-      .eq("hace_checkin", true)
-      .eq("activo", true)
-      .order("nombre"),
+    responsableViejo
+      ? supabase.from("personas").select("id, nombre").eq("id", responsableViejo)
+      : Promise.resolve({ data: [] as { id: string; nombre: string }[] }),
     supabase.from("parametros_operativos").select("clave, valor"),
     supabase
       .from("eventos_estadia")
@@ -177,18 +194,6 @@ export default async function FichaEvento({
     }
   }
 
-  const accesoActual = esLlegada
-    ? evento.punto_acceso_id
-      ? `punto:${evento.punto_acceso_id}`
-      : evento.responsable_id
-        ? `persona:${evento.responsable_id}`
-        : ""
-    : evento.punto_devolucion_id
-      ? `punto:${evento.punto_devolucion_id}`
-      : evento.responsable_devolucion_id
-        ? `persona:${evento.responsable_devolucion_id}`
-        : "";
-
   const puntoElegido = (puntos ?? []).find((p) => `punto:${p.id}` === accesoActual);
 
   // El que ya está elegido se incluye siempre, aunque hoy no figure como
@@ -209,9 +214,11 @@ export default async function FichaEvento({
         metodo: p.metodo,
         instrucciones: p.instrucciones,
       })),
+    // Solo si esta coordinación ya tenía una persona cargada de antes: se
+    // conserva para no borrarla sola, pero no se ofrecen otras.
     ...(personas ?? []).map((p) => ({
       valor: `persona:${p.id}`,
-      etiqueta: p.nombre,
+      etiqueta: `${p.nombre} (cargado antes)`,
       grupo: "Personas" as const,
     })),
   ];

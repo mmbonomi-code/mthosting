@@ -138,6 +138,58 @@ export async function darAcceso(
   return null;
 }
 
+export type EstadoClave = { error: string } | { ok: string } | null;
+
+/**
+ * Reinicia la contraseña de una persona que ya tiene usuario.
+ *
+ * La app no manda mails, así que no hay "olvidé mi contraseña": cuando
+ * alguien pierde la suya, administración le pone una nueva y se la pasa. La
+ * persona puede seguir usándola o cambiarla después.
+ */
+export async function reiniciarClave(
+  personaId: string,
+  _estadoPrevio: EstadoClave,
+  fd: FormData,
+): Promise<EstadoClave> {
+  const password = String(fd.get("password") ?? "");
+  if (password.length < 8) {
+    return { error: "La contraseña tiene que tener al menos 8 caracteres." };
+  }
+
+  const supabase = await crearClienteServidor();
+  if (!(await esAdmin(supabase))) {
+    return { error: "Solo administración puede reiniciar contraseñas." };
+  }
+
+  const { data: persona } = await supabase
+    .from("personas")
+    .select("nombre, profile_id")
+    .eq("id", personaId)
+    .maybeSingle();
+
+  if (!persona?.profile_id) {
+    return { error: "Esta persona todavía no tiene usuario." };
+  }
+
+  const admin = crearClienteAdmin();
+  if (!admin) {
+    return {
+      error:
+        "Falta configurar la clave de servidor (SUPABASE_SERVICE_ROLE_KEY) en Vercel.",
+    };
+  }
+
+  const { error } = await admin.auth.admin.updateUserById(persona.profile_id, {
+    password,
+  });
+  if (error) {
+    return { error: `No se pudo cambiar la contraseña: ${error.message}` };
+  }
+
+  return { ok: `Contraseña nueva lista. Pasásela a ${persona.nombre}.` };
+}
+
 /**
  * Le saca el acceso: la ficha se desvincula del usuario. El usuario no se
  * borra (nada se borra), simplemente deja de estar asociado.

@@ -2,7 +2,14 @@ import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import FormularioPersona from "../../FormularioPersona";
 import FormularioAcceso from "./FormularioAcceso";
-import { actualizarPersona, darAcceso, quitarAcceso } from "../../acciones";
+import FormularioClave from "./FormularioClave";
+import { crearClienteAdmin } from "@/lib/supabase/admin";
+import {
+  actualizarPersona,
+  darAcceso,
+  quitarAcceso,
+  reiniciarClave,
+} from "../../acciones";
 
 export default async function EditarPersona({
   params,
@@ -31,6 +38,17 @@ export default async function EditarPersona({
     .maybeSingle();
   const puedeGestionarAcceso = yo?.rol === "admin";
 
+  // Con qué email entra: administración lo necesita para pasárselo junto con
+  // la contraseña nueva, y nadie se acuerda cuál cargó.
+  let emailUsuario: string | null = null;
+  if (puedeGestionarAcceso && persona.profile_id) {
+    const admin = crearClienteAdmin();
+    if (admin) {
+      const { data } = await admin.auth.admin.getUserById(persona.profile_id);
+      emailUsuario = data.user?.email ?? null;
+    }
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       <h1 className="text-2xl font-semibold tracking-tight text-white">
@@ -54,19 +72,25 @@ export default async function EditarPersona({
           </div>
 
           {persona.profile_id ? (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-emerald-300">
-                ✓ Tiene usuario y puede entrar a la app.
-              </p>
-              <form action={quitarAcceso.bind(null, id)}>
-                <button
-                  type="submit"
-                  className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-slate-800"
-                >
-                  Quitar acceso
-                </button>
-              </form>
-            </div>
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-emerald-300">
+                  ✓ Entra a la app
+                  {emailUsuario && (
+                    <span className="text-slate-400"> con {emailUsuario}</span>
+                  )}
+                </p>
+                <form action={quitarAcceso.bind(null, id)}>
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-slate-800"
+                  >
+                    Quitar acceso
+                  </button>
+                </form>
+              </div>
+              <FormularioClave accion={reiniciarClave.bind(null, id)} />
+            </>
           ) : (
             <FormularioAcceso accion={darAcceso.bind(null, id)} />
           )}

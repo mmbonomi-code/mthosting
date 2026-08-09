@@ -50,6 +50,7 @@ export default async function LayoutApp({
           {[
             { href: "/", texto: "Inicio", pendientes: 0 },
             { href: "/dia", texto: "Día", pendientes: 0 },
+            { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
             { href: "/semana", texto: "Limpiezas", pendientes: 0 },
             { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
             { href: "/propietarios", texto: "Propietarios", pendientes: 0 },

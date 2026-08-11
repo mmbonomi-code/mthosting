@@ -8,6 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../lib/database.types";
 import { plazosDeReclamo, semaforoDeReclamo } from "../lib/reclamos/plazos";
 import { fotosDeLimpieza } from "../lib/reclamos/fotos-limpieza";
+import { BUCKET } from "../lib/reclamos/storage";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const clave = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -140,5 +141,45 @@ describe.skipIf(!url || !clave)("reclamos (base dev)", () => {
 
   it("las fotos de limpieza todavía no existen y devuelven una lista vacía", async () => {
     expect(await fotosDeLimpieza("cualquier-reserva")).toEqual([]);
+  });
+
+  it("sube evidencia al bucket privado y la sirve con URL firmada", async () => {
+    const reclamoId = creados[0];
+    const ruta = `${reclamoId}/${crypto.randomUUID()}.txt`;
+    const contenido = new Blob(["PRUEBA e2e de evidencia"], { type: "text/plain" });
+
+    const { error: errorSubida } = await s.storage.from(BUCKET).upload(ruta, contenido);
+    expect(errorSubida).toBeNull();
+
+    const { data: fila, error: errorFila } = await s
+      .from("reclamo_fotos")
+      .insert({ reclamo_id: reclamoId, storage_path: ruta, origen: "manual" })
+      .select("id, activo, origen")
+      .single();
+    expect(errorFila).toBeNull();
+    expect(fila!.activo).toBe(true);
+
+    // El bucket es privado: sin firma no se puede leer.
+    const { data: publica } = s.storage.from(BUCKET).getPublicUrl(ruta);
+    const respuestaSinFirma = await fetch(publica.publicUrl);
+    expect(respuestaSinFirma.ok).toBe(false);
+
+    // Con firma sí, y el contenido es el que se subió.
+    const { data: firmada, error: errorFirma } = await s.storage
+      .from(BUCKET)
+      .createSignedUrl(ruta, 60);
+    expect(errorFirma).toBeNull();
+    const respuesta = await fetch(firmada!.signedUrl);
+    expect(respuesta.ok).toBe(true);
+    expect(await respuesta.text()).toBe("PRUEBA e2e de evidencia");
+
+    // Sacarla de la evidencia es una baja lógica: el archivo sigue estando.
+    await s.from("reclamo_fotos").update({ activo: false }).eq("id", fila!.id);
+    const { data: despues } = await s.storage
+      .from(BUCKET)
+      .createSignedUrl(ruta, 60);
+    expect(despues?.signedUrl).toBeTruthy();
+
+    await s.storage.from(BUCKET).remove([ruta]);
   });
 });

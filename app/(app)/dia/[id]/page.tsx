@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import { formatearFechaAR } from "@/lib/fechas";
+import { formatearFechaAR, hoyAR } from "@/lib/fechas";
+import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
+import {
+  requiereAtencion,
+  semaforoDeReclamo,
+  textoDePlazo,
+  type EstadoReclamo,
+} from "@/lib/reclamos/plazos";
 import { ETIQUETA_AMBIENTES } from "@/lib/etiquetas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import { METODOS_ACCESO, METODOS_FISICOS } from "@/lib/eventos/etiquetas";
@@ -253,6 +260,19 @@ export default async function FichaEvento({
   });
 
   const telefono = soloDigitos(r.huesped_contacto);
+
+  // Reclamo de daños de esta reserva, si lo hay y si quien mira puede verlo.
+  const verReclamos = await puedeGestionarReclamos(supabase);
+  const { data: reclamo } = verReclamos
+    ? await supabase
+        .from("reclamos")
+        .select("id, estado")
+        .eq("reserva_id", r.id)
+        .maybeSingle()
+    : { data: null };
+  const plazoReclamo = reclamo
+    ? semaforoDeReclamo(r.fecha_checkout, reclamo.estado as EstadoReclamo, hoyAR())
+    : null;
 
   const faltantes = faltantesDeEvento({
     tipo: esLlegada ? "checkin" : "checkout",
@@ -544,6 +564,41 @@ export default async function FichaEvento({
           </div>
         )}
       </section>
+
+      {/* Reclamo de daños: se carga desde la reserva, que es donde se está
+          mirando cuando la limpieza avisa que algo se rompió. */}
+      {verReclamos && (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 p-4">
+          <div>
+            <h2 className="font-medium text-white">Reclamo a Airbnb</h2>
+            <p className="text-sm text-slate-400">
+              {reclamo
+                ? "Esta reserva ya tiene un reclamo cargado."
+                : "Si el huésped dañó algo, se reclama desde acá."}
+            </p>
+          </div>
+          {reclamo ? (
+            <Link
+              href={`/reclamos/${reclamo.id}`}
+              className="flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+            >
+              Ver reclamo
+              {plazoReclamo && requiereAtencion(plazoReclamo.semaforo) && (
+                <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs text-red-300">
+                  {textoDePlazo(plazoReclamo.dias)}
+                </span>
+              )}
+            </Link>
+          ) : (
+            <Link
+              href={`/reclamos/nuevo?reserva=${r.id}`}
+              className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+            >
+              Cargar reclamo
+            </Link>
+          )}
+        </section>
+      )}
 
       {eventoOpuesto && (
         <Link

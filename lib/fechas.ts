@@ -20,6 +20,17 @@ export function hoyAR(): string {
   return formatoISO.format(new Date());
 }
 
+/**
+ * El día de Buenos Aires en el que cayó un instante. Sirve para preguntarle
+ * a un `timestamptz` "¿de qué día es?" sin equivocarse por las tres horas de
+ * diferencia con UTC.
+ */
+export function diaARDe(instante: string | null): string | null {
+  if (!instante) return null;
+  const momento = new Date(instante);
+  return Number.isNaN(momento.getTime()) ? null : formatoISO.format(momento);
+}
+
 /** Fecha de mañana en Buenos Aires, como `yyyy-mm-dd`. */
 export function mananaAR(): string {
   return sumarDias(hoyAR(), 1);

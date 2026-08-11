@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
+import { contarReclamosUrgentes } from "@/lib/reclamos/alertas";
 import { cerrarSesion } from "@/app/ingresar/acciones";
 
 export default async function LayoutApp({
@@ -10,7 +12,7 @@ export default async function LayoutApp({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: persona }, { count: sinAsignar }] = await Promise.all([
+  const [{ data: persona }, { count: sinAsignar }, verReclamos] = await Promise.all([
     supabase
       .from("personas")
       .select("nombre")
@@ -21,7 +23,11 @@ export default async function LayoutApp({
       .select("id", { count: "exact", head: true })
       .is("depto_id", null)
       .eq("descartada", false),
+    puedeGestionarReclamos(supabase),
   ]);
+
+  // El menú avisa cuántos reclamos hay que mirar hoy, sin entrar a la pantalla.
+  const reclamosUrgentes = verReclamos ? await contarReclamosUrgentes(supabase) : 0;
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-slate-900">
@@ -51,6 +57,9 @@ export default async function LayoutApp({
             { href: "/", texto: "Inicio", pendientes: 0 },
             { href: "/dia", texto: "Día", pendientes: 0 },
             { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
+            ...(verReclamos
+              ? [{ href: "/reclamos", texto: "Reclamos", pendientes: reclamosUrgentes }]
+              : []),
             { href: "/semana", texto: "Limpiezas", pendientes: 0 },
             { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
             { href: "/propietarios", texto: "Propietarios", pendientes: 0 },

@@ -4,6 +4,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import {
+  DIAS_REALES_AIRBNB,
   plazosDeReclamo,
   semaforoDeReclamo,
   textoDePlazo,
@@ -201,8 +202,9 @@ export default async function FichaReclamo({
             <strong>{textoDePlazo(plazo.dias)}</strong>
             <p className="text-slate-400">
               Centro de resoluciones hasta el{" "}
-              {formatearFechaAR(plazos.limite_resolucion)} (14 días del check-out).
-              AirCover hasta el {formatearFechaAR(plazos.limite_aircover)}.
+              {formatearFechaAR(plazos.limite_resolucion)}: un día antes de que Airbnb
+              cierre los {DIAS_REALES_AIRBNB} del check-out. AirCover hasta el{" "}
+              {formatearFechaAR(plazos.limite_aircover)}.
             </p>
           </div>
         ) : (

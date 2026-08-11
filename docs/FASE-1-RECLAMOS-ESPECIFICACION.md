@@ -30,8 +30,15 @@ daños, van todos en el mismo reclamo (motivo libre + monto total).
 
 | Plazo | Días desde check-out | Aplica a |
 |---|---|---|
-| Presentar en el Centro de resoluciones | 14 | estados `borrador`, `por_presentar` |
+| Presentar en el Centro de resoluciones | 13 | estados `borrador`, `por_presentar` |
 | Escalar a AirCover (formulario de solicitud de pago) | 30 | estado `presentado` (el huésped no pagó) |
+
+> **Cambio sobre el documento original (decisión del dueño, 11/08/2026):** el
+> plazo de presentación se lleva a **13 días**, uno menos que los 14 reales de
+> Airbnb. El sistema vence un día antes que el plazo verdadero para dejar
+> margen. La constante está en `lib/reclamos/plazos.ts`
+> (`DIAS_PARA_PRESENTAR`), junto al plazo real (`DIAS_REALES_AIRBNB`) que se
+> usa solo para explicarlo en pantalla.
 
 Fuente: Airbnb, Términos de la Protección contra Daños para Anfitriones (art. 2869, secciones
 3.1.2 y 3.3) y Centro de ayuda art. 279. No existe una regla escrita de "antes de que entre el

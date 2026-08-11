@@ -4,8 +4,12 @@
  * Los dos relojes arrancan el día del check-out de la reserva —el de Airbnb,
  * no el que se haya coordinado a mano, porque es el que Airbnb mira:
  *
- *   - 14 días para presentar el caso en el Centro de resoluciones.
+ *   - 13 días para presentar el caso en el Centro de resoluciones.
  *   - 30 días para escalarlo a AirCover, si el huésped no pagó.
+ *
+ * Airbnb cierra la presentación a los 14 días. Acá se usan 13 a propósito
+ * (decisión del dueño, 11/08/2026): el sistema vence un día antes que el
+ * plazo real, para que quede margen si el aviso salta sobre la hora.
  *
  * Cuál de los dos corre depende del estado. Un reclamo ya resuelto no tiene
  * plazo: no hay nada que hacer a tiempo.
@@ -28,7 +32,11 @@ export type EstadoReclamo =
   | "rechazado"
   | "descartado";
 
-export const DIAS_PARA_PRESENTAR = 14;
+/** Un día menos que los 14 reales de Airbnb, a propósito. */
+export const DIAS_PARA_PRESENTAR = 13;
+
+/** El plazo real de Airbnb, para poder decirlo en pantalla. */
+export const DIAS_REALES_AIRBNB = 14;
 export const DIAS_PARA_ESCALAR = 30;
 
 /** A partir de acá se avisa: el plazo vence en 3 días o menos. */

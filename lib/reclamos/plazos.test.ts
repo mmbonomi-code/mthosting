@@ -11,15 +11,16 @@ import {
 const CHECKOUT = "2026-08-01";
 
 describe("plazosDeReclamo", () => {
-  it("14 días para presentar y 30 para escalar, desde el check-out", () => {
+  it("13 días para presentar y 30 para escalar, desde el check-out", () => {
     const p = plazosDeReclamo(CHECKOUT, "borrador");
-    expect(p.limite_resolucion).toBe("2026-08-15");
+    // 13 y no 14: el sistema vence un día antes que Airbnb, a propósito.
+    expect(p.limite_resolucion).toBe("2026-08-14");
     expect(p.limite_aircover).toBe("2026-08-31");
   });
 
-  it("mientras no se presentó, el reloj que corre es el de los 14 días", () => {
+  it("mientras no se presentó, el reloj que corre es el de los 13 días", () => {
     for (const estado of ["borrador", "por_presentar"] as EstadoReclamo[]) {
-      expect(plazosDeReclamo(CHECKOUT, estado).limite_vigente).toBe("2026-08-15");
+      expect(plazosDeReclamo(CHECKOUT, estado).limite_vigente).toBe("2026-08-14");
     }
   });
 
@@ -40,13 +41,13 @@ describe("plazosDeReclamo", () => {
 
   it("cruza el fin de mes sin equivocarse", () => {
     const p = plazosDeReclamo("2026-12-28", "borrador");
-    expect(p.limite_resolucion).toBe("2027-01-11");
+    expect(p.limite_resolucion).toBe("2027-01-10");
     expect(p.limite_aircover).toBe("2027-01-27");
   });
 
   it("febrero de un año bisiesto tampoco lo corre", () => {
     expect(plazosDeReclamo("2028-02-20", "borrador").limite_resolucion).toBe(
-      "2028-03-05",
+      "2028-03-04",
     );
   });
 });
@@ -70,24 +71,24 @@ describe("semaforoDeReclamo", () => {
     semaforoDeReclamo(CHECKOUT, estado, hoy).semaforo;
 
   it("pasado el límite es vencido", () => {
-    expect(semaforo("2026-08-16")).toBe("vencido");
+    expect(semaforo("2026-08-15")).toBe("vencido");
   });
 
   it("el mismo día del límite todavía es urgente, no vencido", () => {
-    expect(semaforo("2026-08-15")).toBe("urgente");
+    expect(semaforo("2026-08-14")).toBe("urgente");
   });
 
   it("tres días o menos es urgente", () => {
-    expect(semaforo("2026-08-12")).toBe("urgente");
+    expect(semaforo("2026-08-11")).toBe("urgente");
   });
 
   it("cuatro días ya es próximo", () => {
-    expect(semaforo("2026-08-11")).toBe("proximo");
+    expect(semaforo("2026-08-10")).toBe("proximo");
   });
 
   it("siete días es el último día de próximo", () => {
-    expect(semaforo("2026-08-08")).toBe("proximo");
-    expect(semaforo("2026-08-07")).toBe("tranquilo");
+    expect(semaforo("2026-08-07")).toBe("proximo");
+    expect(semaforo("2026-08-06")).toBe("tranquilo");
   });
 
   it("un reclamo cobrado no tiene semáforo aunque el check-out sea viejo", () => {

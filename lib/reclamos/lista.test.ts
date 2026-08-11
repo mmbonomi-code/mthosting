@@ -24,8 +24,8 @@ function reclamo(p: Partial<ReclamoEnLista> = {}): ReclamoEnLista {
     resuelto_at: null,
     codigo_reserva: "HM4KX92PL",
     huesped_nombre: "Julien Moreau",
-    // Check-out del 1: vence el 15, faltan 4 días desde el 11.
-    fecha_checkout: "2026-08-01",
+    // Check-out del 2: vence el 15 (13 días), faltan 4 desde el 11.
+    fecha_checkout: "2026-08-02",
     depto_id: "d1",
     depto_codigo: "ARENALES 6",
     ...p,
@@ -47,7 +47,7 @@ describe("conPlazos", () => {
 
   it("un reclamo presentado pasa a mirar el plazo de AirCover", () => {
     const [r] = armar({ estado: "presentado" });
-    expect(r.limite).toBe("2026-08-31");
+    expect(r.limite).toBe("2026-09-01");
   });
 });
 

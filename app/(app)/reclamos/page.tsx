@@ -14,6 +14,8 @@ import {
 import {
   BORDE_SEMAFORO,
   DIAS_DE_AVISO,
+  DIAS_PARA_PRESENTAR,
+  DIAS_REALES_AIRBNB,
   textoDePlazo,
   TEXTO_SEMAFORO,
   type EstadoReclamo,
@@ -152,12 +154,17 @@ export default async function Reclamos({
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Reclamos</h1>
-        <p className="text-sm text-slate-400">
-          Daños a reclamar a Airbnb. 14 días desde el check-out para presentar en el
-          Centro de resoluciones; 30 para escalar a AirCover si el huésped no paga.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-64 flex-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Reclamos</h1>
+          <p className="text-sm text-slate-400">
+            Daños a reclamar a Airbnb. {DIAS_PARA_PRESENTAR} días desde el check-out
+            para presentar en el Centro de resoluciones —uno menos que los{" "}
+            {DIAS_REALES_AIRBNB} de Airbnb, para tener margen— y 30 para escalar a
+            AirCover si el huésped no paga.
+          </p>
+        </div>
+        <BuscadorReserva />
       </div>
 
       {kpis.urgentes > 0 && (
@@ -285,8 +292,6 @@ export default async function Reclamos({
           Se muestran los {TOPE} reclamos más recientes.
         </p>
       )}
-
-      <BuscadorReserva />
     </main>
   );
 }

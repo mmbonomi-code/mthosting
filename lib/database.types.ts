@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       arreglo_fotos: {
@@ -1531,48 +1506,113 @@ export type Database = {
         }
         Relationships: []
       }
-      reclamos: {
+      reclamo_fotos: {
         Row: {
           activo: boolean
           created_at: string
-          descripcion: string | null
-          estado: string | null
-          fecha: string | null
-          fecha_limite: string | null
           id: string
-          notas: string | null
-          reserva_id: string | null
+          orden: number
+          origen: Database["public"]["Enums"]["reclamo_foto_origen"]
+          reclamo_id: string
+          storage_path: string
+          tomada_at: string | null
           updated_at: string
         }
         Insert: {
           activo?: boolean
           created_at?: string
-          descripcion?: string | null
-          estado?: string | null
-          fecha?: string | null
-          fecha_limite?: string | null
           id?: string
-          notas?: string | null
-          reserva_id?: string | null
+          orden?: number
+          origen?: Database["public"]["Enums"]["reclamo_foto_origen"]
+          reclamo_id: string
+          storage_path: string
+          tomada_at?: string | null
           updated_at?: string
         }
         Update: {
           activo?: boolean
           created_at?: string
-          descripcion?: string | null
-          estado?: string | null
-          fecha?: string | null
-          fecha_limite?: string | null
           id?: string
-          notas?: string | null
-          reserva_id?: string | null
+          orden?: number
+          origen?: Database["public"]["Enums"]["reclamo_foto_origen"]
+          reclamo_id?: string
+          storage_path?: string
+          tomada_at?: string | null
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reclamo_fotos_reclamo_id_fkey"
+            columns: ["reclamo_id"]
+            isOneToOne: false
+            referencedRelation: "reclamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reclamos: {
+        Row: {
+          activo: boolean
+          categoria: Database["public"]["Enums"]["reclamo_categoria"]
+          creado_por: string | null
+          created_at: string
+          escalado_at: string | null
+          estado: Database["public"]["Enums"]["reclamo_estado"]
+          id: string
+          moneda: string
+          monto_cobrado: number | null
+          monto_reclamado: number | null
+          motivo: string | null
+          nota_interna: string | null
+          presentado_at: string | null
+          reserva_id: string
+          resuelto_at: string | null
+          updated_at: string
+          url_airbnb: string | null
+        }
+        Insert: {
+          activo?: boolean
+          categoria?: Database["public"]["Enums"]["reclamo_categoria"]
+          creado_por?: string | null
+          created_at?: string
+          escalado_at?: string | null
+          estado?: Database["public"]["Enums"]["reclamo_estado"]
+          id?: string
+          moneda?: string
+          monto_cobrado?: number | null
+          monto_reclamado?: number | null
+          motivo?: string | null
+          nota_interna?: string | null
+          presentado_at?: string | null
+          reserva_id: string
+          resuelto_at?: string | null
+          updated_at?: string
+          url_airbnb?: string | null
+        }
+        Update: {
+          activo?: boolean
+          categoria?: Database["public"]["Enums"]["reclamo_categoria"]
+          creado_por?: string | null
+          created_at?: string
+          escalado_at?: string | null
+          estado?: Database["public"]["Enums"]["reclamo_estado"]
+          id?: string
+          moneda?: string
+          monto_cobrado?: number | null
+          monto_reclamado?: number | null
+          motivo?: string | null
+          nota_interna?: string | null
+          presentado_at?: string | null
+          reserva_id?: string
+          resuelto_at?: string | null
+          updated_at?: string
+          url_airbnb?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "reclamos_reserva_id_fkey"
             columns: ["reserva_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "reservas"
             referencedColumns: ["id"]
           },
@@ -1782,7 +1822,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      puede_gestionar_reclamos: { Args: never; Returns: boolean }
     }
     Enums: {
       acuerdo_pago: "cobra_todo_mth" | "cobra_cada_uno" | "solo_comision"
@@ -1819,6 +1859,23 @@ export type Database = {
       modalidad_pago: "por_limpieza" | "sueldo_mensual" | "ambas"
       movimiento_tipo: "dejada" | "retirada"
       origen_reserva: "csv" | "ical"
+      reclamo_categoria:
+        | "mobiliario"
+        | "electrodomestico"
+        | "limpieza_extraordinaria"
+        | "faltante"
+        | "edilicio"
+        | "huespedes_no_declarados"
+        | "otro"
+      reclamo_estado:
+        | "borrador"
+        | "por_presentar"
+        | "presentado"
+        | "escalado"
+        | "cobrado"
+        | "rechazado"
+        | "descartado"
+      reclamo_foto_origen: "limpieza" | "manual"
       rol_reserva_tipo: "salida" | "entrada" | "durante"
       rol_usuario:
         | "admin"
@@ -1954,9 +2011,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       acuerdo_pago: ["cobra_todo_mth", "cobra_cada_uno", "solo_comision"],
@@ -1996,6 +2050,25 @@ export const Constants = {
       modalidad_pago: ["por_limpieza", "sueldo_mensual", "ambas"],
       movimiento_tipo: ["dejada", "retirada"],
       origen_reserva: ["csv", "ical"],
+      reclamo_categoria: [
+        "mobiliario",
+        "electrodomestico",
+        "limpieza_extraordinaria",
+        "faltante",
+        "edilicio",
+        "huespedes_no_declarados",
+        "otro",
+      ],
+      reclamo_estado: [
+        "borrador",
+        "por_presentar",
+        "presentado",
+        "escalado",
+        "cobrado",
+        "rechazado",
+        "descartado",
+      ],
+      reclamo_foto_origen: ["limpieza", "manual"],
       rol_reserva_tipo: ["salida", "entrada", "durante"],
       rol_usuario: [
         "admin",

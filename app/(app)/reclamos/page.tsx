@@ -33,7 +33,7 @@ const CAMPOS = `
   id, estado, categoria, motivo, monto_reclamado, monto_cobrado, moneda,
   url_airbnb, resuelto_at,
   reserva:reservas!inner(
-    codigo_reserva, huesped_nombre, fecha_checkout,
+    codigo_reserva, huesped_nombre, huesped_contacto, fecha_checkout,
     depto:departamentos(id, codigo)
   )
 `;
@@ -51,6 +51,7 @@ type Fila = {
   reserva: {
     codigo_reserva: string;
     huesped_nombre: string | null;
+    huesped_contacto: string | null;
     fecha_checkout: string | null;
     depto: { id: string; codigo: string } | null;
   } | null;
@@ -124,6 +125,7 @@ export default async function Reclamos({
       resuelto_at: r.resuelto_at,
       codigo_reserva: r.reserva!.codigo_reserva,
       huesped_nombre: r.reserva!.huesped_nombre,
+      huesped_contacto: r.reserva!.huesped_contacto,
       fecha_checkout: r.reserva!.fecha_checkout,
       depto_id: r.reserva!.depto?.id ?? null,
       depto_codigo: r.reserva!.depto?.codigo ?? null,

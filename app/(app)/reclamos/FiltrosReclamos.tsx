@@ -59,7 +59,7 @@ export default function FiltrosReclamos({
         type="search"
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
-        placeholder="Buscar por código, huésped, departamento o motivo"
+        placeholder="Buscar por código, huésped, teléfono, departamento o motivo"
         aria-label="Buscar reclamos"
         className={`${clsEntrada} min-w-56 flex-1`}
       />

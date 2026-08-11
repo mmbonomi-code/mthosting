@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
+import { soloDigitos } from "@/lib/telefono";
+import BotonCopiar from "@/app/componentes/BotonCopiar";
 import {
   DIAS_REALES_AIRBNB,
   plazosDeReclamo,
@@ -71,7 +73,7 @@ export default async function FichaReclamo({
        created_at, creado_por,
        reserva:reservas(
          id, codigo_reserva, huesped_nombre, huesped_contacto, noches,
-         adultos, ninos, fecha_checkin, fecha_checkout,
+         adultos, ninos, fecha_checkin, fecha_checkout, cancelada,
          depto:departamentos(codigo, nombre_interno, barrio)
        )`,
     )
@@ -87,6 +89,9 @@ export default async function FichaReclamo({
   const hoy = hoyAR();
 
   const plazo = semaforoDeReclamo(r.fecha_checkout, estado, hoy);
+  // Para el link de WhatsApp: solo dígitos, con el 9 argentino ya corregido
+  // en la base por la migración de teléfonos.
+  const telefono = soloDigitos(r.huesped_contacto);
   const plazos = r.fecha_checkout ? plazosDeReclamo(r.fecha_checkout, estado) : null;
 
   const [{ data: fotos }, { data: { user } }, { data: quienCargo }] = await Promise.all([
@@ -213,16 +218,42 @@ export default async function FichaReclamo({
           </p>
         )}
 
-        {reclamo.url_airbnb && (
-          <a
-            href={reclamo.url_airbnb}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="self-start rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
-          >
-            Abrir el caso en Airbnb ↗
-          </a>
-        )}
+        {/* El teléfono del huésped: el reclamo se negocia hablando con él
+            antes de que Airbnb lo resuelva. */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">
+          {telefono ? (
+            <>
+              <span className="font-mono text-sm text-slate-300">
+                {r.huesped_contacto}
+              </span>
+              <BotonCopiar texto={r.huesped_contacto!} />
+              <a
+                href={`https://wa.me/${telefono}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600"
+              >
+                WhatsApp
+              </a>
+            </>
+          ) : (
+            <span className="text-sm text-slate-500">
+              Sin teléfono cargado
+              {r.cancelada ? ": Airbnb lo borra al cancelar la reserva." : "."}
+            </span>
+          )}
+
+          {reclamo.url_airbnb && (
+            <a
+              href={reclamo.url_airbnb}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+            >
+              Abrir el caso en Airbnb ↗
+            </a>
+          )}
+        </div>
       </section>
 
       <Acordeon titulo="Detalle del reclamo">

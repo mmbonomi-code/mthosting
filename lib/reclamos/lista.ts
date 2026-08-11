@@ -7,6 +7,7 @@
  */
 
 import { diaARDe, mesDe } from "../fechas";
+import { soloDigitos } from "../telefono";
 import { requiereAtencion, semaforoDeReclamo, type EstadoReclamo, type Semaforo } from "./plazos";
 
 export type ReclamoEnLista = {
@@ -21,6 +22,7 @@ export type ReclamoEnLista = {
   resuelto_at: string | null;
   codigo_reserva: string;
   huesped_nombre: string | null;
+  huesped_contacto: string | null;
   fecha_checkout: string | null;
   depto_id: string | null;
   depto_codigo: string | null;
@@ -104,13 +106,29 @@ export function calcularKpis(reclamos: ReclamoConPlazo[], hoy: string): Kpis {
   };
 }
 
-/** El texto libre busca donde uno lo buscaría: código, huésped, depto, motivo. */
+/**
+ * El texto libre busca donde uno lo buscaría: código, huésped, depto, motivo
+ * y teléfono.
+ *
+ * El teléfono se compara por dígitos, no por texto: guardado está
+ * `+54 9 11 4428-2700` y quien busca lo copia de WhatsApp como
+ * `5491144282700` o escribe `4428-2700`. Comparar los strings tal cual no
+ * encontraría ninguna de las dos formas.
+ */
 function coincideTexto(r: ReclamoConPlazo, q: string): boolean {
   const termino = q.trim().toLowerCase();
   if (termino === "") return true;
-  return [r.codigo_reserva, r.huesped_nombre, r.depto_codigo, r.motivo]
+
+  const porTexto = [r.codigo_reserva, r.huesped_nombre, r.depto_codigo, r.motivo]
     .filter(Boolean)
     .some((campo) => campo!.toLowerCase().includes(termino));
+  if (porTexto) return true;
+
+  const digitosBuscados = soloDigitos(termino);
+  const digitosGuardados = soloDigitos(r.huesped_contacto);
+  // Con menos de 4 dígitos cualquier número coincide con cualquier cosa.
+  if (!digitosBuscados || digitosBuscados.length < 4 || !digitosGuardados) return false;
+  return digitosGuardados.includes(digitosBuscados);
 }
 
 export function filtrar(reclamos: ReclamoConPlazo[], filtros: Filtros): ReclamoConPlazo[] {

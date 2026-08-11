@@ -24,6 +24,7 @@ function reclamo(p: Partial<ReclamoEnLista> = {}): ReclamoEnLista {
     resuelto_at: null,
     codigo_reserva: "HM4KX92PL",
     huesped_nombre: "Julien Moreau",
+    huesped_contacto: "+54 9 11 4428-2700",
     // Check-out del 2: vence el 15 (13 días), faltan 4 desde el 11.
     fecha_checkout: "2026-08-02",
     depto_id: "d1",
@@ -169,6 +170,35 @@ describe("filtrar", () => {
 
   it("no distingue mayúsculas ni espacios de más", () => {
     expect(ids({ q: "  HoLLiS " })).toEqual(["b"]);
+  });
+
+  it("encuentra por teléfono, escrito como venga", () => {
+    const conTelefonos = armar(
+      { id: "a", huesped_contacto: "+54 9 11 4428-2700" },
+      { id: "b", huesped_contacto: "+55 38 99940-9246" },
+    );
+    const buscar = (q: string) =>
+      filtrar(conTelefonos, { ...sinFiltros, q }).map((r) => r.id);
+
+    // Copiado de WhatsApp, con el país y sin espacios.
+    expect(buscar("5491144282700")).toEqual(["a"]);
+    // Solo el final, que es como uno se acuerda de un número.
+    expect(buscar("4428-2700")).toEqual(["a"]);
+    // Con la puntuación tal como está guardado.
+    expect(buscar("+54 9 11 4428-2700")).toEqual(["a"]);
+    expect(buscar("99940")).toEqual(["b"]);
+  });
+
+  it("un número corto no hace coincidir a todos", () => {
+    // "44" está adentro de casi cualquier teléfono: con menos de 4 dígitos
+    // no se busca por número. Con 4 sí.
+    expect(ids({ q: "44" })).toEqual([]);
+    expect(ids({ q: "4428" })).toEqual(["a", "b", "c"]);
+  });
+
+  it("un reclamo sin teléfono no rompe la búsqueda", () => {
+    const sinTelefono = armar({ id: "x", huesped_contacto: null });
+    expect(filtrar(sinTelefono, { ...sinFiltros, q: "4428" })).toEqual([]);
   });
 
   it("filtra por estado y por departamento", () => {

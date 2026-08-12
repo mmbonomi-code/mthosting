@@ -22,7 +22,8 @@ function datosPersona(fd: FormData) {
     telefono: texto(fd, "telefono"),
     hace_limpieza: fd.get("hace_limpieza") === "on",
     hace_checkin: fd.get("hace_checkin") === "on",
-    es_backoffice: fd.get("es_backoffice") === "on",
+    // `es_backoffice` ya no se escribe: el permiso sale del rol. La columna
+    // queda con sus valores, no se pisa con vacío (CLAUDE.md, regla 4).
     modalidad_pago: texto(fd, "modalidad_pago") as ModalidadPago | null,
     rol: texto(fd, "rol") as Rol | null,
     activo: fd.get("activo") === "on",

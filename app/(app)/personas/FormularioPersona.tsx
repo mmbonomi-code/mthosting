@@ -101,9 +101,10 @@ export default function FormularioPersona({
       <fieldset className="flex flex-col gap-1 sm:col-span-2">
         <legend className={`${clsEtiqueta} mb-1`}>Qué hace</legend>
         {[
+          // "Back office" salió de acá: era lo mismo que el rol coordinador
+          // y tener las dos formas de decirlo confundía. Lo dice el rol.
           { nombre: "hace_limpieza", etiqueta: "Hace limpiezas", valor: valores.hace_limpieza },
           { nombre: "hace_checkin", etiqueta: "Hace check-in / check-out", valor: valores.hace_checkin },
-          { nombre: "es_backoffice", etiqueta: "Back office", valor: valores.es_backoffice },
         ].map((campo) => (
           <label key={campo.nombre} className="flex items-center gap-3 py-1">
             <input

@@ -845,6 +845,12 @@ Referencias: ✓ puede · — no ve la pantalla · ✗ ve pero no puede
 | Marcar late check-out | ✓ | ✓ | — | ✓ | — | — |
 | Escribir observaciones | ✓ | ✓ | — | ✓ | — | — |
 | Panel de alertas | ✓ | ✓ | — | ✓ | — | — |
+| **Reclamos a Airbnb** (§ Reclamos) |
+| Ver y cargar reclamos | ✓ | ✓ | — | ✓ | — | — |
+| Reabrir un reclamo cerrado | ✓ | — | — | — | — | — |
+| **Reporte del back office** |
+| Leer el reporte | ✓ | ✓ | ✓ | ✓ | ✓ | — |
+| Escribir en el reporte | ✓ | ✓ | — | ✓ | — | — |
 | **Limpiezas** |
 | Ver todas las limpiezas | ✓ | ✓ | ✓ | ✓ | solo las suyas | — |
 | Asignar responsable | ✓ | ✓ | ✓ | ✓ | ✗ | — |
@@ -877,6 +883,16 @@ Referencias: ✓ puede · — no ve la pantalla · ✗ ve pero no puede
 
 Notas:
 
+- **«Back office» es el rol `coordinador`** (decisión del dueño, 11/08/2026).
+  No son dos cosas distintas. La columna `personas.es_backoffice` existe desde
+  la migración inicial pero ya no decide permisos: el permiso sale del rol y
+  de ningún otro lado.
+- **Estado real al 11/08/2026:** lo único aplicado por rol son Reclamos,
+  Reporte, el alta y edición de reservas (manager/admin) y la gestión de
+  usuarios (admin). Todo lo demás sigue con la política de Fase 1 —cualquier
+  usuario autenticado— y se endurece en la Fase 2, antes de que entre el
+  personal de limpieza. Esta tabla describe el destino, no lo que hoy impide
+  la base.
 - El rol **`gobernanta`** es un híbrido: reparte limpiezas (como coordinador)
   y además tiene sus propias limpiezas y la vista de limpiadora (como
   limpieza). Su pantalla propia es la **vista de distribución** (§3.11). No ve

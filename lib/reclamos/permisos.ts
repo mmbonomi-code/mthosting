@@ -1,7 +1,8 @@
 /**
- * Quién puede ver y tocar los reclamos: back office, manager y
- * administración (decisión del dueño, 11/08/2026). La gobernanta y el
- * personal de limpieza no acceden, porque acá hay montos.
+ * Quién puede ver y tocar los reclamos: coordinador, manager y
+ * administración (decisión del dueño, 11/08/2026 — "back office" y
+ * "coordinador" son el mismo rol). La gobernanta y el personal de limpieza
+ * no acceden, porque acá hay montos.
  *
  * La regla de verdad está en la base, en la política RLS
  * `puede_gestionar_reclamos()`. Esto es la misma condición del lado del
@@ -22,10 +23,14 @@ export async function puedeGestionarReclamos(
 
   const { data: persona } = await supabase
     .from("personas")
-    .select("rol, es_backoffice, activo")
+    .select("rol, activo")
     .eq("profile_id", user.id)
     .maybeSingle();
 
   if (!persona?.activo) return false;
-  return persona.rol === "admin" || persona.rol === "manager" || persona.es_backoffice;
+  return (
+    persona.rol === "admin" ||
+    persona.rol === "manager" ||
+    persona.rol === "coordinador"
+  );
 }

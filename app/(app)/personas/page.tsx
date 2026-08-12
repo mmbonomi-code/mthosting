@@ -55,7 +55,6 @@ export default async function ListaPersonas() {
                       [
                         p.hace_limpieza ? "limpieza" : null,
                         p.hace_checkin ? "check-in" : null,
-                        p.es_backoffice ? "back office" : null,
                       ]
                         .filter(Boolean)
                         .join(", ") || null,

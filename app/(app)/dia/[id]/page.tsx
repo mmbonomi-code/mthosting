@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
+import { puedeEditarReservas } from "@/lib/reservas/permisos";
 import {
   requiereAtencion,
   semaforoDeReclamo,
@@ -262,7 +263,10 @@ export default async function FichaEvento({
   const telefono = soloDigitos(r.huesped_contacto);
 
   // Reclamo de daños de esta reserva, si lo hay y si quien mira puede verlo.
-  const verReclamos = await puedeGestionarReclamos(supabase);
+  const [verReclamos, puedeEditar] = await Promise.all([
+    puedeGestionarReclamos(supabase),
+    puedeEditarReservas(supabase),
+  ]);
   const { data: reclamo } = verReclamos
     ? await supabase
         .from("reclamos")
@@ -564,6 +568,27 @@ export default async function FichaEvento({
           </div>
         )}
       </section>
+
+      {/* Editar los datos de la reserva: sobre todo las que trajo el
+          calendario, que llegan sin nombre ni teléfono. */}
+      {puedeEditar && (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 p-4">
+          <div>
+            <h2 className="font-medium text-white">Datos de la reserva</h2>
+            <p className="text-sm text-slate-400">
+              {r.datos_completos
+                ? "Fechas, huésped y contacto. Lo que edites lo puede pisar la próxima importación."
+                : "Vino del calendario: cargale el nombre y el teléfono."}
+            </p>
+          </div>
+          <Link
+            href={`/reservas/${r.id}/editar`}
+            className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+          >
+            {r.datos_completos ? "Editar reserva" : "Completar datos"}
+          </Link>
+        </section>
+      )}
 
       {/* Reclamo de daños: se carga desde la reserva, que es donde se está
           mirando cuando la limpieza avisa que algo se rompió. */}

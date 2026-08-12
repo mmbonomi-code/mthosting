@@ -4,6 +4,7 @@ import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import { faltantesDeEvento } from "@/lib/eventos/faltantes";
 import { momentoDeEvento } from "@/lib/eventos/reglas";
+import { puedeEditarReservas } from "@/lib/reservas/permisos";
 import { describirAcceso } from "@/lib/eventos/etiquetas";
 import BuscadorDia from "./BuscadorDia";
 import NavegadorFecha from "./NavegadorFecha";
@@ -205,6 +206,7 @@ export default async function DelDia({
   const q = (params.q ?? "").trim();
 
   const supabase = await crearClienteServidor();
+  const puedeEditar = await puedeEditarReservas(supabase);
 
   let eventos: Evento[] = [];
 
@@ -304,20 +306,30 @@ export default async function DelDia({
       ) : (
         <>
           <NavegadorFecha fecha={fecha} />
-          <div>
-            <h1 className="text-xl font-semibold capitalize tracking-tight text-white">
-              {nombreDelDia(fecha)} {formatearFechaAR(fecha)}
-              {fecha === hoy && (
-                <span className="ml-2 rounded-full bg-slate-700 px-2 py-0.5 align-middle text-xs font-normal text-slate-200">
-                  hoy
-                </span>
-              )}
-            </h1>
-            <p className="text-sm text-slate-400">
-              {llegadas.length} llegada{llegadas.length === 1 ? "" : "s"} ·{" "}
-              {salidas.length} salida{salidas.length === 1 ? "" : "s"}
-              {sinCoordinar > 0 && ` · ${sinCoordinar} sin coordinar`}
-            </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-semibold capitalize tracking-tight text-white">
+                {nombreDelDia(fecha)} {formatearFechaAR(fecha)}
+                {fecha === hoy && (
+                  <span className="ml-2 rounded-full bg-slate-700 px-2 py-0.5 align-middle text-xs font-normal text-slate-200">
+                    hoy
+                  </span>
+                )}
+              </h1>
+              <p className="text-sm text-slate-400">
+                {llegadas.length} llegada{llegadas.length === 1 ? "" : "s"} ·{" "}
+                {salidas.length} salida{salidas.length === 1 ? "" : "s"}
+                {sinCoordinar > 0 && ` · ${sinCoordinar} sin coordinar`}
+              </p>
+            </div>
+            {puedeEditar && (
+              <Link
+                href={`/reservas/nueva?fecha=${fecha}`}
+                className="shrink-0 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+              >
+                + Reserva
+              </Link>
+            )}
           </div>
         </>
       )}

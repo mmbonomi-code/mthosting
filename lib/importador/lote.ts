@@ -58,7 +58,10 @@ export function consolidarLote(archivos: ArchivoLote[]): ResultadoLote {
 export type ReservaExistente = {
   id: string;
   canal: "airbnb" | "booking" | "directa";
-  origen: "csv" | "ical";
+  // Una reserva ya guardada puede venir del CSV, del calendario o cargada a
+  // mano. La importación las trata igual: si el archivo la trae, manda el
+  // archivo.
+  origen: "csv" | "ical" | "manual";
   cancelada: boolean;
   descartada: boolean;
   datos_completos: boolean;

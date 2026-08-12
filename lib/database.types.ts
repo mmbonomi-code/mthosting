@@ -1858,7 +1858,7 @@ export type Database = {
         | "llaves"
       modalidad_pago: "por_limpieza" | "sueldo_mensual" | "ambas"
       movimiento_tipo: "dejada" | "retirada"
-      origen_reserva: "csv" | "ical"
+      origen_reserva: "csv" | "ical" | "manual"
       reclamo_categoria:
         | "mobiliario"
         | "electrodomestico"
@@ -2049,7 +2049,7 @@ export const Constants = {
       ],
       modalidad_pago: ["por_limpieza", "sueldo_mensual", "ambas"],
       movimiento_tipo: ["dejada", "retirada"],
-      origen_reserva: ["csv", "ical"],
+      origen_reserva: ["csv", "ical", "manual"],
       reclamo_categoria: [
         "mobiliario",
         "electrodomestico",

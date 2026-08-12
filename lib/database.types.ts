@@ -235,6 +235,7 @@ export type Database = {
         Row: {
           activo: boolean
           created_at: string
+          es_cambio: boolean
           id: string
           nombre: string
           updated_at: string
@@ -242,6 +243,7 @@ export type Database = {
         Insert: {
           activo?: boolean
           created_at?: string
+          es_cambio?: boolean
           id?: string
           nombre: string
           updated_at?: string
@@ -249,6 +251,7 @@ export type Database = {
         Update: {
           activo?: boolean
           created_at?: string
+          es_cambio?: boolean
           id?: string
           nombre?: string
           updated_at?: string
@@ -1123,6 +1126,48 @@ export type Database = {
           },
         ]
       }
+      movimiento_cobertura: {
+        Row: {
+          created_at: string
+          id: string
+          monto: number
+          movimiento_id: string
+          origen_id: string | null
+          tc: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          monto: number
+          movimiento_id: string
+          origen_id?: string | null
+          tc?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          monto?: number
+          movimiento_id?: string
+          origen_id?: string | null
+          tc?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimiento_cobertura_movimiento_id_fkey"
+            columns: ["movimiento_id"]
+            isOneToOne: false
+            referencedRelation: "movimientos_caja"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimiento_cobertura_origen_id_fkey"
+            columns: ["origen_id"]
+            isOneToOne: false
+            referencedRelation: "movimientos_caja"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimiento_comprobantes: {
         Row: {
           activo: boolean
@@ -1241,8 +1286,10 @@ export type Database = {
           reembolsable: boolean
           ref_externa: string | null
           tc: number | null
+          tc_cambio: number | null
           tipo: Database["public"]["Enums"]["caja_tipo"]
           updated_at: string
+          usd_cambiado: number | null
         }
         Insert: {
           activo?: boolean
@@ -1261,8 +1308,10 @@ export type Database = {
           reembolsable?: boolean
           ref_externa?: string | null
           tc?: number | null
+          tc_cambio?: number | null
           tipo?: Database["public"]["Enums"]["caja_tipo"]
           updated_at?: string
+          usd_cambiado?: number | null
         }
         Update: {
           activo?: boolean
@@ -1281,8 +1330,10 @@ export type Database = {
           reembolsable?: boolean
           ref_externa?: string | null
           tc?: number | null
+          tc_cambio?: number | null
           tipo?: Database["public"]["Enums"]["caja_tipo"]
           updated_at?: string
+          usd_cambiado?: number | null
         }
         Relationships: [
           {

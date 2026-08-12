@@ -113,6 +113,36 @@ describe.skipIf(!url || !clave)("caja (base dev)", () => {
     for (const d of deuda) expect(d.cantidad).toBeGreaterThan(0);
   });
 
+  it("«por cobrar» trae toda la deuda, no la del mes que se está mirando", async () => {
+    // Lo que se debe de mayo se sigue debiendo en agosto. Filtrar por mes
+    // mostraba 3 de 11 y parecía que faltaban.
+    const { data: todaLaDeuda } = await s
+      .from("movimientos_caja")
+      .select("id, monto")
+      .eq("activo", true)
+      .eq("reembolsable", true)
+      .is("fecha_cobro", null);
+
+    const { data: soloAgosto } = await s
+      .from("movimientos_caja")
+      .select("id")
+      .eq("activo", true)
+      .eq("reembolsable", true)
+      .is("fecha_cobro", null)
+      .gte("fecha", "2026-08-01")
+      .lt("fecha", "2026-09-01");
+
+    const total = (todaLaDeuda ?? []).reduce((a, m) => a + m.monto, 0);
+    console.log(
+      `deuda total: ${todaLaDeuda!.length} movimientos ${pesos(total)} · ` +
+        `solo agosto: ${soloAgosto!.length}`,
+    );
+
+    // El total que muestra el indicador tiene que ser el de toda la deuda.
+    expect(todaLaDeuda!.length).toBeGreaterThan(soloAgosto!.length);
+    expect(Math.round(total)).toBe(1_193_500);
+  });
+
   it("un movimiento con cotización se convierte y sin ella no inventa", async () => {
     const movimientos = await todos();
     const conTc = movimientos.find((m) => m.tc !== null);

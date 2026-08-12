@@ -58,19 +58,21 @@ export default function FiltrosCaja({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
+      {/* Con "por cobrar" se mira una deuda, no un mes: el navegador de
+          período no aplica y se apaga para que no confunda. */}
+      <div className={`flex items-center gap-2 ${soloPorCobrar ? "opacity-40" : ""}`}>
         <Link
-          href={url({ mes: sumarMeses(mes, -1) })}
+          href={url({ mes: sumarMeses(mes, -1), cobrar: "" })}
           aria-label="Mes anterior"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
         >
           ←
         </Link>
         <span className="flex h-11 flex-1 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 px-3 text-base capitalize text-white">
-          {nombreDelMes(mes)}
+          {soloPorCobrar ? "Toda la historia" : nombreDelMes(mes)}
         </span>
         <Link
-          href={url({ mes: sumarMeses(mes, 1) })}
+          href={url({ mes: sumarMeses(mes, 1), cobrar: "" })}
           aria-label="Mes siguiente"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
         >

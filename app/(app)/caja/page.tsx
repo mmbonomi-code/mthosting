@@ -42,19 +42,33 @@ function Numero({
   valor,
   detalle,
   color,
+  href,
 }: {
   etiqueta: string;
   valor: string;
   detalle?: string;
   color: string;
+  href?: string;
 }) {
-  return (
-    <div className="flex flex-col gap-0.5">
+  const contenido = (
+    <>
       <span className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</span>
       <span className={`text-2xl font-semibold tabular-nums ${color}`}>{valor}</span>
       {detalle && <span className="text-xs text-slate-500">{detalle}</span>}
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="flex flex-col gap-0.5 rounded-lg transition-colors hover:bg-slate-800/60"
+      >
+        {contenido}
+      </Link>
+    );
+  }
+  return <div className="flex flex-col gap-0.5">{contenido}</div>;
 }
 
 export default async function Caja({
@@ -79,6 +93,11 @@ export default async function Caja({
   const hasta = primerDiaDelMes(sumarMeses(mes, 1));
   const ultimoDia = sumarDias(hasta, -1);
 
+  // "Por cobrar" es una deuda, no un movimiento del mes: lo que se debe de
+  // mayo se sigue debiendo en agosto. Por eso ignora el período y trae todo
+  // lo pendiente, o mostraría una parte y parecería que faltan.
+  const soloPorCobrar = params.cobrar === "1";
+
   const [
     { data: saldoActual },
     { data: saldoInicial },
@@ -90,19 +109,25 @@ export default async function Caja({
     // El saldo de hoy: una sola agregación en la base, no un recorrido.
     supabase.rpc("saldo_caja"),
     supabase.rpc("saldo_caja_antes", { p_fecha: desde }),
-    supabase
-      .from("movimientos_caja")
-      .select(
-        `id, fecha, tipo, monto, moneda, tc, descripcion, reembolsable,
-         fecha_cobro, forma_cobro,
-         categoria:categorias_movimiento(id, nombre),
-         depto:departamentos(id, codigo)`,
-      )
-      .eq("activo", true)
-      .gte("fecha", desde)
-      .lt("fecha", hasta)
-      .order("fecha")
-      .order("created_at"),
+    (() => {
+      const base = supabase
+        .from("movimientos_caja")
+        .select(
+          `id, fecha, tipo, monto, moneda, tc, descripcion, reembolsable,
+           fecha_cobro, forma_cobro,
+           categoria:categorias_movimiento(id, nombre),
+           depto:departamentos(id, codigo)`,
+        )
+        .eq("activo", true);
+
+      return soloPorCobrar
+        ? base
+            .eq("reembolsable", true)
+            .is("fecha_cobro", null)
+            .order("fecha")
+            .order("created_at")
+        : base.gte("fecha", desde).lt("fecha", hasta).order("fecha").order("created_at");
+    })(),
     supabase
       .from("categorias_movimiento")
       .select("id, nombre")
@@ -140,17 +165,23 @@ export default async function Caja({
   }));
 
   // El saldo renglón por renglón se calcula sobre el mes que se está mirando,
-  // arrancando del saldo que dejó todo lo anterior.
-  const conSaldo = acumular(movimientos, Number(saldoInicial ?? 0));
+  // arrancando del saldo que dejó todo lo anterior. Con "por cobrar" no
+  // aplica: no es un período, es una deuda suelta.
+  const conSaldo = soloPorCobrar
+    ? movimientos.map((m) => ({ ...m, saldo: null as number | null }))
+    : acumular(movimientos, Number(saldoInicial ?? 0));
 
   const filtros = {
     q: params.q ?? "",
     tipo: (params.tipo ?? "") === "" ? null : (params.tipo as TipoMovimiento),
     categoria: params.categoria ?? "",
     depto: params.depto ?? "",
-    soloPorCobrar: params.cobrar === "1",
+    // Ya vino filtrado de la base; volver a filtrar acá no cambia nada.
+    soloPorCobrar: false,
   };
-  const visibles = filtrar(conSaldo, filtros) as (Movimiento & { saldo: number })[];
+  const visibles = filtrar(conSaldo, filtros) as (Movimiento & {
+    saldo: number | null;
+  })[];
 
   const porCobrar = (porCobrarCrudos ?? []).reduce((s, m) => s + m.monto, 0);
 
@@ -200,8 +231,9 @@ export default async function Caja({
         <Numero
           etiqueta="Por cobrar"
           valor={pesos(porCobrar)}
-          detalle="reembolsos pendientes"
+          detalle="reembolsos pendientes →"
           color={porCobrar > 0 ? "text-amber-300" : "text-slate-400"}
+          href="/caja/por-cobrar"
         />
       </section>
 
@@ -211,16 +243,26 @@ export default async function Caja({
         tipo={params.tipo ?? ""}
         categoria={filtros.categoria}
         depto={filtros.depto}
-        soloPorCobrar={filtros.soloPorCobrar}
+        soloPorCobrar={soloPorCobrar}
         categorias={categorias ?? []}
         departamentos={departamentos ?? []}
       />
 
-      <p className="text-xs text-slate-500">
-        {visibles.length} movimiento{visibles.length === 1 ? "" : "s"} ·{" "}
-        {formatearFechaAR(desde)} al {formatearFechaAR(ultimoDia)} · arranca con{" "}
-        {pesos(Number(saldoInicial ?? 0))}
-      </p>
+      {soloPorCobrar ? (
+        <p className="text-xs text-amber-300">
+          {visibles.length} pendiente{visibles.length === 1 ? "" : "s"} de cobro, de
+          toda la historia — no solo de este mes.{" "}
+          <Link href="/caja/por-cobrar" className="underline underline-offset-4">
+            Verlos agrupados por departamento para cobrarlos
+          </Link>
+        </p>
+      ) : (
+        <p className="text-xs text-slate-500">
+          {visibles.length} movimiento{visibles.length === 1 ? "" : "s"} ·{" "}
+          {formatearFechaAR(desde)} al {formatearFechaAR(ultimoDia)} · arranca con{" "}
+          {pesos(Number(saldoInicial ?? 0))}
+        </p>
+      )}
 
       {visibles.length === 0 ? (
         <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
@@ -278,9 +320,12 @@ export default async function Caja({
                   </span>
                 </span>
 
-                <span className="w-24 shrink-0 text-right text-xs tabular-nums text-slate-400">
-                  {pesos(m.saldo)}
-                </span>
+                {/* Con "por cobrar" no hay saldo: no es un período, es deuda. */}
+                {m.saldo !== null && (
+                  <span className="w-24 shrink-0 text-right text-xs tabular-nums text-slate-400">
+                    {pesos(m.saldo)}
+                  </span>
+                )}
               </Link>
             </li>
           ))}

@@ -485,6 +485,66 @@ export type Database = {
           },
         ]
       }
+      equipamiento_bebe: {
+        Row: {
+          activo: boolean
+          creado_por: string | null
+          created_at: string
+          depto_id: string | null
+          estado: Database["public"]["Enums"]["equipamiento_estado"]
+          fecha_desde: string
+          fecha_hasta: string
+          id: string
+          notas: string | null
+          reserva_id: string | null
+          tipo: Database["public"]["Enums"]["equipamiento_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          creado_por?: string | null
+          created_at?: string
+          depto_id?: string | null
+          estado?: Database["public"]["Enums"]["equipamiento_estado"]
+          fecha_desde: string
+          fecha_hasta: string
+          id?: string
+          notas?: string | null
+          reserva_id?: string | null
+          tipo: Database["public"]["Enums"]["equipamiento_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string | null
+          created_at?: string
+          depto_id?: string | null
+          estado?: Database["public"]["Enums"]["equipamiento_estado"]
+          fecha_desde?: string
+          fecha_hasta?: string
+          id?: string
+          notas?: string | null
+          reserva_id?: string | null
+          tipo?: Database["public"]["Enums"]["equipamiento_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipamiento_bebe_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipamiento_bebe_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "reservas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eventos_estadia: {
         Row: {
           acceso_dejado: boolean
@@ -1228,6 +1288,75 @@ export type Database = {
           },
         ]
       }
+      notas_reporte: {
+        Row: {
+          activo: boolean
+          creado_por: string | null
+          created_at: string
+          depto_id: string | null
+          detalle: string | null
+          estado: Database["public"]["Enums"]["reporte_estado"]
+          fecha: string | null
+          fecha_hasta: string | null
+          hecho_at: string | null
+          hecho_por: string | null
+          id: string
+          responsable_id: string | null
+          seccion: Database["public"]["Enums"]["reporte_seccion"]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          creado_por?: string | null
+          created_at?: string
+          depto_id?: string | null
+          detalle?: string | null
+          estado?: Database["public"]["Enums"]["reporte_estado"]
+          fecha?: string | null
+          fecha_hasta?: string | null
+          hecho_at?: string | null
+          hecho_por?: string | null
+          id?: string
+          responsable_id?: string | null
+          seccion: Database["public"]["Enums"]["reporte_seccion"]
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string | null
+          created_at?: string
+          depto_id?: string | null
+          detalle?: string | null
+          estado?: Database["public"]["Enums"]["reporte_estado"]
+          fecha?: string | null
+          fecha_hasta?: string | null
+          hecho_at?: string | null
+          hecho_por?: string | null
+          id?: string
+          responsable_id?: string | null
+          seccion?: Database["public"]["Enums"]["reporte_seccion"]
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_reporte_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_reporte_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pagos_personal: {
         Row: {
           created_at: string
@@ -1618,44 +1747,6 @@ export type Database = {
           },
         ]
       }
-      reportes: {
-        Row: {
-          activo: boolean
-          contenido: string | null
-          created_at: string
-          fecha: string | null
-          id: string
-          persona_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          activo?: boolean
-          contenido?: string | null
-          created_at?: string
-          fecha?: string | null
-          id?: string
-          persona_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          activo?: boolean
-          contenido?: string | null
-          created_at?: string
-          fecha?: string | null
-          id?: string
-          persona_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reportes_persona_id_fkey"
-            columns: ["persona_id"]
-            isOneToOne: false
-            referencedRelation: "personas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       reservas: {
         Row: {
           adultos: number | null
@@ -1822,6 +1913,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      puede_escribir_reporte: { Args: never; Returns: boolean }
       puede_gestionar_reclamos: { Args: never; Returns: boolean }
     }
     Enums: {
@@ -1830,6 +1922,8 @@ export type Database = {
       bloqueo_motivo: "mantenimiento" | "uso_propietario" | "vacio" | "otro"
       canal_tipo: "airbnb" | "booking" | "directa"
       depto_estado: "activo" | "suspendido"
+      equipamiento_estado: "pedido" | "entregado" | "retirado"
+      equipamiento_tipo: "cuna" | "silla" | "banadera"
       evento_estado: "pendiente" | "coordinado" | "hecho" | "cancelado"
       evento_tipo: "checkin" | "checkout"
       limpieza_estado:
@@ -1876,6 +1970,8 @@ export type Database = {
         | "rechazado"
         | "descartado"
       reclamo_foto_origen: "limpieza" | "manual"
+      reporte_estado: "pendiente" | "hecho"
+      reporte_seccion: "anuncio" | "pendiente"
       rol_reserva_tipo: "salida" | "entrada" | "durante"
       rol_usuario:
         | "admin"
@@ -2018,6 +2114,8 @@ export const Constants = {
       bloqueo_motivo: ["mantenimiento", "uso_propietario", "vacio", "otro"],
       canal_tipo: ["airbnb", "booking", "directa"],
       depto_estado: ["activo", "suspendido"],
+      equipamiento_estado: ["pedido", "entregado", "retirado"],
+      equipamiento_tipo: ["cuna", "silla", "banadera"],
       evento_estado: ["pendiente", "coordinado", "hecho", "cancelado"],
       evento_tipo: ["checkin", "checkout"],
       limpieza_estado: [
@@ -2069,6 +2167,8 @@ export const Constants = {
         "descartado",
       ],
       reclamo_foto_origen: ["limpieza", "manual"],
+      reporte_estado: ["pendiente", "hecho"],
+      reporte_seccion: ["anuncio", "pendiente"],
       rol_reserva_tipo: ["salida", "entrada", "durante"],
       rol_usuario: [
         "admin",

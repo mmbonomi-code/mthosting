@@ -2,6 +2,7 @@ import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { contarReclamosUrgentes } from "@/lib/reclamos/alertas";
+import { contarPendientesUrgentes } from "@/lib/reporte/alertas";
 import { cerrarSesion } from "@/app/ingresar/acciones";
 
 export default async function LayoutApp({
@@ -26,8 +27,11 @@ export default async function LayoutApp({
     puedeGestionarReclamos(supabase),
   ]);
 
-  // El menú avisa cuántos reclamos hay que mirar hoy, sin entrar a la pantalla.
-  const reclamosUrgentes = verReclamos ? await contarReclamosUrgentes(supabase) : 0;
+  // El menú avisa cuántas cosas hay que mirar hoy, sin entrar a la pantalla.
+  const [reclamosUrgentes, reporteUrgente] = await Promise.all([
+    verReclamos ? contarReclamosUrgentes(supabase) : Promise.resolve(0),
+    contarPendientesUrgentes(supabase),
+  ]);
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-slate-900">
@@ -57,6 +61,7 @@ export default async function LayoutApp({
             { href: "/", texto: "Inicio", pendientes: 0 },
             { href: "/dia", texto: "Día", pendientes: 0 },
             { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
+            { href: "/reporte", texto: "Reporte", pendientes: reporteUrgente },
             ...(verReclamos
               ? [{ href: "/reclamos", texto: "Reclamos", pendientes: reclamosUrgentes }]
               : []),

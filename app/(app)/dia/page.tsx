@@ -8,6 +8,7 @@ import { puedeEditarReservas } from "@/lib/reservas/permisos";
 import { describirAcceso } from "@/lib/eventos/etiquetas";
 import BuscadorDia from "./BuscadorDia";
 import NavegadorFecha from "./NavegadorFecha";
+import AvisosDelDia from "./AvisosDelDia";
 
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
@@ -333,6 +334,9 @@ export default async function DelDia({
           </div>
         </>
       )}
+
+      {/* Lo del Reporte que toca hoy: avisos vigentes y cunas a llevar. */}
+      {!q && <AvisosDelDia fecha={fecha} />}
 
       {eventos.length === 0 ? (
         <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">

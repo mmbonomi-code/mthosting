@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describirAcceso } from "./etiquetas";
+import { describirAcceso, esAccesoPresencial } from "./etiquetas";
 
 const punto = (
   metodo: string,
@@ -43,5 +43,32 @@ describe("describirAcceso", () => {
 
   it("un método sin etiqueta conocida se muestra tal cual", () => {
     expect(describirAcceso(punto("self"), null)).toBe("Self");
+  });
+});
+
+describe("esAccesoPresencial", () => {
+  it("un punto presencial ocupa a alguien del equipo", () => {
+    expect(esAccesoPresencial(punto("presencial", "Diego"), null)).toBe(true);
+    expect(esAccesoPresencial(punto("presencial"), null)).toBe(true);
+  });
+
+  it("los accesos donde el huésped entra solo, no", () => {
+    for (const metodo of ["sobre", "candado", "valijas", "self", "llaves"]) {
+      expect(esAccesoPresencial(punto(metodo, "Esmeralda"), null)).toBe(false);
+    }
+  });
+
+  it("una persona suelta de las coordinaciones viejas también es presencial", () => {
+    expect(esAccesoPresencial(null, { nombre: "Marcos" })).toBe(true);
+  });
+
+  it("sin acceso definido no es presencial", () => {
+    expect(esAccesoPresencial(null, null)).toBe(false);
+  });
+
+  it("el punto manda sobre la persona si están los dos", () => {
+    expect(esAccesoPresencial(punto("sobre", "Esmeralda"), { nombre: "Marcos" })).toBe(
+      false,
+    );
   });
 });

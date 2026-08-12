@@ -47,6 +47,20 @@ export function describirAcceso(
   return null;
 }
 
+/**
+ * ¿Va una persona a abrir, o el huésped entra solo?
+ *
+ * Sirve para pintarlo distinto en la vista del día: lo presencial ocupa a
+ * alguien del equipo y se mira antes (decisión del dueño, 12/08/2026).
+ */
+export function esAccesoPresencial(
+  punto: { metodo: string } | null,
+  persona: { nombre: string } | null,
+): boolean {
+  if (punto) return punto.metodo === "presencial";
+  return persona !== null;
+}
+
 export const LLEGADA_DESDE: Record<string, string> = {
   depto: "Otro depto",
   eze: "Ezeiza",

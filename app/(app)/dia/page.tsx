@@ -5,7 +5,7 @@ import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import { faltantesDeEvento } from "@/lib/eventos/faltantes";
 import { momentoDeEvento } from "@/lib/eventos/reglas";
 import { puedeEditarReservas } from "@/lib/reservas/permisos";
-import { describirAcceso } from "@/lib/eventos/etiquetas";
+import { describirAcceso, esAccesoPresencial } from "@/lib/eventos/etiquetas";
 import BuscadorDia from "./BuscadorDia";
 import NavegadorFecha from "./NavegadorFecha";
 import AvisosDelDia from "./AvisosDelDia";
@@ -94,6 +94,7 @@ function Fila({ evento }: { evento: Evento }) {
   const punto = esLlegada ? evento.punto : evento.punto_devolucion;
   const persona = esLlegada ? evento.responsable : evento.responsable_devolucion;
   const textoAcceso = describirAcceso(punto, persona);
+  const accesoPresencial = esAccesoPresencial(punto, persona);
   const hora = formatearHora(evento.hora_coordinada);
   const fechaEvento =
     evento.fecha_coordinada ?? (esLlegada ? r.fecha_checkin : r.fecha_checkout);
@@ -140,10 +141,17 @@ function Fila({ evento }: { evento: Evento }) {
           {/* Lo importante: qué departamento y cómo se coordinó el acceso */}
           <span className="block truncate font-medium text-slate-100">
             {r.depto?.codigo}
-            {/* En celeste: se distingue del código del departamento y de los
-                verdes que usa el resto del sistema. */}
+            {/* Amarillo cuando va una persona, verde cuando el huésped entra
+                solo: de un vistazo se ve qué ocupa al equipo. */}
             {textoAcceso && (
-              <span className="font-normal text-sky-300"> · {textoAcceso}</span>
+              <span
+                className={`font-normal ${
+                  accesoPresencial ? "text-amber-300" : "text-emerald-300"
+                }`}
+              >
+                {" "}
+                · {textoAcceso}
+              </span>
             )}
             {/* Hay algo escrito en las observaciones: se avisa acá para que
                 no haya que entrar a cada ficha a buscarlo. */}

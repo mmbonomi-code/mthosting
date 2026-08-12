@@ -140,8 +140,10 @@ function Fila({ evento }: { evento: Evento }) {
           {/* Lo importante: qué departamento y cómo se coordinó el acceso */}
           <span className="block truncate font-medium text-slate-100">
             {r.depto?.codigo}
+            {/* En celeste: se distingue del código del departamento y de los
+                verdes que usa el resto del sistema. */}
             {textoAcceso && (
-              <span className="font-normal text-emerald-300"> · {textoAcceso}</span>
+              <span className="font-normal text-sky-300"> · {textoAcceso}</span>
             )}
             {/* Hay algo escrito en las observaciones: se avisa acá para que
                 no haya que entrar a cada ficha a buscarlo. */}

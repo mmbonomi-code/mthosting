@@ -27,7 +27,11 @@ export const ESTADOS_EVENTO: Record<string, string> = {
 
 /**
  * Cómo se coordinó el acceso, en una línea: "Sobre - Esmeralda",
- * "Candado - Kennedy 1 #2906", "Presencial - Maguie".
+ * "Candado - Kennedy 1 #2906", "Diego".
+ *
+ * Cuando va una persona no se aclara "Presencial": el nombre ya lo dice
+ * (decisión del dueño, 12/08/2026). Si el punto presencial no tiene a quién
+ * nombrar, ahí sí queda la palabra sola.
  */
 export function describirAcceso(
   punto: { metodo: string; ubicacion: string | null; identificador: string | null } | null,
@@ -35,10 +39,11 @@ export function describirAcceso(
 ): string | null {
   if (punto) {
     const donde = [punto.ubicacion, punto.identificador].filter(Boolean).join(" ");
+    if (punto.metodo === "presencial") return donde || METODOS_ACCESO.presencial;
     const metodo = METODOS_ACCESO[punto.metodo] ?? punto.metodo;
     return donde ? `${metodo} - ${donde}` : metodo;
   }
-  if (persona) return `Presencial - ${persona.nombre}`;
+  if (persona) return persona.nombre;
   return null;
 }
 

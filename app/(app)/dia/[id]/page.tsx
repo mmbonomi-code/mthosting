@@ -470,10 +470,16 @@ export default async function FichaEvento({
           {fechaReserva ? formatearFechaAR(fechaReserva) : "—"}
         </Dato>
         {/* En la salida importa desde cuándo está el huésped: da una idea de
-            cómo va a quedar el departamento. */}
+            cómo va a quedar el departamento. En la llegada importa hasta
+            cuándo se queda, que es lo que se necesita para coordinar. */}
         {!esLlegada && (
           <Dato etiqueta="Entró">
             {r.fecha_checkin ? formatearFechaAR(r.fecha_checkin) : "—"}
+          </Dato>
+        )}
+        {esLlegada && (
+          <Dato etiqueta="Se va">
+            {r.fecha_checkout ? formatearFechaAR(r.fecha_checkout) : "—"}
           </Dato>
         )}
         <Dato etiqueta="Noches">{r.noches}</Dato>

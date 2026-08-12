@@ -76,6 +76,8 @@ export default async function Caja({
 }: {
   searchParams: Promise<{
     mes?: string;
+    desde?: string;
+    hasta?: string;
     q?: string;
     tipo?: string;
     categoria?: string;
@@ -88,9 +90,14 @@ export default async function Caja({
 
   if (!(await puedeVerCaja(supabase))) return <SinAcceso />;
 
+  // El período es un mes, o un rango libre si se eligieron las dos fechas.
+  // `hasta` se maneja exclusivo adentro, como un check-out.
+  const esRangoLibre = Boolean(params.desde && params.hasta);
   const mes = params.mes ?? mesActualAR();
-  const desde = primerDiaDelMes(mes);
-  const hasta = primerDiaDelMes(sumarMeses(mes, 1));
+  const desde = esRangoLibre ? params.desde! : primerDiaDelMes(mes);
+  const hasta = esRangoLibre
+    ? sumarDias(params.hasta!, 1)
+    : primerDiaDelMes(sumarMeses(mes, 1));
   const ultimoDia = sumarDias(hasta, -1);
 
   // "Por cobrar" es una deuda, no un movimiento del mes: lo que se debe de
@@ -239,6 +246,9 @@ export default async function Caja({
 
       <FiltrosCaja
         mes={mes}
+        desde={desde}
+        hasta={ultimoDia}
+        esRangoLibre={esRangoLibre}
         q={filtros.q}
         tipo={params.tipo ?? ""}
         categoria={filtros.categoria}

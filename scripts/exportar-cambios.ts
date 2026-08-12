@@ -29,7 +29,9 @@ const s = createClient<Database>(
 
 const { data: movimientos, error } = await s
   .from("movimientos_caja")
-  .select("id, ref_externa, fecha, monto, descripcion, categoria:categorias_movimiento(nombre)")
+  .select(
+    "id, ref_externa, fecha, monto, tc, descripcion, categoria:categorias_movimiento(nombre)",
+  )
   .eq("activo", true)
   .eq("tipo", "ingreso")
   .order("fecha");
@@ -38,6 +40,13 @@ if (error) throw error;
 const cambios = (movimientos ?? []).filter(
   (m) => m.categoria?.nombre === "CAMBIO URVA",
 );
+
+/**
+ * Diferencia que se acepta como redondeo (decisión del dueño, 12/08/2026):
+ * si el producto no da exacto por menos de mil pesos, el cambio está bien y
+ * la diferencia se absorbe.
+ */
+const REDONDEO_ACEPTADO = 1000;
 
 /** `1430 X 1200` → los dos números, en el orden en que aparecen. */
 function numerosDelDetalle(detalle: string | null): [number, number] | null {
@@ -49,19 +58,51 @@ function numerosDelDetalle(detalle: string | null): [number, number] | null {
 }
 
 /**
- * Solo se sugiere si el producto da el monto EXACTO. El dólar es el número
- * más chico y el tipo de cambio el más grande: un TC de tres dígitos no
- * existe en este período y un cambio de 1.400 dólares tampoco es habitual,
- * pero igual queda a la vista para que se revise.
+ * El detalle escribe los dos números en cualquier orden: a veces
+ * `1430 X 1200` (tipo de cambio primero) y a veces `351 x 1425` (dólares
+ * primero). Para saber cuál es cuál se compara con el dólar que Ninox venía
+ * usando por esos días: el número que se le parece es el tipo de cambio.
  */
-function sugerir(detalle: string | null, monto: number) {
+function separarUsdYTc(a: number, b: number, referencia: number) {
+  const tc = Math.abs(a - referencia) <= Math.abs(b - referencia) ? a : b;
+  return { usd: tc === a ? b : a, tc };
+}
+
+function sugerir(detalle: string | null, monto: number, referencia: number) {
   const par = numerosDelDetalle(detalle);
   if (!par) return null;
-  const [a, b] = par;
-  if (Math.round(a * b) !== Math.round(monto)) return null;
-  const usd = Math.min(a, b);
-  const tc = Math.max(a, b);
-  return { usd, tc };
+
+  const { usd, tc } = separarUsdYTc(par[0], par[1], referencia);
+  const diferencia = Math.round(usd * tc - monto);
+
+  // Una diferencia grande significa que el detalle no describe ese monto:
+  // eso lo tiene que mirar una persona.
+  if (Math.abs(diferencia) >= REDONDEO_ACEPTADO) return null;
+
+  return { usd, tc, diferencia };
+}
+
+/**
+ * El dólar que Ninox venía usando por esas fechas, para desambiguar el orden
+ * de los dos números del detalle. Se toma el del cambio más cercano en el
+ * tiempo que tenga cotización cargada.
+ */
+const referencias = cambios
+  .filter((m) => m.tc !== null)
+  .map((m) => ({ fecha: Date.parse(m.fecha), tc: m.tc as number }));
+
+function referenciaDe(fecha: string): number {
+  const cuando = Date.parse(fecha);
+  let mejor = 1400;
+  let distancia = Infinity;
+  for (const r of referencias) {
+    const d = Math.abs(r.fecha - cuando);
+    if (d < distancia) {
+      distancia = d;
+      mejor = r.tc;
+    }
+  }
+  return mejor;
 }
 
 const libro = new ExcelJS.Workbook();
@@ -75,16 +116,27 @@ hoja.columns = [
   { header: "DOLARES", key: "usd", width: 12 },
   { header: "TIPO DE CAMBIO", key: "tc", width: 16 },
   { header: "CONTROL (dolares x TC)", key: "control", width: 22 },
+  { header: "REDONDEO", key: "redondeo", width: 12 },
   { header: "ESTADO", key: "estado", width: 26 },
 ];
 hoja.getRow(1).font = { bold: true };
 hoja.views = [{ state: "frozen", ySplit: 1 }];
 
-let sugeridos = 0;
+let exactos = 0;
+let conRedondeo = 0;
+let aCompletar = 0;
+let redondeoTotal = 0;
 
 for (const [i, m] of cambios.entries()) {
-  const sugerencia = sugerir(m.descripcion, m.monto);
-  if (sugerencia) sugeridos++;
+  const sugerencia = sugerir(m.descripcion, m.monto, referenciaDe(m.fecha));
+
+  if (sugerencia) {
+    if (sugerencia.diferencia === 0) exactos++;
+    else {
+      conRedondeo++;
+      redondeoTotal += sugerencia.diferencia;
+    }
+  } else aCompletar++;
 
   const fila = hoja.addRow({
     id: m.ref_externa ?? m.id,
@@ -93,7 +145,12 @@ for (const [i, m] of cambios.entries()) {
     detalle: m.descripcion ?? "",
     usd: sugerencia?.usd ?? null,
     tc: sugerencia?.tc ?? null,
-    estado: sugerencia ? "Sugerido: revisar" : "COMPLETAR",
+    redondeo: sugerencia?.diferencia ?? null,
+    estado: !sugerencia
+      ? "COMPLETAR"
+      : sugerencia.diferencia === 0
+        ? "Listo"
+        : "Listo (redondeo)",
   });
 
   const n = i + 2;
@@ -101,6 +158,7 @@ for (const [i, m] of cambios.entries()) {
   fila.getCell("control").value = { formula: `IF(AND(E${n}<>"",F${n}<>""),E${n}*F${n},"")` };
   fila.getCell("monto").numFmt = "#,##0";
   fila.getCell("control").numFmt = "#,##0";
+  fila.getCell("redondeo").numFmt = "#,##0;[Red]-#,##0";
   fila.getCell("usd").numFmt = "#,##0.##";
   fila.getCell("tc").numFmt = "#,##0.##";
 
@@ -113,16 +171,20 @@ for (const [i, m] of cambios.entries()) {
         fgColor: { argb: "FFFDF1DA" },
       };
     }
+  } else if (sugerencia.diferencia !== 0) {
+    fila.getCell("redondeo").font = { color: { argb: "FF8A5A00" } };
   }
 }
 
 // Una fila de ayuda al final, separada de los datos.
 hoja.addRow({});
 hoja.addRow({
-  id: "",
-  fecha: "",
-  monto: "",
-  detalle: "La columna CONTROL tiene que dar igual que PESOS QUE ENTRARON.",
+  detalle: `Solo hay que completar las ${aCompletar} filas que dicen COMPLETAR.`,
+});
+hoja.addRow({
+  detalle:
+    "REDONDEO es lo que sobra o falta entre dolares x TC y los pesos que entraron. " +
+    "Se acepta hasta $1.000.",
 });
 hoja.addRow({ detalle: "No cambies la columna ID: es con lo que se vuelve a cargar." });
 
@@ -131,5 +193,7 @@ const buffer = await libro.xlsx.writeBuffer();
 writeFileSync(salida, Buffer.from(buffer));
 
 console.log(`${cambios.length} cambios exportados a ${salida}`);
-console.log(`  con sugerencia (el producto da exacto): ${sugeridos}`);
-console.log(`  a completar a mano: ${cambios.length - sugeridos}`);
+console.log(`  exactos:                  ${exactos}`);
+console.log(`  aceptados por redondeo:   ${conRedondeo}`);
+console.log(`  a completar a mano:       ${aCompletar}`);
+console.log(`  redondeo total: $${redondeoTotal.toLocaleString("es-AR")}`);

@@ -231,7 +231,7 @@ export type Database = {
           },
         ]
       }
-      categorias_gasto: {
+      categorias_movimiento: {
         Row: {
           activo: boolean
           created_at: string
@@ -275,33 +275,6 @@ export type Database = {
           fecha?: string
           id?: string
           tc?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      cuentas: {
-        Row: {
-          activo: boolean
-          created_at: string
-          id: string
-          moneda: string | null
-          nombre: string
-          updated_at: string
-        }
-        Insert: {
-          activo?: boolean
-          created_at?: string
-          id?: string
-          moneda?: string | null
-          nombre: string
-          updated_at?: string
-        }
-        Update: {
-          activo?: boolean
-          created_at?: string
-          id?: string
-          moneda?: string | null
-          nombre?: string
           updated_at?: string
         }
         Relationships: []
@@ -659,79 +632,6 @@ export type Database = {
         }
         Relationships: []
       }
-      gastos: {
-        Row: {
-          activo: boolean
-          categoria_id: string | null
-          comprobante: string | null
-          created_at: string
-          cuenta_id: string | null
-          depto_id: string | null
-          descripcion: string | null
-          fecha: string | null
-          fecha_tc: string | null
-          id: string
-          moneda: string | null
-          monto: number | null
-          tc: number | null
-          updated_at: string
-        }
-        Insert: {
-          activo?: boolean
-          categoria_id?: string | null
-          comprobante?: string | null
-          created_at?: string
-          cuenta_id?: string | null
-          depto_id?: string | null
-          descripcion?: string | null
-          fecha?: string | null
-          fecha_tc?: string | null
-          id?: string
-          moneda?: string | null
-          monto?: number | null
-          tc?: number | null
-          updated_at?: string
-        }
-        Update: {
-          activo?: boolean
-          categoria_id?: string | null
-          comprobante?: string | null
-          created_at?: string
-          cuenta_id?: string | null
-          depto_id?: string | null
-          descripcion?: string | null
-          fecha?: string | null
-          fecha_tc?: string | null
-          id?: string
-          moneda?: string | null
-          monto?: number | null
-          tc?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gastos_categoria_id_fkey"
-            columns: ["categoria_id"]
-            isOneToOne: false
-            referencedRelation: "categorias_gasto"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gastos_cuenta_id_fkey"
-            columns: ["cuenta_id"]
-            isOneToOne: false
-            referencedRelation: "cuentas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gastos_depto_id_fkey"
-            columns: ["depto_id"]
-            isOneToOne: false
-            referencedRelation: "departamentos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       importaciones: {
         Row: {
           actualizadas: number | null
@@ -1087,42 +987,42 @@ export type Database = {
         Row: {
           concepto: string
           created_at: string
-          gasto_id: string | null
           id: string
           liquidacion_id: string
           moneda: string | null
           monto: number | null
+          movimiento_id: string | null
           reserva_id: string | null
           updated_at: string
         }
         Insert: {
           concepto: string
           created_at?: string
-          gasto_id?: string | null
           id?: string
           liquidacion_id: string
           moneda?: string | null
           monto?: number | null
+          movimiento_id?: string | null
           reserva_id?: string | null
           updated_at?: string
         }
         Update: {
           concepto?: string
           created_at?: string
-          gasto_id?: string | null
           id?: string
           liquidacion_id?: string
           moneda?: string | null
           monto?: number | null
+          movimiento_id?: string | null
           reserva_id?: string | null
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "liquidacion_lineas_gasto_id_fkey"
-            columns: ["gasto_id"]
+            columns: ["movimiento_id"]
             isOneToOne: false
-            referencedRelation: "gastos"
+            referencedRelation: "movimientos_caja"
             referencedColumns: ["id"]
           },
           {
@@ -1223,6 +1123,41 @@ export type Database = {
           },
         ]
       }
+      movimiento_comprobantes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          movimiento_id: string
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          movimiento_id: string
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          movimiento_id?: string
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimiento_comprobantes_movimiento_id_fkey"
+            columns: ["movimiento_id"]
+            isOneToOne: false
+            referencedRelation: "movimientos_caja"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimientos_acceso: {
         Row: {
           confirmado: boolean
@@ -1284,6 +1219,84 @@ export type Database = {
             columns: ["punto_acceso_id"]
             isOneToOne: false
             referencedRelation: "puntos_acceso"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movimientos_caja: {
+        Row: {
+          activo: boolean
+          categoria_id: string | null
+          created_at: string
+          depto_id: string | null
+          descripcion: string | null
+          fecha: string
+          fecha_cobro: string | null
+          fecha_tc: string | null
+          forma_cobro: string | null
+          id: string
+          moneda: string | null
+          monto: number
+          notas_cobro: string | null
+          reembolsable: boolean
+          ref_externa: string | null
+          tc: number | null
+          tipo: Database["public"]["Enums"]["caja_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          categoria_id?: string | null
+          created_at?: string
+          depto_id?: string | null
+          descripcion?: string | null
+          fecha: string
+          fecha_cobro?: string | null
+          fecha_tc?: string | null
+          forma_cobro?: string | null
+          id?: string
+          moneda?: string | null
+          monto: number
+          notas_cobro?: string | null
+          reembolsable?: boolean
+          ref_externa?: string | null
+          tc?: number | null
+          tipo?: Database["public"]["Enums"]["caja_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          categoria_id?: string | null
+          created_at?: string
+          depto_id?: string | null
+          descripcion?: string | null
+          fecha?: string
+          fecha_cobro?: string | null
+          fecha_tc?: string | null
+          forma_cobro?: string | null
+          id?: string
+          moneda?: string | null
+          monto?: number
+          notas_cobro?: string | null
+          reembolsable?: boolean
+          ref_externa?: string | null
+          tc?: number | null
+          tipo?: Database["public"]["Enums"]["caja_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_movimiento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
             referencedColumns: ["id"]
           },
         ]
@@ -1915,11 +1928,15 @@ export type Database = {
     Functions: {
       puede_escribir_reporte: { Args: never; Returns: boolean }
       puede_gestionar_reclamos: { Args: never; Returns: boolean }
+      puede_ver_caja: { Args: never; Returns: boolean }
+      saldo_caja: { Args: { p_hasta?: string }; Returns: number }
+      saldo_caja_antes: { Args: { p_fecha: string }; Returns: number }
     }
     Enums: {
       acuerdo_pago: "cobra_todo_mth" | "cobra_cada_uno" | "solo_comision"
       ambientes_tipo: "monoambiente" | "dos" | "tres" | "cuatro"
       bloqueo_motivo: "mantenimiento" | "uso_propietario" | "vacio" | "otro"
+      caja_tipo: "ingreso" | "egreso"
       canal_tipo: "airbnb" | "booking" | "directa"
       depto_estado: "activo" | "suspendido"
       equipamiento_estado: "pedido" | "entregado" | "retirado"
@@ -2112,6 +2129,7 @@ export const Constants = {
       acuerdo_pago: ["cobra_todo_mth", "cobra_cada_uno", "solo_comision"],
       ambientes_tipo: ["monoambiente", "dos", "tres", "cuatro"],
       bloqueo_motivo: ["mantenimiento", "uso_propietario", "vacio", "otro"],
+      caja_tipo: ["ingreso", "egreso"],
       canal_tipo: ["airbnb", "booking", "directa"],
       depto_estado: ["activo", "suspendido"],
       equipamiento_estado: ["pedido", "entregado", "retirado"],

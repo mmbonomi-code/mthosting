@@ -3,6 +3,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { contarReclamosUrgentes } from "@/lib/reclamos/alertas";
 import { contarPendientesUrgentes } from "@/lib/reporte/alertas";
+import { puedeVerCaja } from "@/lib/caja/permisos";
 import { cerrarSesion } from "@/app/ingresar/acciones";
 
 export default async function LayoutApp({
@@ -13,7 +14,7 @@ export default async function LayoutApp({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: persona }, { count: sinAsignar }, verReclamos] = await Promise.all([
+  const [{ data: persona }, { count: sinAsignar }, verReclamos, verCaja] = await Promise.all([
     supabase
       .from("personas")
       .select("nombre")
@@ -25,6 +26,7 @@ export default async function LayoutApp({
       .is("depto_id", null)
       .eq("descartada", false),
     puedeGestionarReclamos(supabase),
+    puedeVerCaja(supabase),
   ]);
 
   // El menú avisa cuántas cosas hay que mirar hoy, sin entrar a la pantalla.
@@ -62,6 +64,7 @@ export default async function LayoutApp({
             { href: "/dia", texto: "Día", pendientes: 0 },
             { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
             { href: "/reporte", texto: "Reporte", pendientes: reporteUrgente },
+            ...(verCaja ? [{ href: "/caja", texto: "Caja", pendientes: 0 }] : []),
             ...(verReclamos
               ? [{ href: "/reclamos", texto: "Reclamos", pendientes: reclamosUrgentes }]
               : []),

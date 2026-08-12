@@ -4,6 +4,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerCaja } from "@/lib/caja/permisos";
 import { formatearFechaAR } from "@/lib/fechas";
 import { dolares, enDolares, pesos } from "@/lib/caja/saldo";
+import { costoEnDolares, tcPromedio } from "@/lib/caja/cobertura";
 import { BUCKET_COMPROBANTES } from "@/lib/caja/tipos";
 import {
   anularMovimiento,
@@ -32,7 +33,8 @@ export default async function FichaMovimiento({
     .select(
       `id, fecha, tipo, monto, moneda, tc, descripcion, reembolsable,
        fecha_cobro, forma_cobro, notas_cobro, activo, ref_externa,
-       categoria:categorias_movimiento(id, nombre),
+       usd_cambiado, tc_cambio,
+       categoria:categorias_movimiento(id, nombre, es_cambio),
        depto:departamentos(id, codigo)`,
     )
     .eq("id", id)
@@ -44,7 +46,7 @@ export default async function FichaMovimiento({
     await Promise.all([
       supabase
         .from("categorias_movimiento")
-        .select("id, nombre")
+        .select("id, nombre, es_cambio")
         .eq("activo", true)
         .order("nombre"),
       supabase
@@ -77,7 +79,47 @@ export default async function FichaMovimiento({
     esPdf: a.storage_path.toLowerCase().endsWith(".pdf"),
   }));
 
-  const usd = enDolares({ monto: movimiento.monto, tc: movimiento.tc });
+  // De dónde salió la plata de este gasto: qué bolsa pagó cada tramo.
+  const { data: tramosCrudos } = await supabase
+    .from("movimiento_cobertura")
+    .select(
+      `monto, tc,
+       origen:movimientos_caja!movimiento_cobertura_origen_id_fkey(id, fecha, descripcion)`,
+    )
+    .eq("movimiento_id", id);
+
+  type TramoCrudo = {
+    monto: number;
+    tc: number | null;
+    origen: { id: string; fecha: string; descripcion: string | null } | null;
+  };
+  const tramos = (tramosCrudos ?? []) as unknown as TramoCrudo[];
+
+  const costoReal = costoEnDolares(
+    tramos.map((t) => ({
+      movimiento_id: id,
+      origen_id: t.origen?.id ?? null,
+      monto: t.monto,
+      tc: t.tc,
+    })),
+    movimiento.tc,
+  );
+  const promedio = tcPromedio(
+    tramos.map((t) => ({
+      movimiento_id: id,
+      origen_id: t.origen?.id ?? null,
+      monto: t.monto,
+      tc: t.tc,
+    })),
+    movimiento.tc,
+  );
+
+  // En un egreso manda el costo real de la plata; en un ingreso, la
+  // conversión del día.
+  const usd =
+    movimiento.tipo === "egreso" && costoReal !== null
+      ? costoReal
+      : enDolares({ monto: movimiento.monto, tc: movimiento.tc });
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -119,6 +161,61 @@ export default async function FichaMovimiento({
           {movimiento.depto?.codigo && ` · ${movimiento.depto.codigo}`}
         </p>
       </div>
+
+      {/* Un cambio: cuántos dólares se dieron y a cuánto */}
+      {movimiento.usd_cambiado !== null && movimiento.tc_cambio !== null && (
+        <section className="rounded-xl border border-emerald-900/60 bg-emerald-950/20 px-4 py-3 text-sm text-emerald-200">
+          Se cambiaron{" "}
+          <strong>US$ {movimiento.usd_cambiado.toLocaleString("es-AR")}</strong> a{" "}
+          <strong>{movimiento.tc_cambio.toLocaleString("es-AR")}</strong>. Los gastos
+          que se paguen con esta plata cuestan a ese tipo de cambio.
+        </section>
+      )}
+
+      {/* De qué bolsa salió cada peso de este gasto */}
+      {movimiento.tipo === "egreso" && tramos.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-xl border border-slate-800 p-4">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            De dónde salió la plata
+          </h2>
+          <ul className="flex flex-col gap-1.5">
+            {tramos.map((t, i) => (
+              <li
+                key={i}
+                className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
+              >
+                <span className="text-slate-300">
+                  {pesos(t.monto)}
+                  {t.origen ? (
+                    <span className="text-slate-500">
+                      {" "}
+                      del cambio del {formatearFechaAR(t.origen.fecha)}
+                    </span>
+                  ) : (
+                    <span className="text-amber-300"> sin cubrir todavía</span>
+                  )}
+                </span>
+                <span className="tabular-nums text-slate-400">
+                  {t.tc === null ? (
+                    <span className="text-slate-500">
+                      al dólar del día
+                      {movimiento.tc !== null && ` (${movimiento.tc.toLocaleString("es-AR")})`}
+                    </span>
+                  ) : (
+                    `a ${t.tc.toLocaleString("es-AR")}`
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {promedio !== null && tramos.length > 1 && (
+            <p className="border-t border-slate-800 pt-2 text-xs text-slate-500">
+              Tipo de cambio promedio de este gasto:{" "}
+              <span className="text-slate-300">{promedio.toLocaleString("es-AR")}</span>
+            </p>
+          )}
+        </section>
+      )}
 
       {/* Estado del reembolso */}
       {movimiento.reembolsable && (
@@ -193,6 +290,10 @@ export default async function FichaMovimiento({
             depto_id: movimiento.depto?.id ?? "",
             descripcion: movimiento.descripcion ?? "",
             reembolsable: movimiento.reembolsable,
+            usd_cambiado:
+              movimiento.usd_cambiado === null ? "" : String(movimiento.usd_cambiado),
+            tc_cambio:
+              movimiento.tc_cambio === null ? "" : String(movimiento.tc_cambio),
           }}
           categorias={categorias ?? []}
           departamentos={departamentos ?? []}

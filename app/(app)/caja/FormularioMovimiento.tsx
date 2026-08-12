@@ -13,7 +13,23 @@ export type ValoresMovimiento = {
   depto_id: string;
   descripcion: string;
   reembolsable: boolean;
+  usd_cambiado: string;
+  tc_cambio: string;
 };
+
+/** `1716000` → `1.716.000`, para leer el resultado de un vistazo. */
+function conPuntos(valor: number): string {
+  return Math.round(valor).toLocaleString("es-AR");
+}
+
+function aNumero(texto: string): number | null {
+  const limpio = texto.trim();
+  if (limpio === "") return null;
+  const n = Number(
+    limpio.includes(",") ? limpio.replace(/\./g, "").replace(",", ".") : limpio.replace(/\./g, ""),
+  );
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
 
 /**
  * Alta y edición de un movimiento. El monto va siempre positivo: el signo lo
@@ -29,7 +45,7 @@ export default function FormularioMovimiento({
 }: {
   accion: (estadoPrevio: EstadoFormulario, fd: FormData) => Promise<EstadoFormulario>;
   valores: ValoresMovimiento;
-  categorias: { id: string; nombre: string }[];
+  categorias: { id: string; nombre: string; es_cambio: boolean }[];
   departamentos: { id: string; codigo: string }[];
   esAlta: boolean;
   urlCancelar: string;
@@ -41,6 +57,19 @@ export default function FormularioMovimiento({
   const [tipo, setTipo] = useState(valores.tipo);
   const [depto, setDepto] = useState(valores.depto_id);
   const [reembolsable, setReembolsable] = useState(valores.reembolsable);
+  const [categoria, setCategoria] = useState(valores.categoria_id);
+  const [usd, setUsd] = useState(valores.usd_cambiado);
+  const [tcCambio, setTcCambio] = useState(valores.tc_cambio);
+
+  // Un ingreso de una categoría de cambio se carga en dólares y tipo de
+  // cambio: los pesos son el producto y no se escriben a mano.
+  const esCambio =
+    tipo === "ingreso" &&
+    categorias.find((c) => c.id === categoria)?.es_cambio === true;
+
+  const dolares = aNumero(usd);
+  const cotizacion = aNumero(tcCambio);
+  const pesosCalculados = dolares !== null && cotizacion !== null ? dolares * cotizacion : null;
 
   return (
     <form action={enviar} className="flex flex-col gap-4">
@@ -81,7 +110,72 @@ export default function FormularioMovimiento({
             className={clsEntrada}
           />
         </label>
+
         <label className="flex flex-col gap-1.5">
+          <span className={clsEtiqueta}>Categoría</span>
+          <select
+            name="categoria_id"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            required
+            className={clsEntrada}
+          >
+            <option value="">— Elegir —</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {esCambio ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-4">
+          <p className="text-xs uppercase tracking-wide text-emerald-400">
+            Cambio de dólares
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className={clsEtiqueta}>Dólares cambiados</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="usd_cambiado"
+                value={usd}
+                onChange={(e) => setUsd(e.target.value)}
+                required
+                placeholder="1200"
+                className={clsEntrada}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={clsEtiqueta}>Tipo de cambio</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="tc_cambio"
+                value={tcCambio}
+                onChange={(e) => setTcCambio(e.target.value)}
+                required
+                placeholder="1430"
+                className={clsEntrada}
+              />
+            </label>
+          </div>
+          <p className="text-sm text-slate-300">
+            Entran{" "}
+            <strong className="text-lg tabular-nums text-emerald-300">
+              {pesosCalculados === null ? "—" : `$ ${conPuntos(pesosCalculados)}`}
+            </strong>
+          </p>
+          <p className="text-xs text-slate-500">
+            Los gastos que se paguen con esta plata van a costar a este tipo de
+            cambio, no al dólar del día.
+          </p>
+        </div>
+      ) : (
+        <label className="flex flex-col gap-1.5 sm:max-w-64">
           <span className={clsEtiqueta}>Monto (pesos)</span>
           <input
             type="text"
@@ -96,24 +190,7 @@ export default function FormularioMovimiento({
             Siempre positivo. El signo lo da si entra o sale.
           </span>
         </label>
-      </div>
-
-      <label className="flex flex-col gap-1.5">
-        <span className={clsEtiqueta}>Categoría</span>
-        <select
-          name="categoria_id"
-          defaultValue={valores.categoria_id}
-          required
-          className={clsEntrada}
-        >
-          <option value="">— Elegir —</option>
-          {categorias.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-            </option>
-          ))}
-        </select>
-      </label>
+      )}
 
       <label className="flex flex-col gap-1.5">
         <span className={clsEtiqueta}>Detalle</span>

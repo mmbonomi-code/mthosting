@@ -14,8 +14,16 @@ import ExcelJS from "exceljs";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../lib/database.types.ts";
 
-/** Diferencia aceptada entre dólares × TC y los pesos que entraron. */
-const REDONDEO_ACEPTADO = 1000;
+/**
+ * Diferencia aceptada entre dólares × TC y los pesos que entraron.
+ *
+ * Arrancó en mil pesos y el dueño la subió a diez mil (12/08/2026): sobre
+ * medio año de operación la diferencia total no llega a diez mil pesos y no
+ * cambia nada. Se puede pisar con `--tolerancia`.
+ */
+const REDONDEO_ACEPTADO = Number(
+  process.argv.find((a) => a.startsWith("--tolerancia="))?.split("=")[1] ?? 10_000,
+);
 
 const ruta = process.argv[2];
 const cargar = process.argv.includes("--cargar");

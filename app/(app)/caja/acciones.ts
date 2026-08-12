@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerCaja } from "@/lib/caja/permisos";
 import { BUCKET_COMPROBANTES, type EstadoFormulario } from "@/lib/caja/tipos";
+import { recalcularCobertura } from "@/lib/caja/recalcular";
 import type { Database } from "@/lib/database.types";
 
 type TipoCaja = Database["public"]["Enums"]["caja_tipo"];
@@ -67,15 +68,62 @@ function validar(datos: {
   return null;
 }
 
+/**
+ * Un ingreso de una categoría de cambio se carga en dólares y tipo de
+ * cambio, y los pesos salen de multiplicar. Es como se opera: a Maguie le
+ * avisan "cambié tantos dólares a tanto".
+ */
+async function datosDelCambio(
+  supabase: NonNullable<Awaited<ReturnType<typeof conPermiso>>>,
+  categoriaId: string | null,
+  tipo: TipoCaja,
+  fd: FormData,
+): Promise<
+  { ok: true; usd: number | null; tc: number | null; pesos: number | null } | { ok: false; error: string }
+> {
+  if (tipo !== "ingreso" || !categoriaId) {
+    return { ok: true, usd: null, tc: null, pesos: null };
+  }
+
+  const { data: categoria } = await supabase
+    .from("categorias_movimiento")
+    .select("es_cambio")
+    .eq("id", categoriaId)
+    .maybeSingle();
+
+  if (!categoria?.es_cambio) return { ok: true, usd: null, tc: null, pesos: null };
+
+  const usd = monto(fd, "usd_cambiado");
+  const tc = monto(fd, "tc_cambio");
+
+  if (usd === null || tc === null) {
+    return {
+      ok: false,
+      error: "Poné cuántos dólares se cambiaron y a qué tipo de cambio.",
+    };
+  }
+  if (usd <= 0 || tc <= 0) {
+    return { ok: false, error: "Los dólares y el tipo de cambio tienen que ser mayores a cero." };
+  }
+
+  return { ok: true, usd, tc, pesos: Math.round(usd * tc * 100) / 100 };
+}
+
 export async function crearMovimiento(fd: FormData): Promise<EstadoFormulario> {
   const supabase = await conPermiso();
   if (!supabase) return { error: "La caja es de manager y administración." };
 
   const fecha = texto(fd, "fecha");
-  const importe = monto(fd, "monto");
   const categoriaId = texto(fd, "categoria_id");
   const deptoId = texto(fd, "depto_id");
   const reembolsable = fd.get("reembolsable") === "on";
+  const tipo = (texto(fd, "tipo") ?? "egreso") as TipoCaja;
+
+  const cambio = await datosDelCambio(supabase, categoriaId, tipo, fd);
+  if (!cambio.ok) return { error: cambio.error };
+
+  // En un cambio los pesos no se escriben: son el producto.
+  const importe = cambio.pesos ?? monto(fd, "monto");
 
   const error = validar({ fecha, monto: importe, categoria_id: categoriaId, depto_id: deptoId, reembolsable });
   if (error) return { error };
@@ -89,7 +137,7 @@ export async function crearMovimiento(fd: FormData): Promise<EstadoFormulario> {
     .from("movimientos_caja")
     .insert({
       fecha: fecha!,
-      tipo: (texto(fd, "tipo") ?? "egreso") as TipoCaja,
+      tipo,
       monto: importe!,
       moneda: "ARS",
       tc,
@@ -98,11 +146,15 @@ export async function crearMovimiento(fd: FormData): Promise<EstadoFormulario> {
       depto_id: deptoId,
       descripcion: texto(fd, "descripcion"),
       reembolsable: reembolsable && deptoId !== null,
+      usd_cambiado: cambio.usd,
+      tc_cambio: cambio.tc,
     })
     .select("id")
     .single();
 
   if (errorAlta) return { error: `No se pudo guardar: ${errorAlta.message}` };
+
+  await recalcularCobertura(supabase);
 
   revalidatePath("/caja");
   redirect(`/caja/${data.id}`);
@@ -116,10 +168,15 @@ export async function editarMovimiento(
   if (!supabase) return { error: "La caja es de manager y administración." };
 
   const fecha = texto(fd, "fecha");
-  const importe = monto(fd, "monto");
   const categoriaId = texto(fd, "categoria_id");
   const deptoId = texto(fd, "depto_id");
   const reembolsable = fd.get("reembolsable") === "on";
+  const tipo = (texto(fd, "tipo") ?? "egreso") as TipoCaja;
+
+  const cambio = await datosDelCambio(supabase, categoriaId, tipo, fd);
+  if (!cambio.ok) return { error: cambio.error };
+
+  const importe = cambio.pesos ?? monto(fd, "monto");
 
   const error = validar({ fecha, monto: importe, categoria_id: categoriaId, depto_id: deptoId, reembolsable });
   if (error) return { error };
@@ -137,7 +194,7 @@ export async function editarMovimiento(
     .from("movimientos_caja")
     .update({
       fecha: fecha!,
-      tipo: (texto(fd, "tipo") ?? "egreso") as TipoCaja,
+      tipo,
       monto: importe!,
       tc,
       fecha_tc: tc === null ? null : fecha,
@@ -145,6 +202,8 @@ export async function editarMovimiento(
       depto_id: deptoId,
       descripcion: texto(fd, "descripcion"),
       reembolsable: reembolsable && deptoId !== null,
+      usd_cambiado: cambio.usd,
+      tc_cambio: cambio.tc,
       // Si deja de ser reembolsable, el cobro no tiene sentido.
       ...(reembolsable && deptoId !== null
         ? {}
@@ -153,6 +212,8 @@ export async function editarMovimiento(
     .eq("id", id);
 
   if (errorEdicion) return { error: `No se pudo guardar: ${errorEdicion.message}` };
+
+  await recalcularCobertura(supabase);
 
   revalidatePath("/caja");
   revalidatePath(`/caja/${id}`);
@@ -211,6 +272,7 @@ export async function anularMovimiento(id: string) {
   if (!supabase) return;
 
   await supabase.from("movimientos_caja").update({ activo: false }).eq("id", id);
+  await recalcularCobertura(supabase);
   revalidatePath("/caja");
   redirect("/caja");
 }

@@ -14,7 +14,7 @@ export default async function NuevoMovimiento() {
     await Promise.all([
       supabase
         .from("categorias_movimiento")
-        .select("id, nombre")
+        .select("id, nombre, es_cambio")
         .eq("activo", true)
         .order("nombre"),
       supabase
@@ -59,6 +59,8 @@ export default async function NuevoMovimiento() {
           depto_id: "",
           descripcion: "",
           reembolsable: false,
+          usd_cambiado: "",
+          tc_cambio: "",
         }}
         categorias={categorias ?? []}
         departamentos={departamentos ?? []}

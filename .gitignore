@@ -38,3 +38,7 @@ yarn-error.log*
 
 # Planillas de trabajo que se generan y no se versionan
 *.xlsx
+
+# Datos reales para probar: los CSV de Airbnb traen nombre y apellido de los
+# huéspedes. Se trabaja con ellos en local y NO se suben al repositorio.
+/datos-privados/

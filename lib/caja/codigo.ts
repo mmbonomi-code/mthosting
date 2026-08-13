@@ -21,8 +21,13 @@ import { cookies } from "next/headers";
 /** Nombre de la cookie que recuerda que ya se puso el código. */
 const COOKIE = "caja_abierta";
 
-/** Cuánto dura sin volver a pedirlo. Una jornada de trabajo. */
-const HORAS = 8;
+/**
+ * Cuánto dura sin volver a pedirlo (decisión del dueño, 12/08/2026).
+ *
+ * Una hora: el tiempo de sentarse a hacer caja. Después vuelve a pedirlo,
+ * así una sesión olvidada abierta no deja la plata a la vista toda la tarde.
+ */
+const HORAS = 1;
 
 export function codigoConfigurado(): boolean {
   return (process.env.CAJA_CODIGO ?? "").trim() !== "";

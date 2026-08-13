@@ -25,6 +25,7 @@ function reserva(parcial: Partial<ReservaPlan> = {}): ReservaPlan {
 function limpieza(parcial: Partial<LimpiezaExistente> = {}): LimpiezaExistente {
   return {
     id: "l1",
+    depto_id: DEPTO,
     reserva_id: "r1",
     rol_reserva: "salida",
     fecha: "2026-08-15",
@@ -41,7 +42,6 @@ function planificar(entrada: Partial<EntradaPlanificar>) {
   return planificarLimpiezas({
     reservas,
     contexto: entrada.contexto ?? reservas,
-    bloqueos: entrada.bloqueos ?? [],
     eventos: entrada.eventos ?? [],
     limpiezas: entrada.limpiezas ?? [],
     hoy: entrada.hoy ?? HOY,
@@ -101,7 +101,10 @@ describe("repaso", () => {
     expect(plan.limpiezasNuevas.some((l) => l.rol_reserva === "salida")).toBe(true);
   });
 
-  it("un bloqueo entre la salida anterior y esta llegada vuelve a pedir repaso", () => {
+  it("cancela el repaso que quedó pegado cuando aparece la salida anterior", () => {
+    // El repaso se creó cuando la reserva anterior todavía no estaba
+    // importada. Después apareció y el motivo desapareció: hasta ahora el
+    // repaso quedaba para siempre porque el código solo sabía crearlos.
     const previa = reserva({
       id: "r0",
       codigo_reserva: "HMPREVIA",
@@ -112,9 +115,95 @@ describe("repaso", () => {
     const plan = planificar({
       reservas: [actual],
       contexto: [previa, actual],
-      bloqueos: [{ depto_id: DEPTO, fecha_desde: "2026-08-06", fecha_hasta: "2026-08-09" }],
+      limpiezas: [
+        limpieza({ id: "repaso-viejo", rol_reserva: "entrada", fecha: "2026-08-10" }),
+      ],
     });
-    expect(plan.limpiezasNuevas.some((l) => l.rol_reserva === "entrada")).toBe(true);
+    expect(plan.limpiezasAActualizar).toContainEqual({
+      id: "repaso-viejo",
+      estado: "cancelada",
+    });
+    expect(plan.canceladas).toBe(1);
+  });
+
+  it("no cancela un repaso que alguien ya está haciendo: avisa", () => {
+    const previa = reserva({
+      id: "r0",
+      codigo_reserva: "HMPREVIA",
+      fecha_checkin: "2026-08-01",
+      fecha_checkout: "2026-08-05",
+    });
+    const plan = planificar({
+      reservas: [reserva()],
+      contexto: [previa, reserva()],
+      limpiezas: [
+        limpieza({
+          id: "repaso-viejo",
+          rol_reserva: "entrada",
+          fecha: "2026-08-10",
+          estado: "en_curso",
+        }),
+      ],
+    });
+    expect(plan.canceladas).toBe(0);
+    expect(plan.anomalias.some((a) => a.includes("en_curso"))).toBe(true);
+  });
+});
+
+describe("un departamento, una limpieza por día", () => {
+  it("no crea una segunda limpieza el día que ya tiene una", () => {
+    // Pasa cuando hay dos reservas pisadas en el mismo departamento: las dos
+    // salen el mismo día y las dos quieren su limpieza de salida.
+    const una = reserva({
+      id: "r1",
+      codigo_reserva: "HMPISADA01",
+      fecha_checkin: "2026-08-10",
+      fecha_checkout: "2026-08-16",
+    });
+    const otra = reserva({
+      id: "r2",
+      codigo_reserva: "HMPISADA02",
+      fecha_checkin: "2026-08-11",
+      fecha_checkout: "2026-08-16",
+    });
+    const plan = planificar({ reservas: [una, otra], contexto: [una, otra] });
+
+    const salidasDel16 = plan.limpiezasNuevas.filter((l) => l.fecha === "2026-08-16");
+    expect(salidasDel16).toHaveLength(1);
+    expect(plan.anomalias.join(" ")).toMatch(/ya tiene otra limpieza/i);
+    // Y el aviso nombra el problema de fondo, que son las reservas pisadas.
+    expect(plan.anomalias.join(" ")).toMatch(/reservas pisadas/i);
+  });
+
+  it("tampoco pisa una limpieza cargada a mano", () => {
+    // Las cargadas a mano no cuelgan de ninguna reserva, así que solo se ven
+    // mirando el día del departamento.
+    const plan = planificar({
+      reservas: [reserva()],
+      limpiezas: [
+        limpieza({ id: "a-mano", reserva_id: null, rol_reserva: null, fecha: "2026-08-15" }),
+      ],
+    });
+    expect(plan.limpiezasNuevas.filter((l) => l.fecha === "2026-08-15")).toHaveLength(0);
+    expect(plan.anomalias.join(" ")).toMatch(/ya tiene otra limpieza/i);
+  });
+
+  it("el resultado no depende del orden en que vengan las reservas", () => {
+    const una = reserva({
+      id: "r1",
+      codigo_reserva: "HMPISADA01",
+      fecha_checkin: "2026-08-10",
+      fecha_checkout: "2026-08-16",
+    });
+    const otra = reserva({
+      id: "r2",
+      codigo_reserva: "HMPISADA02",
+      fecha_checkin: "2026-08-11",
+      fecha_checkout: "2026-08-16",
+    });
+    const derecho = planificar({ reservas: [una, otra], contexto: [una, otra] });
+    const alReves = planificar({ reservas: [otra, una], contexto: [una, otra] });
+    expect(alReves.limpiezasNuevas).toEqual(derecho.limpiezasNuevas);
   });
 });
 
@@ -232,7 +321,10 @@ describe("cancelaciones", () => {
     expect(plan.canceladas).toBe(1);
   });
 
-  it("cancelar con el huésped adentro NO cancela la limpieza: pide fecha real", () => {
+  it("cancelar con la estadía en curso también cancela la limpieza, pero avisa", () => {
+    // Antes se dejaba viva por si el huésped seguía adentro. En la práctica
+    // son reservas tentativas del calendario que se caen, y la limpieza
+    // fantasma quedaba en la lista sin ninguna marca de que ya no existía.
     const r = reserva({
       cancelada: true,
       fecha_checkin: "2026-07-30",
@@ -245,9 +337,11 @@ describe("cancelaciones", () => {
       hoy: HOY, // 02/08: la estadía está en curso
       cancelacionesNuevas: new Set([r.codigo_reserva]),
     });
-    expect(plan.canceladas).toBe(0);
-    expect(plan.limpiezasAActualizar).toHaveLength(0);
-    expect(plan.anomalias.join(" ")).toMatch(/fecha real de salida/i);
+    expect(plan.limpiezasAActualizar).toContainEqual({ id: "l1", estado: "cancelada" });
+    expect(plan.canceladas).toBe(1);
+    // Y queda el aviso, por si el huésped estaba de verdad adentro.
+    expect(plan.anomalias.join(" ")).toMatch(/estadía en curso/i);
+    expect(plan.anomalias.join(" ")).toMatch(/a mano/i);
   });
 
   it("una cancelación vieja cuyas fechas incluyen hoy no alerta: no hay nadie adentro", () => {
@@ -276,6 +370,37 @@ describe("cancelaciones", () => {
     });
     expect(plan.canceladas).toBe(0);
     expect(plan.anomalias.join(" ")).toMatch(/hecha/);
+  });
+
+  it("cancelar una reserva libera el día para otra limpieza", () => {
+    // Si no se liberara, la limpieza de la reserva que sí queda no se podría
+    // crear porque el día figuraría ocupado por la que se acaba de cancelar.
+    const cae = reserva({
+      id: "r1",
+      codigo_reserva: "HMCANCELA",
+      cancelada: true,
+      fecha_checkin: "2026-08-12",
+      fecha_checkout: "2026-08-14",
+    });
+    const queda = reserva({
+      id: "r2",
+      codigo_reserva: "HMQUEDA000",
+      fecha_checkin: "2026-08-09",
+      fecha_checkout: "2026-08-14",
+    });
+    const plan = planificar({
+      reservas: [cae, queda],
+      contexto: [queda],
+      limpiezas: [
+        limpieza({ id: "vieja", reserva_id: "r1", fecha: "2026-08-14" }),
+      ],
+    });
+    expect(plan.limpiezasAActualizar).toContainEqual({ id: "vieja", estado: "cancelada" });
+    expect(
+      plan.limpiezasNuevas.some(
+        (l) => l.reserva_id === "r2" && l.fecha === "2026-08-14",
+      ),
+    ).toBe(true);
   });
 
   it("descartar una reserva cancela sus limpiezas y sus eventos", () => {

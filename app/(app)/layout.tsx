@@ -4,6 +4,7 @@ import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { contarReclamosUrgentes } from "@/lib/reclamos/alertas";
 import { contarPendientesUrgentes } from "@/lib/reporte/alertas";
 import { puedeVerCaja } from "@/lib/caja/permisos";
+import { esManagerOAdmin } from "@/lib/permisos";
 import { cerrarSesion } from "@/app/ingresar/acciones";
 
 export default async function LayoutApp({
@@ -14,7 +15,13 @@ export default async function LayoutApp({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: persona }, { count: sinAsignar }, verReclamos, verCaja] = await Promise.all([
+  const [
+    { data: persona },
+    { count: sinAsignar },
+    verReclamos,
+    verCaja,
+    esConfiguracion,
+  ] = await Promise.all([
     supabase
       .from("personas")
       .select("nombre")
@@ -27,6 +34,7 @@ export default async function LayoutApp({
       .eq("descartada", false),
     puedeGestionarReclamos(supabase),
     puedeVerCaja(supabase),
+    esManagerOAdmin(supabase),
   ]);
 
   // El menú avisa cuántas cosas hay que mirar hoy, sin entrar a la pantalla.
@@ -71,9 +79,14 @@ export default async function LayoutApp({
             { href: "/semana", texto: "Limpiezas", pendientes: 0 },
             { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
             { href: "/propietarios", texto: "Propietarios", pendientes: 0 },
-            { href: "/personas", texto: "Personas", pendientes: 0 },
+            // Configuración del sistema: manager y administración (spec §3.8).
+            ...(esConfiguracion
+              ? [
+                  { href: "/personas", texto: "Personas", pendientes: 0 },
+                  { href: "/tarifas", texto: "Valores", pendientes: 0 },
+                ]
+              : []),
             { href: "/puntos-acceso", texto: "Accesos", pendientes: 0 },
-            { href: "/tarifas", texto: "Valores", pendientes: 0 },
             { href: "/parametros", texto: "Parámetros", pendientes: 0 },
             { href: "/importar", texto: "Importar", pendientes: 0 },
             { href: "/exportar", texto: "Exportar", pendientes: 0 },

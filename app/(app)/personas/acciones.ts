@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
+import { esManagerOAdmin } from "@/lib/permisos";
 import type { Database } from "@/lib/database.types";
 
 type ModalidadPago = Database["public"]["Enums"]["modalidad_pago"];
@@ -38,6 +39,12 @@ export async function crearPersona(
   if (!datos.nombre) return { error: "El nombre es obligatorio." };
 
   const supabase = await crearClienteServidor();
+  // La pantalla ya está cerrada, pero una acción se puede llamar sin pasar
+  // por ella: el control va también acá.
+  if (!(await esManagerOAdmin(supabase))) {
+    return { error: "Solo manager y administración pueden cargar personas." };
+  }
+
   const { error } = await supabase.from("personas").insert(datos);
   if (error) return { error: "No se pudo guardar. Probá de nuevo." };
 
@@ -54,6 +61,10 @@ export async function actualizarPersona(
   if (!datos.nombre) return { error: "El nombre es obligatorio." };
 
   const supabase = await crearClienteServidor();
+  if (!(await esManagerOAdmin(supabase))) {
+    return { error: "Solo manager y administración pueden editar personas." };
+  }
+
   const { error } = await supabase.from("personas").update(datos).eq("id", id);
   if (error) return { error: "No se pudo guardar. Probá de nuevo." };
 

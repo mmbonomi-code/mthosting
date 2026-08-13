@@ -3,9 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { esManagerOAdmin } from "@/lib/permisos";
 import { sumarDias } from "@/lib/fechas";
 
 export type EstadoFormulario = { error: string } | null;
+
+/** Los valores son lo que cobra cada persona: manager y administración. */
+const SIN_PERMISO = {
+  error: "Solo manager y administración pueden cargar los valores de limpieza.",
+} as const;
 
 const AMBIENTES = ["monoambiente", "dos", "tres", "cuatro"] as const;
 
@@ -35,6 +41,7 @@ export async function cargarTarifas(
   }
 
   const supabase = await crearClienteServidor();
+  if (!(await esManagerOAdmin(supabase))) return SIN_PERMISO;
 
   // Se cierran las vigentes de esos ambientes el día anterior.
   const { error: errorCierre } = await supabase
@@ -82,6 +89,7 @@ export async function cargarTarifaDepto(
   if (Number.isNaN(monto)) return { error: "El monto no es un número válido." };
 
   const supabase = await crearClienteServidor();
+  if (!(await esManagerOAdmin(supabase))) return SIN_PERMISO;
 
   await supabase
     .from("tarifas")

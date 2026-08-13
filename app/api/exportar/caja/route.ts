@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerCaja } from "@/lib/caja/permisos";
+import { cajaDesbloqueada } from "@/lib/caja/codigo";
 import {
   formatearFechaAR,
   mesActualAR,
@@ -53,6 +54,11 @@ export async function GET(request: Request) {
   const supabase = await crearClienteServidor();
   if (!(await puedeVerCaja(supabase))) {
     return new Response("La caja es de manager y administración.", { status: 403 });
+  }
+  // La misma cortina que las pantallas: si no se puso el código, tampoco se
+  // baja el archivo entrando a la dirección de memoria.
+  if (!(await cajaDesbloqueada())) {
+    return new Response("Poné el código de la caja antes de exportar.", { status: 403 });
   }
 
   const params = new URL(request.url).searchParams;

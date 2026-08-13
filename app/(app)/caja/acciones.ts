@@ -6,6 +6,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerCaja } from "@/lib/caja/permisos";
 import { BUCKET_COMPROBANTES, type EstadoFormulario } from "@/lib/caja/tipos";
 import { recalcularCobertura } from "@/lib/caja/recalcular";
+import { abrirCaja, cerrarCaja, codigoEsCorrecto } from "@/lib/caja/codigo";
 import type { Database } from "@/lib/database.types";
 
 type TipoCaja = Database["public"]["Enums"]["caja_tipo"];
@@ -66,6 +67,29 @@ function validar(datos: {
     return "Para marcarlo reembolsable hay que decir de qué departamento es.";
   }
   return null;
+}
+
+/**
+ * Abre la caja con el código. Es una cortina sobre la pantalla, no un
+ * permiso: quien llega hasta acá ya es manager o administración.
+ */
+export async function desbloquearCaja(fd: FormData): Promise<EstadoFormulario> {
+  const supabase = await conPermiso();
+  if (!supabase) return { error: "La caja es de manager y administración." };
+
+  const valor = String(fd.get("codigo") ?? "");
+  if (!codigoEsCorrecto(valor)) return { error: "El código no es correcto." };
+
+  await abrirCaja();
+  revalidatePath("/caja");
+  return null;
+}
+
+/** Vuelve a pedir el código, sin cerrar la sesión del sistema. */
+export async function bloquearCaja() {
+  await cerrarCaja();
+  revalidatePath("/caja");
+  redirect("/caja");
 }
 
 /**

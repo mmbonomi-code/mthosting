@@ -19,6 +19,8 @@ import {
   type Movimiento,
   type TipoMovimiento,
 } from "@/lib/caja/saldo";
+import { codigoConfigurado } from "@/lib/caja/codigo";
+import { bloquearCaja } from "./acciones";
 import FiltrosCaja from "./FiltrosCaja";
 import SinAcceso from "./SinAcceso";
 
@@ -192,6 +194,9 @@ export default async function Caja({
 
   const porCobrar = (porCobrarCrudos ?? []).reduce((s, m) => s + m.monto, 0);
 
+  // Sin código configurado no hay nada que cerrar: el botón no tendría sentido.
+  const pideCodigo = codigoConfigurado();
+
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -342,13 +347,23 @@ export default async function Caja({
         </ul>
       )}
 
-      <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
         <Link href="/caja/cotizaciones" className="hover:text-slate-300">
           Cotizaciones →
         </Link>
         <Link href="/caja/categorias" className="hover:text-slate-300">
           Categorías →
         </Link>
+        {pideCodigo && (
+          <form action={bloquearCaja} className="ml-auto">
+            <button
+              type="submit"
+              className="rounded-lg border border-slate-800 px-2.5 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
+            >
+              Cerrar la caja
+            </button>
+          </form>
+        )}
       </div>
     </main>
   );

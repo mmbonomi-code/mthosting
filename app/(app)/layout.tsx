@@ -73,6 +73,12 @@ export default async function LayoutApp({
             { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
             { href: "/reporte", texto: "Reporte", pendientes: reporteUrgente },
             ...(verCaja ? [{ href: "/caja", texto: "Caja", pendientes: 0 }] : []),
+            // Económico va con el mismo permiso que la caja: manager y
+            // administración. Cuando la barra se agrupe por dominio, esta y
+            // Dashboard quedan juntas bajo Informes.
+            ...(esConfiguracion
+              ? [{ href: "/economico", texto: "Económico", pendientes: 0 }]
+              : []),
             ...(verReclamos
               ? [{ href: "/reclamos", texto: "Reclamos", pendientes: reclamosUrgentes }]
               : []),

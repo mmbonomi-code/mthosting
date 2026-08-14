@@ -8,6 +8,7 @@ import {
   cargaPorPersona,
   semaforoDeLimpieza,
 } from "@/lib/limpiezas/semaforo";
+import { revisarLimpiezas, type EstadiaRevisar } from "@/lib/limpiezas/alertas";
 import { clsBotonPrimario } from "@/lib/ui";
 import SelectorResponsable, {
   type PersonaOpcion,
@@ -71,25 +72,40 @@ export default async function Semana({
     .filter((id): id is string => !!id);
   const deptos = [...new Set((limpiezas ?? []).map((l) => l.depto_id))];
 
-  const [{ data: eventosSalida }, { data: llegadas }] = await Promise.all([
-    idsReservas.length > 0
-      ? supabase
-          .from("eventos_estadia")
-          .select("reserva_id, fecha_coordinada, hora_coordinada")
-          .eq("tipo", "checkout")
-          .in("reserva_id", idsReservas)
-      : Promise.resolve({ data: [] }),
-    deptos.length > 0
-      ? supabase
-          .from("reservas")
-          .select("depto_id, fecha_checkin, eventos:eventos_estadia(tipo, hora_coordinada)")
-          .in("depto_id", deptos)
-          .eq("cancelada", false)
-          .eq("descartada", false)
-          .gte("fecha_checkin", desde)
-          .lte("fecha_checkin", sumarDias(hasta, 1))
-      : Promise.resolve({ data: [] }),
-  ]);
+  const [{ data: eventosSalida }, { data: llegadas }, { data: estadias }] =
+    await Promise.all([
+      idsReservas.length > 0
+        ? supabase
+            .from("eventos_estadia")
+            .select("reserva_id, fecha_coordinada, hora_coordinada")
+            .eq("tipo", "checkout")
+            .in("reserva_id", idsReservas)
+        : Promise.resolve({ data: [] }),
+      deptos.length > 0
+        ? supabase
+            .from("reservas")
+            .select("depto_id, fecha_checkin, eventos:eventos_estadia(tipo, hora_coordinada)")
+            .in("depto_id", deptos)
+            .eq("cancelada", false)
+            .eq("descartada", false)
+            .gte("fecha_checkin", desde)
+            .lte("fecha_checkin", sumarDias(hasta, 1))
+        : Promise.resolve({ data: [] }),
+      // Las estadías que ATRAVIESAN el período: sirven para detectar una
+      // limpieza que cae con el huésped adentro sin estar marcada como tal.
+      deptos.length > 0
+        ? supabase
+            .from("reservas")
+            .select(
+              "depto_id, codigo_reserva, fecha_checkin, fecha_checkout, cancelada, descartada",
+            )
+            .in("depto_id", deptos)
+            .eq("cancelada", false)
+            .eq("descartada", false)
+            .lte("fecha_checkin", hasta)
+            .gte("fecha_checkout", desde)
+        : Promise.resolve({ data: [] }),
+    ]);
 
   const salidaPorReserva = new Map(
     (eventosSalida ?? []).map((e) => [
@@ -113,6 +129,21 @@ export default async function Semana({
 
   // Siempre las siete filas, aunque un día no tenga limpiezas.
   const fechas = Array.from({ length: dias }, (_, i) => sumarDias(desde, i));
+
+  // Lo que hay que MIRAR, no lo que hay que hacer: una limpieza con el
+  // huésped adentro sin estar marcada como tal, o dos el mismo día en el
+  // mismo departamento. El sistema no las arregla solo porque las dos cosas
+  // pueden ser legítimas o un error grave, y no se distingue sin mirar.
+  const alertas = revisarLimpiezas(
+    (limpiezas ?? []).map((l) => ({
+      id: l.id,
+      depto_id: l.depto_id,
+      fecha: l.fecha,
+      tipo: l.tipo,
+      estado: l.estado,
+    })),
+    (estadias ?? []) as EstadiaRevisar[],
+  );
 
   const total = (limpiezas ?? []).length;
   const totalSinAsignar = (limpiezas ?? []).filter((l) => !l.asignado_a).length;
@@ -140,6 +171,19 @@ export default async function Semana({
       </div>
 
       <NavegadorSemana desde={desde} />
+
+      {alertas.size > 0 && (
+        <div className="rounded-xl border border-amber-900 bg-amber-950/30 px-4 py-3">
+          <p className="text-sm font-medium text-amber-200">
+            {alertas.size} {alertas.size === 1 ? "limpieza" : "limpiezas"} para
+            revisar en este período
+          </p>
+          <p className="mt-0.5 text-xs text-amber-200/70">
+            Están marcadas abajo con el motivo. No se tocaron solas: puede ser
+            correcto o puede estar mal, y eso lo decide una persona.
+          </p>
+        </div>
+      )}
 
       {/* Cuánto lleva cada persona: se mira antes de darle una más a alguien */}
       {carga.length > 0 && (
@@ -250,11 +294,16 @@ export default async function Semana({
                       hoy,
                       tieneResponsable: !!l.asignado_a,
                     });
+                    const revisar = alertas.get(l.id) ?? [];
 
                     return (
                       <li
                         key={l.id}
-                        className={`flex flex-col gap-2 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 ${BORDE_SEMAFORO[semaforo]}`}
+                        className={`flex flex-col gap-2 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 ${
+                          revisar.length > 0
+                            ? "border-y-amber-800 border-r-amber-800"
+                            : ""
+                        } ${BORDE_SEMAFORO[semaforo]}`}
                       >
                         <Link href={`/limpiezas/${l.id}`} className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-baseline gap-x-2">
@@ -298,6 +347,14 @@ export default async function Semana({
                               ? `entra ${mismoDia ? "" : formatearFechaAR(proximo) + " "}${horaLlegada ?? (mismoDia ? "sin hora" : "")}`
                               : null}
                           </span>
+                          {revisar.map((a) => (
+                            <span
+                              key={a.motivo}
+                              className="mt-1 block text-xs text-amber-300"
+                            >
+                              ⚠ {a.detalle}
+                            </span>
+                          ))}
                         </Link>
 
                         <SelectorResponsable

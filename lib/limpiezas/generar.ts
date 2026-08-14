@@ -9,11 +9,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../database.types";
 import {
   planificarLimpiezas,
-  type Bloqueo,
   type EventoExistente,
   type LimpiezaExistente,
   type ReservaPlan,
 } from "./planificar";
+
+const CAMPOS_LIMPIEZA =
+  "id, depto_id, reserva_id, rol_reserva, fecha, estado, urgente, prox_checkin";
 
 type Cliente = SupabaseClient<Database>;
 
@@ -76,35 +78,41 @@ export async function generarLimpiezas(
     throw new Error(`No se pudo leer el contexto de reservas: ${errorContexto.message}`);
   }
 
-  // 3. Bloqueos, eventos y limpiezas que ya existen.
+  // 3. Eventos y limpiezas que ya existen.
+  //
+  // Las limpiezas se traen por DOS caminos y se juntan: las de las reservas
+  // del lote (para saber si mover o cancelar la de cada reserva) y todas las
+  // del departamento en la ventana de fechas (para saber qué días ya están
+  // ocupados, incluidas las cargadas a mano, que no cuelgan de una reserva).
   const idsReservas = reservas.map((r) => r.id);
 
-  const { data: bloqueos } = await supabase
-    .from("bloqueos")
-    .select("depto_id, fecha_desde, fecha_hasta")
-    .in("depto_id", deptos)
-    .eq("activo", true);
-
   const eventos: EventoExistente[] = [];
-  const limpiezas: LimpiezaExistente[] = [];
+  const porId = new Map<string, LimpiezaExistente>();
+
+  const { data: delDepto } = await supabase
+    .from("limpiezas")
+    .select(CAMPOS_LIMPIEZA)
+    .in("depto_id", deptos)
+    .gte("fecha", desde)
+    .lte("fecha", hasta);
+  for (const l of (delDepto ?? []) as LimpiezaExistente[]) porId.set(l.id, l);
+
   for (let i = 0; i < idsReservas.length; i += 200) {
     const tanda = idsReservas.slice(i, i + 200);
     const [{ data: ev }, { data: li }] = await Promise.all([
       supabase.from("eventos_estadia").select("id, reserva_id, tipo, estado").in("reserva_id", tanda),
-      supabase
-        .from("limpiezas")
-        .select("id, reserva_id, rol_reserva, fecha, estado, urgente, prox_checkin")
-        .in("reserva_id", tanda),
+      supabase.from("limpiezas").select(CAMPOS_LIMPIEZA).in("reserva_id", tanda),
     ]);
     eventos.push(...((ev ?? []) as EventoExistente[]));
-    limpiezas.push(...((li ?? []) as LimpiezaExistente[]));
+    for (const l of (li ?? []) as LimpiezaExistente[]) porId.set(l.id, l);
   }
+
+  const limpiezas = [...porId.values()];
 
   // 4. Decidir.
   const plan = planificarLimpiezas({
     reservas,
     contexto: (contexto ?? []) as ReservaPlan[],
-    bloqueos: (bloqueos ?? []) as Bloqueo[],
     eventos,
     limpiezas,
     hoy,

@@ -208,6 +208,31 @@ export async function editarLimpieza(
   if (!fecha || !tipo) return { error: "La fecha y el tipo son obligatorios." };
 
   const supabase = await crearClienteServidor();
+
+  // Mover una limpieza a un día que ya tiene otra deja las dos: mismo control
+  // que en el alta.
+  const { data: actual } = await supabase
+    .from("limpiezas")
+    .select("depto_id, fecha")
+    .eq("id", limpiezaId)
+    .maybeSingle();
+  if (actual && actual.fecha !== fecha) {
+    const { data: yaHay } = await supabase
+      .from("limpiezas")
+      .select("id")
+      .eq("depto_id", actual.depto_id)
+      .eq("fecha", fecha)
+      .neq("estado", "cancelada")
+      .neq("id", limpiezaId)
+      .limit(1)
+      .maybeSingle();
+    if (yaHay) {
+      return {
+        error: "Ese departamento ya tiene una limpieza ese día. Elegí otra fecha.",
+      };
+    }
+  }
+
   const { error } = await supabase
     .from("limpiezas")
     // La hora de salida no se edita acá: sale de lo coordinado en el
@@ -254,6 +279,25 @@ export async function crearLimpieza(
   }
 
   const supabase = await crearClienteServidor();
+
+  // Un departamento no puede tener dos limpiezas el mismo día (decisión del
+  // dueño, 13/08/2026). Se corta acá, antes de crearla: hasta ahora la
+  // pantalla dejaba cargar una encima de la que ya había generado el sistema,
+  // y quedaban las dos sin que nadie se enterara.
+  const { data: yaHay } = await supabase
+    .from("limpiezas")
+    .select("id, tipo")
+    .eq("depto_id", deptoId)
+    .eq("fecha", fecha)
+    .neq("estado", "cancelada")
+    .limit(1)
+    .maybeSingle();
+  if (yaHay) {
+    return {
+      error:
+        "Ese departamento ya tiene una limpieza ese día. Si hay que cambiarle algo, editá la que está en vez de cargar otra.",
+    };
+  }
 
   // Si ese día hay un huésped adentro, la limpieza queda vinculada a su
   // reserva con rol "durante": es una limpieza de estadía en curso.

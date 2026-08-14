@@ -62,9 +62,13 @@ describe("parsearICal contra el archivo real de Airbnb", () => {
   });
 
   it("el primer evento coincide con lo que dice el archivo", () => {
+    // Los códigos y los teléfonos del archivo son inventados desde el
+    // 13/08/2026: eran de reservas y huéspedes reales, y la prueba de punta a
+    // punta los cargaba en la base como si fueran del departamento al que le
+    // prestaba el calendario.
     expect(resultado.reservas[0]).toMatchObject({
-      codigo: "HMWHAKBNE2",
-      telefono4: "5778",
+      codigo: "HMZZD6XQHB",
+      telefono4: "1137",
       desde: "2026-07-26",
       hasta: "2026-07-28",
     });

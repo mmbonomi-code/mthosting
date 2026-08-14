@@ -67,7 +67,7 @@ describe.skipIf(!url || !clave)("bandeja de reservas sin asignar (base dev)", ()
     // Aparecen en la bandeja (misma consulta que la pantalla).
     const { data: enBandeja } = await s
       .from("reservas")
-      .select("id, listing_nombre_raw")
+      .select("id, listing_nombre_raw, cancelada")
       .is("depto_id", null)
       .eq("descartada", false);
     const delAnuncio = (enBandeja ?? []).filter((r) => r.listing_nombre_raw === ANUNCIO);
@@ -75,9 +75,16 @@ describe.skipIf(!url || !clave)("bandeja de reservas sin asignar (base dev)", ()
     console.log(`bandeja: ${delAnuncio.length} reservas de "${ANUNCIO}"`);
 
     // --- 2. Mapear UNA vez ---
-    const { reservasAsignadas } = await mapearAnuncio(s, ANUNCIO, deptoOriginal!);
+    const { reservasAsignadas, limpiezasGeneradas } = await mapearAnuncio(
+      s,
+      ANUNCIO,
+      deptoOriginal!,
+    );
     expect(reservasAsignadas).toBe(delAnuncio.length);
-    console.log(`mapeo: ${reservasAsignadas} reservas asignadas de una`);
+    console.log(
+      `mapeo: ${reservasAsignadas} reservas asignadas, ${limpiezasGeneradas} limpiezas generadas`,
+    );
+
 
     // La bandeja queda limpia para ese anuncio.
     const { count: quedan } = await s
@@ -107,4 +114,98 @@ describe.skipIf(!url || !clave)("bandeja de reservas sin asignar (base dev)", ()
       `re-importación: ${segunda.sin_asignar} sin asignar en total, 0 de este anuncio`,
     );
   }, 180000);
+
+  /**
+   * El caso que reportó el dueño con ARENALES 9 (13/08/2026): la reserva
+   * quedaba con su departamento puesto pero SIN eventos, y una reserva sin
+   * eventos no aparece en la pantalla del día. El check-in existía y era
+   * invisible.
+   *
+   * Esta prueba se arma su propia reserva, con un anuncio que no existe en
+   * ningún lado, y borra todo lo suyo al terminar. No toca ni un dato de la
+   * operación: la lección de la prueba del calendario, que se llevó puestas
+   * 12 limpiezas reales por borrar por código.
+   */
+  describe("una reserva recién mapeada queda lista para trabajar", () => {
+    const ANUNCIO_INVENTADO = `ZZ prueba bandeja ${Date.now()}`;
+    const CODIGO = `HMZZB${String(Date.now()).slice(-5)}`;
+    let reservaId: string | null = null;
+    let deptoId: string | null = null;
+
+    afterAll(async () => {
+      if (reservaId) {
+        await s.from("limpiezas").delete().eq("reserva_id", reservaId);
+        await s.from("eventos_estadia").delete().eq("reserva_id", reservaId);
+        await s.from("reservas").delete().eq("id", reservaId);
+      }
+      await s.from("listing_alias").delete().eq("nombre_listing", ANUNCIO_INVENTADO);
+    });
+
+    it("le genera los eventos y la limpieza al asignarle el departamento", async () => {
+      const { data: depto } = await s
+        .from("departamentos")
+        .select("id")
+        .eq("estado", "activo")
+        .limit(1)
+        .single();
+      deptoId = depto!.id;
+
+      // Una reserva como la deja la importación cuando el anuncio no se
+      // reconoce: con fechas y sin departamento.
+      const { data: creada, error } = await s
+        .from("reservas")
+        .insert({
+          codigo_reserva: CODIGO,
+          canal: "airbnb",
+          origen: "csv",
+          depto_id: null,
+          listing_nombre_raw: ANUNCIO_INVENTADO,
+          fecha_checkin: "2027-06-10",
+          fecha_checkout: "2027-06-14",
+          noches: 4,
+        })
+        .select("id")
+        .single();
+      expect(error).toBeNull();
+      reservaId = creada!.id;
+
+      // Sin departamento no tiene nada, y así es como estaba el check-in que
+      // no aparecía.
+      const { count: antes } = await s
+        .from("eventos_estadia")
+        .select("id", { count: "exact", head: true })
+        .eq("reserva_id", reservaId);
+      expect(antes).toBe(0);
+
+      const { reservasAsignadas, limpiezasGeneradas } = await mapearAnuncio(
+        s,
+        ANUNCIO_INVENTADO,
+        deptoId!,
+      );
+      expect(reservasAsignadas).toBe(1);
+      expect(limpiezasGeneradas).toBeGreaterThan(0);
+
+      // Ahora sí: los dos eventos, que es lo que la hace visible en el día.
+      const { data: eventos } = await s
+        .from("eventos_estadia")
+        .select("tipo")
+        .eq("reserva_id", reservaId);
+      expect((eventos ?? []).map((e) => e.tipo).sort()).toEqual(["checkin", "checkout"]);
+
+      // Y su limpieza de salida, el día del check-out.
+      const { data: limpiezas } = await s
+        .from("limpiezas")
+        .select("fecha, rol_reserva, depto_id")
+        .eq("reserva_id", reservaId)
+        .neq("estado", "cancelada");
+      expect(limpiezas).toContainEqual({
+        fecha: "2027-06-14",
+        rol_reserva: "salida",
+        depto_id: deptoId,
+      });
+      console.log(
+        `reserva mapeada: ${(eventos ?? []).length} eventos y ${(limpiezas ?? []).length} limpiezas`,
+      );
+    }, 120000);
+  });
 });

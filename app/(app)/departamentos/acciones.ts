@@ -103,6 +103,25 @@ async function guardarBanos(
   }
 }
 
+/**
+ * Traduce un choque de unicidad. Hay dos: el código y el calendario.
+ *
+ * Lo del calendario importa explicarlo bien. Dos departamentos con la misma
+ * dirección de calendario hacen que las reservas de uno se archiven en el
+ * otro, y no se nota hasta que aparecen reservas ajenas semanas después.
+ * Pasó de verdad: RODRIGUEZ PEÑA 2 tenía el calendario de GOLFARINI 1.
+ */
+function explicarChoque(mensaje: string, codigo: string): string {
+  if (/ical_url/i.test(mensaje)) {
+    return (
+      "Ese calendario de Airbnb ya está cargado en otro departamento. " +
+      "Cada departamento tiene que tener el suyo: si se repite, las reservas " +
+      "de uno terminan archivadas en el otro."
+    );
+  }
+  return `Ya existe un departamento con el código ${codigo}.`;
+}
+
 export async function crearDepartamento(
   _estadoPrevio: EstadoFormulario,
   fd: FormData,
@@ -122,7 +141,7 @@ export async function crearDepartamento(
 
   if (error) {
     if (error.code === "23505") {
-      return { error: `Ya existe un departamento con el código ${datos.codigo}.` };
+      return { error: explicarChoque(error.message, datos.codigo) };
     }
     return { error: "No se pudo guardar. Probá de nuevo." };
   }
@@ -152,7 +171,7 @@ export async function actualizarDepartamento(
 
   if (error) {
     if (error.code === "23505") {
-      return { error: `Ya existe un departamento con el código ${datos.codigo}.` };
+      return { error: explicarChoque(error.message, datos.codigo) };
     }
     return { error: "No se pudo guardar. Probá de nuevo." };
   }

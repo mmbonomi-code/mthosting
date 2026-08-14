@@ -5,7 +5,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { mapearAnuncio } from "@/lib/importador/bandeja";
 
 export type EstadoMapeo =
-  | { resultado: "ok"; asignadas: number }
+  | { resultado: "ok"; asignadas: number; limpiezas: number }
   | { resultado: "error"; error: string }
   | null;
 
@@ -22,10 +22,22 @@ export async function vincularAnuncio(
   const supabase = await crearClienteServidor();
 
   try {
-    const { reservasAsignadas } = await mapearAnuncio(supabase, nombreListing, deptoId);
+    const { reservasAsignadas, limpiezasGeneradas } = await mapearAnuncio(
+      supabase,
+      nombreListing,
+      deptoId,
+    );
     revalidatePath("/bandeja");
     revalidatePath("/departamentos");
-    return { resultado: "ok", asignadas: reservasAsignadas };
+    // El día y las limpiezas cambian: la reserva recién ahora tiene sus
+    // eventos y aparece en las pantallas de trabajo.
+    revalidatePath("/dia");
+    revalidatePath("/semana");
+    return {
+      resultado: "ok",
+      asignadas: reservasAsignadas,
+      limpiezas: limpiezasGeneradas,
+    };
   } catch (error) {
     return {
       resultado: "error",

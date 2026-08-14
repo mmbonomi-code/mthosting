@@ -57,8 +57,10 @@ construir.
   endurecen en Fase 2, antes de que entre el personal de limpieza.
 - `service_role` key SOLO en server. Jamás en el cliente ni en el repo.
 - Secretos en `.env.local` (gitignored) y en las env vars de Vercel.
-- Credenciales de Airbnb: en texto plano por decisión del dueño (01/08/2026),
-  visibles solo por rol admin cuando se endurezca RLS en Fase 2.
+- Credenciales de Airbnb: en texto plano por decisión del dueño (01/08/2026).
+  En la ficha del departamento las ven **manager y administración**, y nadie
+  más (13/08/2026). Es una restricción de PANTALLA: en la base siguen legibles
+  para cualquier usuario autenticado hasta que se endurezca RLS en Fase 2.
 
 ## Identidad visual
 

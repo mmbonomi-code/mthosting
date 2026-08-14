@@ -873,7 +873,7 @@ Referencias: ✓ puede · — no ve la pantalla · ✗ ve pero no puede
 | **Departamentos** |
 | Ver ficha e inventario | ✓ | ✓ | ✓ | ✓ | solo asignados | solo propios |
 | Editar departamento e inventario | ✓ | ✓ | — | ✗ | — | — |
-| Ver credenciales de Airbnb | ✓ | — | — | — | — | — |
+| Ver credenciales de Airbnb | ✓ | ✓ | — | — | — | — |
 | **Configuración** |
 | Valores de limpieza (tarifas) | ✓ | ✓ | — | — | — | — |
 | Puntos de acceso, personas, feriados | ✓ | ✓ | — | — | — | — |
@@ -911,9 +911,12 @@ Notas:
   describe lo que verá en Fase 2. Se define ahora para que las políticas RLS
   no haya que rehacerlas después.
 - El rol `propietario` es de Fase 4.
-- `manager` no ve las credenciales de Airbnb de los propietarios. Es la única
-  capacidad reservada exclusivamente a `admin` además de la gestión de
-  usuarios.
+- **Credenciales de Airbnb, corregido el 13/08/2026 (decisión del dueño):** las
+  ven `manager` y `admin`. Antes esta nota decía que eran exclusivas de `admin`,
+  pero el manager las necesita para operar. La única capacidad que queda
+  reservada a `admin` es la gestión de usuarios.
+  Hasta ese día la ficha se las mostraba a **cualquier usuario autenticado**;
+  ahora la pantalla las esconde al resto.
 - **Puntos de acceso**: ABM completo.
 - **Personas**: ABM completo.
 - **Tarifas**: carga de un juego de valores con fecha `desde`.

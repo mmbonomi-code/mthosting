@@ -78,7 +78,7 @@ export default async function FichaDepartamento({
   if (!depto) notFound();
 
   const rol = await rolDelUsuario(supabase);
-  const esAdmin = rol === "admin";
+  const veCredenciales = rol === "admin" || rol === "manager";
   const puedeEditar = puedeEntrar(rol, `/departamentos/${id}/editar`);
 
   const [{ data: aliases }, { data: catalogo }, { data: inventario }, { data: banos }] =
@@ -252,11 +252,11 @@ export default async function FichaDepartamento({
           <Dato etiqueta="Acuerdo de pago">
             {depto.acuerdo_pago ? ETIQUETA_ACUERDO_PAGO[depto.acuerdo_pago] : "—"}
           </Dato>
-          {/* Las credenciales de Airbnb son solo de administración (spec §3.8
-              y CLAUDE.md). Están en texto plano por decisión del dueño, así
-              que la ficha no las muestra a nadie más — ni al manager. Hasta
-              ahora las veía cualquiera que abriera un departamento. */}
-          {esAdmin && (
+          {/* Las credenciales de Airbnb son de manager y administración
+              (decisión del dueño, 13/08/2026). Están guardadas en texto plano,
+              así que la ficha no las muestra a nadie más: hasta ahora las veía
+              cualquiera que abriera un departamento. */}
+          {veCredenciales && (
             <>
               <Dato etiqueta="Usuario de Airbnb">
                 {depto.airbnb_user && (

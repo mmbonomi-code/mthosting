@@ -34,6 +34,36 @@ function correrDias(fecha: string, dias: number): string {
   return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10);
 }
 
+/** Cuántas filas devuelve la base de una sola vez. Pasado eso, corta. */
+const TOPE_POR_CONSULTA = 1000;
+
+/**
+ * Trae TODAS las filas de una consulta, de a tandas.
+ *
+ * La base devuelve como máximo mil filas y NO avisa cuando corta: la consulta
+ * sale bien y con menos datos. Acá eso no es un detalle de rendimiento, es un
+ * error de cálculo — con el contexto incompleto el planificador cree que un
+ * departamento no tuvo salida anterior y genera un repaso que no va.
+ *
+ * Pasó de verdad el 14/08/2026, cuando las reservas pasaron de mil.
+ */
+async function traerTodo<T>(
+  armarConsulta: (desde: number, hasta: number) => PromiseLike<{
+    data: T[] | null;
+    error: { message: string } | null;
+  }>,
+  queCosa: string,
+): Promise<T[]> {
+  const filas: T[] = [];
+  for (let desde = 0; ; desde += TOPE_POR_CONSULTA) {
+    const { data, error } = await armarConsulta(desde, desde + TOPE_POR_CONSULTA - 1);
+    if (error) throw new Error(`No se pudo leer ${queCosa}: ${error.message}`);
+    const tanda = data ?? [];
+    filas.push(...tanda);
+    if (tanda.length < TOPE_POR_CONSULTA) return filas;
+  }
+}
+
 export async function generarLimpiezas(
   supabase: Cliente,
   codigosReserva: string[],
@@ -66,17 +96,22 @@ export async function generarLimpiezas(
   const desde = correrDias(fechas.sort()[0] ?? hoy, -VENTANA_DIAS);
   const hasta = correrDias(fechas[fechas.length - 1] ?? hoy, VENTANA_DIAS);
 
-  const { data: contexto, error: errorContexto } = await supabase
-    .from("reservas")
-    .select("id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout, cancelada, descartada")
-    .in("depto_id", deptos)
-    .eq("cancelada", false)
-    .eq("descartada", false)
-    .gte("fecha_checkout", desde)
-    .lte("fecha_checkin", hasta);
-  if (errorContexto) {
-    throw new Error(`No se pudo leer el contexto de reservas: ${errorContexto.message}`);
-  }
+  const contexto = await traerTodo<ReservaPlan>(
+    (a, b) =>
+      supabase
+        .from("reservas")
+        .select(
+          "id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout, cancelada, descartada",
+        )
+        .in("depto_id", deptos)
+        .eq("cancelada", false)
+        .eq("descartada", false)
+        .gte("fecha_checkout", desde)
+        .lte("fecha_checkin", hasta)
+        .order("id")
+        .range(a, b),
+    "el contexto de reservas",
+  );
 
   // 3. Eventos y limpiezas que ya existen.
   //
@@ -89,13 +124,22 @@ export async function generarLimpiezas(
   const eventos: EventoExistente[] = [];
   const porId = new Map<string, LimpiezaExistente>();
 
-  const { data: delDepto } = await supabase
-    .from("limpiezas")
-    .select(CAMPOS_LIMPIEZA)
-    .in("depto_id", deptos)
-    .gte("fecha", desde)
-    .lte("fecha", hasta);
-  for (const l of (delDepto ?? []) as LimpiezaExistente[]) porId.set(l.id, l);
+  const delDepto = await traerTodo<LimpiezaExistente>(
+    (a, b) =>
+      supabase
+        .from("limpiezas")
+        .select(CAMPOS_LIMPIEZA)
+        .in("depto_id", deptos)
+        .gte("fecha", desde)
+        .lte("fecha", hasta)
+        .order("id")
+        .range(a, b) as unknown as PromiseLike<{
+        data: LimpiezaExistente[] | null;
+        error: { message: string } | null;
+      }>,
+    "las limpiezas del departamento",
+  );
+  for (const l of delDepto) porId.set(l.id, l);
 
   for (let i = 0; i < idsReservas.length; i += 200) {
     const tanda = idsReservas.slice(i, i + 200);

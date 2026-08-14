@@ -2,6 +2,8 @@ import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { ETIQUETA_AMBIENTES } from "@/lib/etiquetas";
 import { clsBotonPrimario } from "@/lib/ui";
+import { rolDelUsuario } from "@/lib/permisos";
+import { puedeEntrar } from "@/lib/secciones";
 import FiltrosDepartamentos from "./FiltrosDepartamentos";
 import type { Database } from "@/lib/database.types";
 
@@ -45,6 +47,7 @@ export default async function ListaDepartamentos({
   const desde = (numeroPagina - 1) * POR_PAGINA;
 
   const supabase = await crearClienteServidor();
+  const puedeCrear = puedeEntrar(await rolDelUsuario(supabase), "/departamentos/nuevo");
 
   let consulta = supabase
     .from("departamentos")
@@ -98,12 +101,14 @@ export default async function ListaDepartamentos({
             {hayFiltros && " encontrados"}
           </span>
         </h1>
-        <Link
-          href="/departamentos/nuevo"
-          className={`${clsBotonPrimario} flex items-center`}
-        >
-          + Nuevo
-        </Link>
+        {puedeCrear && (
+          <Link
+            href="/departamentos/nuevo"
+            className={`${clsBotonPrimario} flex items-center`}
+          >
+            + Nuevo
+          </Link>
+        )}
       </div>
 
       <FiltrosDepartamentos filtros={filtros} hayFiltros={hayFiltros} />

@@ -893,6 +893,14 @@ Notas:
   usuario autenticado— y se endurece en la Fase 2, antes de que entre el
   personal de limpieza. Esta tabla describe el destino, no lo que hoy impide
   la base.
+- **Gobernanta, ajuste del 13/08/2026 (decisión del dueño):** ve **solo
+  Limpiezas y Departamentos**, y nada más. Respecto de la tabla de arriba eso
+  saca dos cosas: el **resumen del día** y la **lectura del reporte**. Las
+  fichas de departamento las consulta pero no las edita, así que tampoco entra
+  al alta, a la edición ni al inventario.
+  Está implementado en `lib/secciones.ts` y lo aplica `proxy.ts`, que es por
+  donde pasan todas las direcciones. Es la primera restricción que se hace por
+  ruta y no adentro de un módulo; el resto de la tabla sigue pendiente.
 - El rol **`gobernanta`** es un híbrido: reparte limpiezas (como coordinador)
   y además tiene sus propias limpiezas y la vista de limpiadora (como
   limpieza). Su pantalla propia es la **vista de distribución** (§3.11). No ve

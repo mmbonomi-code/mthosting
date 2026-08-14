@@ -4,7 +4,8 @@ import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { contarReclamosUrgentes } from "@/lib/reclamos/alertas";
 import { contarPendientesUrgentes } from "@/lib/reporte/alertas";
 import { puedeVerCaja } from "@/lib/caja/permisos";
-import { esManagerOAdmin } from "@/lib/permisos";
+import { esManagerOAdmin, rolDelUsuario } from "@/lib/permisos";
+import { inicioDelRol, puedeEntrar } from "@/lib/secciones";
 import { cerrarSesion } from "@/app/ingresar/acciones";
 
 export default async function LayoutApp({
@@ -21,6 +22,7 @@ export default async function LayoutApp({
     verReclamos,
     verCaja,
     esConfiguracion,
+    rol,
   ] = await Promise.all([
     supabase
       .from("personas")
@@ -35,19 +37,25 @@ export default async function LayoutApp({
     puedeGestionarReclamos(supabase),
     puedeVerCaja(supabase),
     esManagerOAdmin(supabase),
+    rolDelUsuario(supabase),
   ]);
 
   // El menú avisa cuántas cosas hay que mirar hoy, sin entrar a la pantalla.
+  // No se cuenta lo que este rol no va a ver.
   const [reclamosUrgentes, reporteUrgente] = await Promise.all([
     verReclamos ? contarReclamosUrgentes(supabase) : Promise.resolve(0),
-    contarPendientesUrgentes(supabase),
+    puedeEntrar(rol, "/reporte")
+      ? contarPendientesUrgentes(supabase)
+      : Promise.resolve(0),
   ]);
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-slate-900">
       <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
         <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <Link href="/" className="shrink-0">
+          {/* Al nombre lo lleva a su pantalla de entrada, que no es la misma
+              para todos los roles. */}
+          <Link href={inicioDelRol(rol)} className="shrink-0">
             <span className="text-lg font-semibold tracking-tight text-white">
               MTHosting
             </span>
@@ -92,20 +100,25 @@ export default async function LayoutApp({
             { href: "/exportar", texto: "Exportar", pendientes: 0 },
             { href: "/ical", texto: "Calendarios", pendientes: 0 },
             { href: "/bandeja", texto: "Sin asignar", pendientes: sinAsignar ?? 0 },
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
-            >
-              {item.texto}
-              {item.pendientes > 0 && (
-                <span className="rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-slate-900">
-                  {item.pendientes}
-                </span>
-              )}
-            </Link>
-          ))}
+          ]
+            // El menú ofrece exactamente lo que el guardián deja abrir. Es la
+            // misma función en los dos lados: si se separan, aparecen enlaces
+            // que rebotan.
+            .filter((item) => puedeEntrar(rol, item.href))
+            .map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+              >
+                {item.texto}
+                {item.pendientes > 0 && (
+                  <span className="rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-slate-900">
+                    {item.pendientes}
+                  </span>
+                )}
+              </Link>
+            ))}
         </nav>
       </header>
       {children}

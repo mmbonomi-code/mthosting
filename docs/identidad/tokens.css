@@ -1,0 +1,133 @@
+/* MTHosting — design tokens
+ * Isotipo 2a "Barras" · Paleta 4B "Bosque profundo + terracota"
+ * Modo claro únicamente. Todos los pares texto/fondo cumplen WCAG AA.
+ * UI en es-AR.
+ */
+
+:root {
+  /* ---- Marca ---- */
+  --color-primary:              #14532D;  /* blanco encima 9,11:1 */
+  --color-primary-hover:        #0F4023;  /* 11,81:1 */
+  --color-primary-active:       #0A2E19;  /* 14,81:1 */
+  --color-primary-soft:         #E4EFE8;
+  --color-primary-soft-text:    #0F4325;  /* sobre soft 9,63:1 */
+  --color-accent:               #C2410C;  /* blanco encima 5,18:1 · sobre bg 4,92:1 */
+  --color-accent-hover:         #9A3412;  /* 7,31:1 */
+  --color-accent-soft:          #FDF0E9;
+  --color-accent-soft-text:     #9A3412;  /* sobre soft 6,55:1 */
+  --color-brand-mark-amber:     #E8A33D;  /* SOLO dentro del isotipo — nunca en la UI */
+
+  /* ---- Neutrales cálidos ---- */
+  --color-neutral-50:           #FAF9F7;
+  --color-neutral-100:          #F2F0EC;
+  --color-neutral-200:          #E5E1DA;
+  --color-neutral-300:          #CFC9BF;
+  --color-neutral-400:          #8C8478;  /* 3,69:1 sobre blanco — ok para UI */
+  --color-neutral-500:          #6E6A62;  /* 5,38:1 */
+  --color-neutral-600:          #5C564C;  /* 7,27:1 */
+  --color-neutral-700:          #403B34;  /* 10,74:1 */
+  --color-neutral-800:          #2A2621;  /* 14,25:1 */
+  --color-neutral-900:          #1A1815;  /* 17,72:1 */
+
+  /* ---- Superficies ---- */
+  --color-bg:                   var(--color-neutral-50);
+  --color-surface:              #FFFFFF;
+  --color-surface-alt:          var(--color-neutral-100);   /* thead, zebra */
+  --color-surface-hover:        #F5F3EF;
+  --color-surface-selected:     var(--color-primary-soft);
+  --color-overlay:              rgba(26, 24, 21, 0.45);
+
+  /* ---- Bordes ---- */
+  --color-border:               var(--color-neutral-200);
+  --color-border-strong:        var(--color-neutral-300);
+  --color-border-control:       var(--color-neutral-400);
+  --color-focus-ring:           var(--color-primary);
+
+  /* ---- Texto ---- */
+  --color-text-primary:         var(--color-neutral-900);
+  --color-text-secondary:       var(--color-neutral-600);
+  --color-text-muted:           var(--color-neutral-500);
+  --color-text-inverse:         #FFFFFF;
+  --color-text-link:            var(--color-primary);
+
+  /* ---- Semánticos ---- */
+  --color-success:              #0F7A46;
+  --color-success-soft:         #E6F4EC;
+  --color-success-text:         #0B5A33;  /* sobre soft 7,33:1 */
+  --color-warning:              #A16207;
+  --color-warning-soft:         #FBF0D9;
+  --color-warning-text:         #7A4A05;  /* 6,61:1 */
+  --color-danger:               #B42318;
+  --color-danger-soft:          #FCEBE9;
+  --color-danger-text:          #8A1C13;  /* 8,07:1 */
+  --color-info:                 #1A5FB4;
+  --color-info-soft:            #E7EFFA;
+  --color-info-text:            #14498A;  /* 7,71:1 */
+
+  /* ---- Estados: reservas ---- */
+  --color-estado-reserva-confirmada-bg:    #E4EFE8;
+  --color-estado-reserva-confirmada-text:  #0F4325;  /* 9,63:1 */
+  --color-estado-reserva-tentativa-bg:     #F5F3EF;
+  --color-estado-reserva-tentativa-text:   #5C564C;  /* 6,56:1 */
+  --color-estado-reserva-tentativa-border: #8C8478;  /* 1px dashed — señal no cromática */
+  --color-estado-reserva-en-curso-bg:      #E7EFFA;
+  --color-estado-reserva-en-curso-text:    #14498A;  /* 7,71:1 */
+  --color-estado-reserva-finalizada-bg:    #F2F0EC;
+  --color-estado-reserva-finalizada-text:  #5C564C;  /* 6,38:1 */
+  --color-estado-reserva-cancelada-bg:     #FCEBE9;
+  --color-estado-reserva-cancelada-text:   #8A1C13;  /* 8,07:1 */
+
+  /* ---- Estados: limpiezas ---- */
+  --color-estado-limpieza-pendiente-bg:    #F2F0EC;
+  --color-estado-limpieza-pendiente-text:  #5C564C;  /* 6,38:1 */
+  --color-estado-limpieza-asignada-bg:     #E7EFFA;
+  --color-estado-limpieza-asignada-text:   #14498A;  /* 7,71:1 */
+  --color-estado-limpieza-en-proceso-bg:   #FDF0E9;
+  --color-estado-limpieza-en-proceso-text: #9A3412;  /* 6,55:1 */
+  --color-estado-limpieza-completada-bg:   #E6F4EC;
+  --color-estado-limpieza-completada-text: #0B5A33;  /* 7,33:1 */
+
+  /* ---- Estados: reclamos por daños ---- */
+  --color-estado-reclamo-borrador-bg:        #F5F3EF;
+  --color-estado-reclamo-borrador-text:      #5C564C;  /* 6,56:1 */
+  --color-estado-reclamo-por-presentar-bg:   #FBF0D9;
+  --color-estado-reclamo-por-presentar-text: #7A4A05;  /* 6,61:1 */
+  --color-estado-reclamo-presentado-bg:      #E7EFFA;
+  --color-estado-reclamo-presentado-text:    #14498A;  /* 7,71:1 */
+  --color-estado-reclamo-escalado-bg:        #F1EBFB;
+  --color-estado-reclamo-escalado-text:      #5B21B6;  /* 7,71:1 */
+  --color-estado-reclamo-cobrado-bg:         #E6F4EC;
+  --color-estado-reclamo-cobrado-text:       #0B5A33;  /* 7,33:1 */
+  --color-estado-reclamo-rechazado-bg:       #FCEBE9;
+  --color-estado-reclamo-rechazado-text:     #8A1C13;  /* 8,07:1 */
+  --color-estado-reclamo-descartado-bg:      #F2F0EC;
+  --color-estado-reclamo-descartado-text:    #6E6A62;  /* 4,73:1 */
+
+  /* ---- Alerta de vencimiento (< 3 días) ---- */
+  --color-alerta-vencimiento-bg:      #FBE0D1;
+  --color-alerta-vencimiento-text:    #7C2D12;  /* 7,44:1 */
+  --color-alerta-vencimiento-dot:     #C2410C;  /* 4,92:1 sobre bg */
+  --color-alerta-vencimiento-row-bg:  #FDF0E9;
+  --color-alerta-vencimiento-row-bar: #C2410C;
+
+  /* ---- Tipografía ---- */
+  --font-sans:    "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, monospace;
+  --font-numeric: tabular-nums;
+
+  /* ---- Forma, densidad, elevación ---- */
+  --radius-sm:  3px;
+  --radius-md:  4px;
+  --radius-lg:  8px;
+  --row-height: 40px;   /* densidad media */
+  --tap-min:    44px;   /* target táctil mínimo en móvil */
+  --shadow-sm:  0 1px 2px rgba(26, 24, 21, 0.06);
+  --shadow-md:  0 4px 12px rgba(26, 24, 21, 0.08);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+table { font-variant-numeric: var(--font-numeric); }

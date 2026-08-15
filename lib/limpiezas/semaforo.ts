@@ -37,12 +37,30 @@ export function semaforoDeLimpieza({
   return "gris";
 }
 
-/** Clase del borde izquierdo de la fila, según el semáforo. */
+/**
+ * El filete izquierdo de la fila (docs/IDENTIDAD-VISUAL.md).
+ *
+ * Solo grita lo que falta hacer. Una limpieza YA ASIGNADA lleva el borde
+ * neutro a propósito: si todo lleva color, no se ve nada, y lo que hay que
+ * mirar en esta pantalla es lo que todavía no tiene responsable.
+ */
 export const BORDE_SEMAFORO: Record<Semaforo, string> = {
-  asignada: "border-l-emerald-600",
-  rojo: "border-l-red-500",
-  ambar: "border-l-amber-500",
-  gris: "border-l-slate-600",
+  asignada: "border-l-borde",
+  rojo: "border-l-accent",
+  ambar: "border-l-accent",
+  gris: "border-l-borde-fuerte",
+};
+
+/**
+ * El fondo de la fila. Solo el rojo lo lleva: es la señal fuerte, la que se
+ * ve de un vistazo sin leer. Una sola alarma por fila — el fondo va con el
+ * filete, nunca además con un badge rojo encima.
+ */
+export const FONDO_SEMAFORO: Record<Semaforo, string> = {
+  asignada: "",
+  rojo: "bg-accent-soft",
+  ambar: "",
+  gris: "",
 };
 
 export type CargaPersona = {

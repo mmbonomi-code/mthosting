@@ -1,23 +1,35 @@
 <!-- ------------------------------------------------------------------------
      NOTA DEL PROYECTO — lo de abajo es el handoff tal como llegó, sin tocar.
 
-     Estado de la implementación (13/08/2026):
+     Estado de la implementación (15/08/2026):
 
        [x] Paso 1 — logo, íconos y PWA. Los 11 SVG están en `public/icons`,
            los PNG se generan con `node scripts/generar-iconos.mjs`, y el
            manifest y el favicon ya usan el isotipo.
-       [ ] Paso 2 — tokens y tipografía. `docs/identidad/tokens.css` hay que
-           traducirlo al `@theme` de Tailwind 4: el `tailwind.config.ts` del
-           handoff es de la versión 3 y este proyecto no lo lee.
-       [ ] Paso 3 — badge, botón, tarjeta y tabla, con el mapa de los 16
-           estados.
-       [ ] Paso 4 — primera pantalla migrada (Limpiezas).
-       [ ] Paso 5 — el resto de las pantallas.
+       [x] Paso 2 — tokens y tipografía, en el `@theme` de `app/globals.css`.
+           `docs/identidad/tokens.css` quedó como referencia: el
+           `tailwind.config.ts` del handoff es de la versión 3 y este proyecto
+           usa la 4, donde el tema vive en el CSS y ese archivo no se lee.
+       [x] Paso 3 — badge, botón, tarjeta y tabla, con el mapa de estados en
+           `lib/estados.ts`.
+       [x] Paso 4 — primera pantalla migrada (Limpiezas / semana).
+       [ ] Paso 5 — el resto de las pantallas. Empezar por el armazón
+           (`app/(app)/layout.tsx`), que sigue oscuro.
        [ ] Paso 6 — sacar la paleta de fábrica de Tailwind para que no se
            pueda escribir un color a mano.
 
-     Mientras los pasos 2 a 5 no estén, la app sigue en el tema oscuro viejo.
-     Eso es transitorio y esperable, no es que la identidad esté mal aplicada.
+     Al terminar cada pantalla del paso 5:
+
+         npx next build
+         node scripts/verificar-identidad.mjs <los archivos tocados>
+
+     Un token mal escrito no rompe nada —la clase no existe y el elemento
+     queda sin pintar—, así que conviene que lo diga una comprobación y no
+     el ojo.
+
+     Mientras el paso 5 no esté, las pantallas sin migrar siguen en el tema
+     oscuro viejo. Eso es transitorio y esperable, no es que la identidad
+     esté mal aplicada.
 
      Dos cosas que el handoff da por hechas y que este proyecto todavía no
      tiene, para no leerlas como si existieran:

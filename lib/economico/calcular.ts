@@ -68,8 +68,22 @@ export type MovimientoCalculable = {
   tc_usd?: number | null;
 };
 
+/**
+ * La ganancia se guarda ABIERTA en sus dos mitades, no como un total.
+ *
+ * Son negocios distintos y se mueven distinto: la comisión depende de cuánto
+ * factura el departamento, la limpieza depende de cuántas veces se ocupó. Un
+ * mes con muchas estadías cortas sube la limpieza sin mover la comisión, y eso
+ * no se ve si el número viene sumado.
+ *
+ * `ganancia()` las suma cuando hace falta. No se guarda el total además de las
+ * partes: dos fuentes para el mismo número siempre terminan discrepando.
+ */
 export type Aporte = {
-  ganancia: number;
+  /** El porcentaje sobre el alquiler. */
+  comision: number;
+  /** La tarifa de limpieza, que va 100% a MTHosting y no comisiona. */
+  limpieza: number;
   percibido: number;
   aircover: number;
   /**
@@ -81,7 +95,16 @@ export type Aporte = {
   custodia: number;
 };
 
-const CERO: Aporte = { ganancia: 0, percibido: 0, aircover: 0, custodia: 0 };
+export const ganancia = (a: Pick<Aporte, "comision" | "limpieza">): number =>
+  a.comision + a.limpieza;
+
+const CERO: Aporte = {
+  comision: 0,
+  limpieza: 0,
+  percibido: 0,
+  aircover: 0,
+  custodia: 0,
+};
 
 /** Las categorías que se comisionan sin descontar limpieza (spec §5.1). */
 const EXTRA: ReadonlySet<Categoria> = new Set([
@@ -122,8 +145,9 @@ export function aporteDeMovimiento(
     const monto = aUsd(Number(m.monto ?? 0), m.moneda, m.tc_usd);
     const limpieza = aUsd(Number(m.tarifa_limpieza ?? 0), m.moneda, m.tc_usd);
     if (monto === null || limpieza === null) return null;
-    // La limpieza va 100% a MTHosting y no comisiona.
-    return { ...CERO, ganancia: (monto - limpieza) * pct + limpieza };
+    // La limpieza va 100% a MTHosting y no comisiona: se descuenta del monto
+    // antes de aplicar el porcentaje y después se suma entera.
+    return { ...CERO, comision: (monto - limpieza) * pct, limpieza };
   }
 
   if (m.categoria === "coanfitrion") {
@@ -161,7 +185,8 @@ export function aporteDeMovimiento(
   if (EXTRA.has(m.categoria)) {
     const monto = aUsd(Number(m.monto ?? 0), m.moneda, m.tc_usd);
     if (monto === null) return null;
-    return { ...CERO, ganancia: monto * pct };
+    // Sin limpieza: un cobro de resolución o un ajuste comisiona pelado.
+    return { ...CERO, comision: monto * pct };
   }
 
   return { ...CERO };
@@ -172,12 +197,27 @@ export type Celda = Aporte & {
   /** `2026-04`. */
   mes: string;
   reservas: number;
+  noches: number;
 };
 
 export type FilaAgregable = MovimientoCalculable & {
   depto_id: string | null;
   fecha: string;
+  noches?: number | null;
 };
+
+/** Suma un conjunto de celdas. Para totales por mes, por depto o generales. */
+export function totalizar(celdas: Aporte[]): Aporte {
+  const t = { ...CERO };
+  for (const c of celdas) {
+    t.comision += c.comision;
+    t.limpieza += c.limpieza;
+    t.percibido += c.percibido;
+    t.aircover += c.aircover;
+    t.custodia += c.custodia;
+  }
+  return t;
+}
 
 export type ResultadoAgregado = {
   celdas: Celda[];
@@ -216,12 +256,16 @@ export function agregarPorDeptoMes(
     const clave = `${f.depto_id}|${mes}`;
     const c =
       celdas.get(clave) ??
-      { depto_id: f.depto_id, mes, reservas: 0, ...CERO };
-    c.ganancia += aporte.ganancia;
+      { depto_id: f.depto_id, mes, reservas: 0, noches: 0, ...CERO };
+    c.comision += aporte.comision;
+    c.limpieza += aporte.limpieza;
     c.percibido += aporte.percibido;
     c.aircover += aporte.aircover;
     c.custodia += aporte.custodia;
-    if (f.categoria === "reserva") c.reservas++;
+    if (f.categoria === "reserva") {
+      c.reservas++;
+      c.noches += f.noches ?? 0;
+    }
     celdas.set(clave, c);
   }
 
@@ -235,9 +279,10 @@ export function agregarPorDeptoMes(
 }
 
 /**
- * La brecha: percibido − ganancia. Es el SALDO con el propietario.
+ * El saldo con el propietario: percibido − ganancia.
  *
- * Positiva, MTHosting cobró más de lo que le corresponde: le debe. Negativa,
- * le deben a MTHosting. Nunca es "un error a corregir".
+ * Positivo, MTHosting cobró más de lo que le corresponde y le DEBE al
+ * propietario. Negativo, entró menos de lo ganado y el propietario le debe a
+ * MTHosting. Nunca es "un error a corregir".
  */
-export const brecha = (c: Aporte): number => c.percibido - c.ganancia;
+export const saldoPropietario = (c: Aporte): number => c.percibido - ganancia(c);

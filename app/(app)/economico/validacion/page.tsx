@@ -3,7 +3,10 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR } from "@/lib/fechas";
 import {
   agregarPorDeptoMes,
-  brecha,
+  ganancia,
+  saldoPropietario,
+  totalizar,
+  type Aporte,
   type ClaseCuenta,
   type FilaAgregable,
 } from "@/lib/economico/calcular";
@@ -137,13 +140,9 @@ export default async function Validacion({
         .sort((a, b) => a.fecha.localeCompare(b.fecha))
     : [];
 
-  const porDepto = new Map<string, { ganancia: number; percibido: number; aircover: number }>();
+  const porDepto = new Map<string, Aporte[]>();
   for (const c of celdas) {
-    const acum = porDepto.get(c.depto_id) ?? { ganancia: 0, percibido: 0, aircover: 0 };
-    acum.ganancia += c.ganancia;
-    acum.percibido += c.percibido;
-    acum.aircover += c.aircover;
-    porDepto.set(c.depto_id, acum);
+    porDepto.set(c.depto_id, [...(porDepto.get(c.depto_id) ?? []), c]);
   }
 
   if (crudas.length === 0) {
@@ -330,14 +329,15 @@ export default async function Validacion({
                 .sort((a, b) =>
                   (codigoDepto.get(a[0]) ?? "").localeCompare(codigoDepto.get(b[0]) ?? ""),
                 )
-                .map(([id, t]) => {
-                  const dif = brecha({ ...t, custodia: 0 });
+                .map(([id, celdasDelDepto]) => {
+                  const t = totalizar(celdasDelDepto);
+                  const dif = saldoPropietario(t);
                   return (
                     <tr key={id} className="h-fila border-t border-borde">
                       <td className="px-3 py-2 font-mono font-semibold">
                         {codigoDepto.get(id) ?? "—"}
                       </td>
-                      <td className="px-3 py-2 text-right">{usd(t.ganancia)}</td>
+                      <td className="px-3 py-2 text-right">{usd(ganancia(t))}</td>
                       <td className="px-3 py-2 text-right">{usd(t.percibido)}</td>
                       <td
                         className={`px-3 py-2 text-right font-semibold ${

@@ -15,7 +15,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../lib/database.types";
 import {
   agregarPorDeptoMes,
-  brecha,
+  ganancia,
+  saldoPropietario,
+  totalizar,
   type Celda,
   type FilaAgregable,
 } from "../lib/economico/calcular";
@@ -67,8 +69,11 @@ const deDepto = (codigo: string) => {
   return celdas.filter((c) => c.depto_id === id);
 };
 
-const sumar = (cs: Celda[], campo: "ganancia" | "percibido" | "aircover" | "reservas") =>
+const sumar = (cs: Celda[], campo: "percibido" | "aircover" | "reservas") =>
   cs.reduce((s, c) => s + c[campo], 0);
+
+/** La ganancia sale de sumar sus dos mitades, no de un total guardado. */
+const gananciaDe = (cs: Celda[]) => ganancia(totalizar(cs));
 
 const hasta = (cs: Celda[], mes: string) => cs.filter((c) => c.mes <= mes);
 
@@ -151,7 +156,7 @@ describe.skipIf(!hayBase)("el motor sobre los datos reales", () => {
       // al 20%. Sin él —que es la decisión tomada— son 1.941,23. Y el segundo
       // archivo agrega 4 reservas de mayo que el primero no tenía, por 222,18.
       const c = hasta(deDepto("KENNEDY 1"), "2026-05");
-      expect(sumar(c, "ganancia")).toBeCloseTo(1941.23 + 222.18, 1);
+      expect(gananciaDe(c)).toBeCloseTo(1941.23 + 222.18, 1);
       expect(sumar(c, "percibido")).toBeCloseTo(2115.19, 1);
     });
 
@@ -167,20 +172,14 @@ describe.skipIf(!hayBase)("el motor sobre los datos reales", () => {
       // Y la ganancia de junio sigue en el rango de los meses normales. Si el
       // motor calculara sobre lo cobrado, acá daría el doble.
       const mayo = cs.find((c) => c.mes === "2026-05")!;
-      expect(junio.ganancia).toBeLessThan(mayo.ganancia * 1.2);
-      expect(junio.ganancia).toBeGreaterThan(mayo.ganancia * 0.8);
+      expect(ganancia(junio)).toBeLessThan(ganancia(mayo) * 1.2);
+      expect(ganancia(junio)).toBeGreaterThan(ganancia(mayo) * 0.8);
     });
 
     it("la brecha del período completo es el recupero documentado", () => {
       const cs = deDepto("KENNEDY 1");
-      const total = {
-        ganancia: sumar(cs, "ganancia"),
-        percibido: sumar(cs, "percibido"),
-        aircover: 0,
-        custodia: 0,
-      };
-      // La spec habla de "+818" de recupero contra la ganancia teórica.
-      expect(brecha(total)).toBeCloseTo(818.19, 1);
+      const total = totalizar(cs);
+      expect(saldoPropietario(total)).toBeCloseTo(818.19, 1);
     });
 
     it("el AirCover queda afuera y se informa aparte", () => {
@@ -188,7 +187,7 @@ describe.skipIf(!hayBase)("el motor sobre los datos reales", () => {
       expect(sumar(cs, "aircover")).toBeCloseTo(6, 2);
       const abril = cs.find((c) => c.mes === "2026-04")!;
       // 463,68 sin el AirCover. Con él comisionado al 20% daba 464,88.
-      expect(abril.ganancia).toBeCloseTo(463.68, 2);
+      expect(ganancia(abril)).toBeCloseTo(463.68, 2);
       expect(abril.aircover).toBeCloseTo(6, 2);
     });
   });
@@ -206,7 +205,7 @@ describe.skipIf(!hayBase)("el motor sobre los datos reales", () => {
 
     it("de enero a mayo la ganancia da lo medido a mano", () => {
       const todas = UNIDADES.flatMap((u) => hasta(deDepto(u), "2026-05"));
-      expect(sumar(todas, "ganancia")).toBeCloseTo(12117.44, 0);
+      expect(gananciaDe(todas)).toBeCloseTo(12117.44, 0);
     });
 
     it("de enero a mayo el percibido da lo medido a mano", () => {
@@ -216,13 +215,7 @@ describe.skipIf(!hayBase)("el motor sobre los datos reales", () => {
 
     it("la brecha se explica por los cobros de resolución sin comisionar", () => {
       const todas = UNIDADES.flatMap((u) => hasta(deDepto(u), "2026-05"));
-      const total = {
-        ganancia: sumar(todas, "ganancia"),
-        percibido: sumar(todas, "percibido"),
-        aircover: 0,
-        custodia: 0,
-      };
-      expect(brecha(total)).toBeCloseTo(-77.17, 0);
+      expect(saldoPropietario(totalizar(todas))).toBeCloseTo(-77.17, 0);
     });
   });
 

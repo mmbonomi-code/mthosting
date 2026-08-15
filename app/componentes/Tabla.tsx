@@ -24,7 +24,7 @@ export function Tabla({
   minimo?: string;
 }) {
   return (
-    <div className="overflow-x-auto rounded border border-borde bg-superficie">
+    <div className="overflow-x-auto rounded-md border border-borde bg-superficie">
       <table
         className="w-full border-collapse text-left text-[13px] tabular-nums"
         style={{ minWidth: minimo }}

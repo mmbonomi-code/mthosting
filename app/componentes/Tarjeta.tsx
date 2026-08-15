@@ -24,7 +24,7 @@ export default function Tarjeta({
 }) {
   return (
     <div
-      className={`rounded border border-borde p-4 shadow-sm ${
+      className={`rounded-md border border-borde p-4 shadow-sm ${
         fondo ?? "bg-superficie"
       } ${filete ? `border-l-[3px] ${filete}` : ""} ${className ?? ""}`}
     >

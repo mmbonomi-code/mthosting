@@ -38,7 +38,7 @@ export default function SelectorResponsable({
         });
       }}
       // 44px: se usa desde el celular.
-      className={`h-11 max-w-44 rounded-sm border px-2 text-sm outline-none transition-colors focus:border-primary ${
+      className={`h-11 max-w-44 rounded-md border px-2 text-sm outline-none transition-colors focus:border-primary ${
         valor
           ? "border-borde-control bg-superficie text-tinta"
           : "border-accent bg-accent-soft text-accent-soft-text font-medium"

@@ -28,12 +28,29 @@ export type Tono = {
   punto?: boolean;
 };
 
-/** Los seis roles de color. Un estado nuevo elige uno de estos, no un color. */
+/**
+ * Los seis roles de color. Un estado nuevo elige uno de estos, no un color.
+ *
+ * DOS INTENSIDADES, y cuál va dónde no es decorativo:
+ *
+ *   suave  → fondo tenue con texto oscuro. Es el default y lo que pide el
+ *            handoff. Sirve para informar: "esto está así".
+ *   fuerte → relleno sólido con texto blanco. SOLO para lo que está pasando
+ *            ahora o salió mal.
+ *
+ * El handoff está escrito para fondo oscuro, donde un rojo encendido salta
+ * solo. Pasado a fondo claro, el mismo criterio se apaga y la alarma se
+ * pierde entre lo que ya está resuelto (Marcos, 15/08/2026). El relleno
+ * sólido devuelve ese peso.
+ *
+ * La restricción importante: fuerte se reserva a AHORA y CERRADO_MAL. Si
+ * gritan todos, no grita ninguno.
+ */
 const INERTE = "bg-warm-100 text-warm-600";
 const ESPERANDO = "bg-dato-soft text-dato-text";
-const AHORA = "bg-accent-soft text-accent-soft-text";
+const AHORA = "bg-accent text-tinta-inversa font-semibold";
 const CERRADO_BIEN = "bg-exito-soft text-exito-text";
-const CERRADO_MAL = "bg-error-soft text-error-text";
+const CERRADO_MAL = "bg-error text-tinta-inversa font-semibold";
 const EXCEPCION = "bg-excepcion-soft text-excepcion-text";
 
 // ---------------------------------------------------------------------------
@@ -146,11 +163,23 @@ export const ETIQUETA_RECLAMO: Record<EstadoReclamo, string> = {
 // Alerta de vencimiento
 // ---------------------------------------------------------------------------
 
+/**
+ * Un escalón por encima de AHORA, dentro de la misma familia: terracota más
+ * profundo. "Está pasando ahora" y "ya tendría que estar hecho" no pueden
+ * verse igual, y el handoff pide que el vencimiento salte incluso en una
+ * tabla llena. Además lleva punto, que es la señal que se ve sin color.
+ */
+const URGENTE = "bg-accent-hover text-tinta-inversa font-semibold";
+
 /** Para un reclamo que vence en menos de tres días. */
-export const TONO_VENCIMIENTO: Tono = {
-  clases: "bg-alerta-soft text-alerta-text font-semibold",
-  punto: true,
-};
+export const TONO_VENCIMIENTO: Tono = { clases: URGENTE, punto: true };
+
+/**
+ * Trabajo sin repartir: las limpiezas de un día que todavía no tienen a
+ * nadie. No es el estado de una fila sino el resumen de un grupo, y es la
+ * única alarma que puede ir en un encabezado.
+ */
+export const TONO_ALARMA: Tono = { clases: URGENTE, punto: true };
 
 /**
  * Fila que vence: fondo tenue y filete al costado.
@@ -195,5 +224,11 @@ export const CATALOGO: {
     estado: "vencimiento",
     etiqueta: "Vence pronto",
     tono: TONO_VENCIMIENTO,
+  },
+  {
+    dominio: "alerta",
+    estado: "sin_asignar",
+    etiqueta: "Sin asignar",
+    tono: TONO_ALARMA,
   },
 ];

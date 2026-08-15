@@ -11,7 +11,7 @@ import { sumarDias } from "@/lib/fechas";
  * puede bajar de ahí (docs/IDENTIDAD-VISUAL.md §7).
  */
 const CONTROL =
-  "flex h-11 shrink-0 items-center justify-center rounded-sm border border-borde-control text-tinta-suave transition-colors hover:bg-superficie-hover";
+  "flex h-11 shrink-0 items-center justify-center rounded-md border border-borde-control text-tinta-suave transition-colors hover:bg-superficie-hover";
 
 export default function NavegadorSemana({ desde }: { desde: string }) {
   const router = useRouter();
@@ -32,7 +32,7 @@ export default function NavegadorSemana({ desde }: { desde: string }) {
           if (e.target.value) router.push(`/semana?desde=${e.target.value}`);
         }}
         aria-label="Elegir fecha"
-        className="h-11 min-w-0 flex-1 rounded-sm border border-borde-control bg-superficie px-3 text-base text-tinta tabular-nums outline-none focus:border-primary"
+        className="h-11 min-w-0 flex-1 rounded-md border border-borde-control bg-superficie px-3 text-base text-tinta tabular-nums outline-none focus:border-primary"
       />
       <Link href="/semana" className={`${CONTROL} px-3 text-sm`}>
         Hoy

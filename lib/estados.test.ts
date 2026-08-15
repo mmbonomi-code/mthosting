@@ -13,7 +13,7 @@ describe("el mapa de estados", () => {
     expect(Object.keys(TONO_RESERVA)).toHaveLength(5);
     expect(Object.keys(TONO_LIMPIEZA)).toHaveLength(6);
     expect(Object.keys(TONO_RECLAMO)).toHaveLength(7);
-    expect(CATALOGO).toHaveLength(19);
+    expect(CATALOGO).toHaveLength(20);
   });
 
   it("ningún estado se queda sin color", () => {
@@ -32,6 +32,22 @@ describe("el mapa de estados", () => {
       );
     }
     expect(FILA_VENCE).not.toMatch(/#[0-9a-f]{3,8}/i);
+  });
+
+  it("el relleno sólido está reservado a las alarmas", () => {
+    // El fondo tenue es el default. El relleno sólido se lo ganan solo los
+    // estados que piden acción: lo que está pasando ahora, lo que salió mal
+    // y lo que ya tendría que estar hecho. Si mañana alguien lo reparte a
+    // "Coordinado" o "Confirmada", la pantalla vuelve a gritar entera y no
+    // se distingue nada. Por eso está escrito acá y no en un comentario.
+    const solidos = CATALOGO.filter((c) => c.tono.clases.includes("text-tinta-inversa"));
+    expect(solidos.map((c) => `${c.dominio}/${c.estado}`)).toEqual([
+      "reserva/cancelada",
+      "limpieza/en_curso",
+      "reclamo/rechazado",
+      "alerta/vencimiento",
+      "alerta/sin_asignar",
+    ]);
   });
 
   it("el ámbar del isotipo no aparece en ningún estado", () => {
@@ -55,9 +71,9 @@ describe("las señales que no son de color", () => {
     expect(TONO_VENCIMIENTO.punto).toBe(true);
   });
 
-  it("ningún otro estado depende de una señal extra", () => {
+  it("solo las alarmas dependen de una señal extra", () => {
     const conPunto = CATALOGO.filter((c) => c.tono.punto);
-    expect(conPunto.map((c) => c.estado)).toEqual(["vencimiento"]);
+    expect(conPunto.map((c) => c.estado)).toEqual(["vencimiento", "sin_asignar"]);
   });
 });
 
@@ -93,9 +109,9 @@ describe("la lógica de color es la misma en los tres dominios", () => {
 
   it("lo que pasa ahora es naranja, y no se confunde con lo que vence", () => {
     // "En proceso" y "vence pronto" son los dos anaranjados, pero el de
-    // vencimiento va más saturado para que salte en una tabla llena.
-    expect(TONO_LIMPIEZA.en_curso.clases).toContain("accent");
-    expect(TONO_VENCIMIENTO.clases).toContain("alerta");
+    // vencimiento va más profundo para que salte en una tabla llena.
+    expect(TONO_LIMPIEZA.en_curso.clases).toContain("bg-accent ");
+    expect(TONO_VENCIMIENTO.clases).toContain("bg-accent-hover");
     expect(TONO_VENCIMIENTO.clases).not.toBe(TONO_LIMPIEZA.en_curso.clases);
   });
 });

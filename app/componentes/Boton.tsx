@@ -32,7 +32,7 @@ export function clsBoton(
   tamano: TamanoBoton = "normal",
 ): string {
   return [
-    "inline-flex items-center justify-center gap-2 rounded-sm font-medium",
+    "inline-flex items-center justify-center gap-2 rounded-md font-medium",
     "transition-colors duration-150",
     "disabled:cursor-not-allowed disabled:opacity-45",
     VARIANTE[variante],

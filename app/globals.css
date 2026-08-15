@@ -81,20 +81,26 @@
   --color-excepcion-soft: #f1ebfb;
   --color-excepcion-text: #5b21b6; /* sobre soft 7,71:1 */
 
-  /* Alerta de vencimiento: más saturada que "en proceso", para que salte en
-     una tabla llena. Lleva punto además del color (señal no cromática). */
-  --color-alerta-soft: #fbe0d1;
-  --color-alerta-text: #7c2d12; /* sobre soft 7,44:1 */
-  --color-alerta-punto: #c2410c; /* 4,92:1 sobre soft */
+  /* La alerta de vencimiento del handoff era un fondo tenue (#FBE0D1) con
+     texto oscuro. Se sacó el 15/08/2026: sobre fondo claro no alcanzaba, y
+     ahora va en relleno sólido con `accent-hover` (ver lib/estados.ts). Los
+     tokens no quedan sueltos a propósito, para que nadie vuelva a vestir una
+     alarma con el estilo callado. */
 
   /* ---- Tipografía ---- */
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 
   /* ---- Forma y densidad ---- */
-  --radius-sm: 3px; /* badges, inputs, botones */
-  --radius-md: 4px; /* tarjetas, tablas */
-  --radius-lg: 8px; /* modales */
+  /* El handoff pedía 3/4/8. Marcos los subió el 15/08/2026: el borde casi
+     recto endurecía la app y prefiere lo redondeado que había antes. Se
+     movieron los tres juntos para que la escala siga siendo una escala.
+     Ver docs/IDENTIDAD-VISUAL.md.
+     OJO: la clase `rounded` a secas de Tailwind NO lee estos tokens, es
+     0.25rem fijo. Siempre `rounded-sm` / `rounded-md` / `rounded-lg`. */
+  --radius-sm: 8px; /* chips y controles chicos */
+  --radius-md: 12px; /* tarjetas, filas, tablas, inputs, botones */
+  --radius-lg: 16px; /* modales */
 
   --shadow-sm: 0 1px 2px rgba(26, 24, 21, 0.06);
   --shadow-md: 0 4px 12px rgba(26, 24, 21, 0.08);

@@ -10,7 +10,7 @@ import {
   semaforoDeLimpieza,
 } from "@/lib/limpiezas/semaforo";
 import { revisarLimpiezas, type EstadiaRevisar } from "@/lib/limpiezas/alertas";
-import { TONO_LIMPIEZA, TONO_RESERVA } from "@/lib/estados";
+import { TONO_ALARMA, TONO_LIMPIEZA, TONO_RESERVA } from "@/lib/estados";
 import Badge from "@/app/componentes/Badge";
 import { clsBoton } from "@/app/componentes/Boton";
 import SelectorResponsable, {
@@ -181,7 +181,7 @@ export default async function Semana({
       <NavegadorSemana desde={desde} />
 
       {alertas.size > 0 && (
-        <div className="rounded border border-borde border-l-[3px] border-l-aviso bg-aviso-soft px-4 py-3">
+        <div className="rounded-md border border-borde border-l-[3px] border-l-aviso bg-aviso-soft px-4 py-3">
           <p className="text-sm font-medium text-aviso-text">
             {alertas.size} {alertas.size === 1 ? "limpieza" : "limpiezas"} para
             revisar en este período
@@ -195,11 +195,11 @@ export default async function Semana({
 
       {/* Cuánto lleva cada persona: se mira antes de darle una más a alguien */}
       {carga.length > 0 && (
-        <div className="flex flex-wrap gap-2 rounded border border-borde bg-superficie p-3 shadow-sm">
+        <div className="flex flex-wrap gap-2 rounded-md border border-borde bg-superficie p-3 shadow-sm">
           {carga.map((c) => (
             <span
               key={c.personaId}
-              className="rounded-sm bg-superficie-alt px-3 py-1.5 text-sm tabular-nums"
+              className="rounded-md bg-superficie-alt px-3 py-1.5 text-sm tabular-nums"
             >
               <span className="font-medium text-tinta">{c.nombre}</span>
               <span className="ml-2 text-tinta-suave">
@@ -234,7 +234,7 @@ export default async function Semana({
             <details
               key={fecha}
               open={fecha === hoy && delDia.length > 0}
-              className={`group rounded border border-borde border-l-[3px] bg-superficie shadow-sm ${
+              className={`group rounded-md border border-borde border-l-[3px] bg-superficie shadow-sm ${
                 delDia.length === 0
                   ? "border-l-borde opacity-60"
                   : BORDE_SEMAFORO[semaforoDia]
@@ -249,12 +249,12 @@ export default async function Semana({
                     {formatearFechaAR(fecha)}
                   </span>
                   {fecha === hoy && (
-                    <span className="rounded-sm bg-warm-100 px-2 py-0.5 text-xs font-medium text-warm-600">
+                    <span className="rounded-full bg-warm-100 px-2 py-0.5 text-xs font-medium text-warm-600">
                       hoy
                     </span>
                   )}
                   {pagoDoble && delDia.length > 0 && (
-                    <span className="rounded-sm bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-soft-text">
+                    <span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-soft-text">
                       pago doble
                     </span>
                   )}
@@ -266,13 +266,15 @@ export default async function Semana({
                         <span className="tabular-nums text-tinta-suave">
                           {delDia.length} {delDia.length === 1 ? "limpieza" : "limpiezas"}
                         </span>
-                        {/* La alarma del día: lo que falta repartir, con punto
-                            para que no dependa solo del color. */}
+                        {/* La alarma del día: lo que falta repartir. Sale del
+                            mapa de estados como cualquier otra, con punto para
+                            que no dependa solo del color. */}
                         {faltanAsignar > 0 && (
-                          <span className="inline-flex items-center gap-1.5 rounded-sm bg-alerta-soft px-2.5 py-0.5 text-xs font-semibold tabular-nums text-alerta-text">
-                            <span aria-hidden className="size-1.5 rounded-full bg-alerta-punto" />
-                            {faltanAsignar} sin asignar
-                          </span>
+                          <Badge tono={TONO_ALARMA}>
+                            <span className="tabular-nums">
+                              {faltanAsignar} sin asignar
+                            </span>
+                          </Badge>
                         )}
                       </>
                     )}
@@ -317,7 +319,7 @@ export default async function Semana({
                     return (
                       <li
                         key={l.id}
-                        className={`flex flex-col gap-2 rounded border border-borde border-l-[3px] px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 ${
+                        className={`flex flex-col gap-2 rounded-md border border-borde border-l-[3px] px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 ${
                           BORDE_SEMAFORO[semaforo]
                         } ${
                           // Una sola alarma por fila: el fondo lo pone el
@@ -405,7 +407,7 @@ export default async function Semana({
       </div>
 
       {opciones.length === 0 && (
-        <p className="rounded-sm bg-aviso-soft px-3 py-2 text-xs text-aviso-text">
+        <p className="rounded-md bg-aviso-soft px-3 py-2 text-xs text-aviso-text">
           No hay personas que hagan limpieza cargadas: agregalas en Personas
           para poder asignar.
         </p>

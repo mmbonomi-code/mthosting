@@ -1,6 +1,56 @@
-<!-- ------------------------------------------------------------------------
-     NOTA DEL PROYECTO — lo de abajo es el handoff tal como llegó, sin tocar.
+# Nota del proyecto
 
+**El handoff empieza más abajo, en "Handoff: identidad visual MTHosting", y está
+tal como llegó, sin tocar. Esta sección es lo que MTHosting decidió cambiarle.
+Donde las dos cosas se contradigan, manda esta sección.**
+
+## Cambios sobre el handoff
+
+Ninguno de los dos es una preferencia suelta: los dos salen de que el handoff
+está pensado y dibujado sobre fondo oscuro, y esta app es de fondo claro.
+
+### 1. El redondeo sube (15/08/2026, decisión de Marcos)
+
+| Token | Handoff | Ahora | Dónde |
+| --- | --- | --- | --- |
+| `--radius-sm` | 3px | **8px** | chips y controles chicos |
+| `--radius-md` | 4px | **12px** | tarjetas, filas, tablas, inputs, botones |
+| `--radius-lg` | 8px | **16px** | modales |
+
+Los badges van directamente en `rounded-full`, como estaban antes de migrar.
+
+El borde casi recto del handoff endurecía la app. Se movieron los tres tokens
+juntos para que la escala siga siendo una escala y no tres números sueltos.
+
+> **Ojo con `rounded` a secas.** En Tailwind 4 esa clase NO lee estos tokens:
+> es `0.25rem` fijo. Siempre `rounded-sm` / `rounded-md` / `rounded-lg` /
+> `rounded-full`. Es un error que no falla ni se ve venir.
+
+### 2. Las alarmas van en relleno sólido (15/08/2026, decisión de Marcos)
+
+El handoff pide fondo tenue con texto oscuro para los 19 estados (§6). Sobre
+fondo oscuro un rojo tenue igual salta; sobre fondo claro se apaga, y la alarma
+se pierde entre lo que ya está resuelto.
+
+Entonces hay **dos intensidades**, y cuál va dónde está en `lib/estados.ts`:
+
+- **suave** — fondo tenue, texto oscuro. Es el default, y es el del handoff.
+  Sirve para informar: "esto está así".
+- **fuerte** — relleno sólido, texto blanco. SOLO para `AHORA` (lo que está
+  pasando) y `CERRADO_MAL` (lo que salió mal).
+- **urgente** — `accent-hover`, un escalón más profundo, con punto. Para lo que
+  ya tendría que estar hecho: vencimientos y trabajo sin repartir.
+
+La restricción es la que importa: **si gritan todos, no grita ninguno.**
+"Coordinado", "Confirmada", "Movido" y "Tentativa" se quedan en suave a
+propósito. Hay un test en `lib/estados.test.ts` que falla si alguien reparte el
+relleno sólido a un estado más, justamente para que esto no se afloje solo.
+
+Consecuencia: los tokens `--color-alerta-*` del handoff (el fondo tenue de
+vencimiento) se sacaron de `globals.css`. No quedan sueltos a propósito, para
+que nadie vuelva a vestir una alarma con el estilo callado.
+
+<!-- ------------------------------------------------------------------------
      Estado de la implementación (15/08/2026):
 
        [x] Paso 1 — logo, íconos y PWA. Los 11 SVG están en `public/icons`,

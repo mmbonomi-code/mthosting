@@ -49,7 +49,7 @@ export default async function Semana({
       supabase
         .from("limpiezas")
         .select(
-          "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, depto_id, asignado_a, monto_pactado, moneda, pago_doble, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, noches, fecha_checkout, datos_completos)",
+          "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, fecha_manual, depto_id, asignado_a, monto_pactado, moneda, pago_doble, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, noches, fecha_checkout, datos_completos)",
         )
         .gte("fecha", desde)
         .lte("fecha", hasta)
@@ -320,6 +320,17 @@ export default async function Semana({
                             {l.reserva && !l.reserva.datos_completos && (
                               <span className="rounded-full bg-violet-950 px-2 py-0.5 text-xs font-medium text-violet-300">
                                 Tentativa
+                              </span>
+                            )}
+                            {/* Para que se sepa por qué esta no cae el día del
+                                check-out, y que la importación no la va a
+                                mover. */}
+                            {l.fecha_manual && (
+                              <span
+                                title="La fecha la puso una persona. La importación no la mueve."
+                                className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-200"
+                              >
+                                Fecha a mano
                               </span>
                             )}
                             {l.monto_pactado !== null && (

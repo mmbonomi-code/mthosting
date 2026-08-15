@@ -213,7 +213,9 @@ export async function editarLimpieza(
   // que en el alta.
   const { data: actual } = await supabase
     .from("limpiezas")
-    .select("depto_id, fecha")
+    .select(
+      "depto_id, fecha, rol_reserva, reserva:reservas(fecha_checkin, fecha_checkout)",
+    )
     .eq("id", limpiezaId)
     .maybeSingle();
   if (actual && actual.fecha !== fecha) {
@@ -233,11 +235,26 @@ export async function editarLimpieza(
     }
   }
 
+  // Si la fecha que elige la persona NO es la que le tocaría por la reserva,
+  // queda fijada: la importación no la vuelve a mover. Y si la devuelve a su
+  // día natural, vuelve a seguir la reserva sola, sin tener que destildar
+  // nada. Sin esto, la limpieza volvía a su lugar en cada importación.
+  const natural =
+    actual?.rol_reserva === "entrada"
+      ? (actual.reserva as { fecha_checkin: string | null } | null)?.fecha_checkin
+      : (actual?.reserva as { fecha_checkout: string | null } | null)?.fecha_checkout;
+
   const { error } = await supabase
     .from("limpiezas")
     // La hora de salida no se edita acá: sale de lo coordinado en el
     // check-out de la reserva.
-    .update({ fecha, tipo, notas: texto(fd, "notas") })
+    .update({
+      fecha,
+      tipo,
+      notas: texto(fd, "notas"),
+      // Una limpieza suelta, sin reserva, siempre lleva fecha puesta a mano.
+      fecha_manual: natural == null ? true : fecha !== natural,
+    })
     .eq("id", limpiezaId);
   if (error) return { error: "No se pudo guardar. Probá de nuevo." };
 

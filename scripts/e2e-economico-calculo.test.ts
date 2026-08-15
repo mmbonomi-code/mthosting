@@ -45,6 +45,7 @@ async function traerTodo<T>(
 }
 
 type Cruda = {
+  archivo: string;
   categoria: FilaAgregable["categoria"];
   monto: number | null;
   cobrado: number | null;
@@ -57,6 +58,9 @@ type Cruda = {
 };
 
 let celdas: Celda[] = [];
+/** Las filas crudas y las comisiones, para poder reagregar por archivo. */
+let todasLasFilas: (FilaAgregable & { archivo: string })[] = [];
+let comisionPorDepto = new Map<string, number>();
 let porCodigo = new Map<string, string>();
 let sinConvertir = 0;
 let sinDepartamento = 0;
@@ -76,6 +80,21 @@ const sumar = (cs: Celda[], campo: "percibido" | "aircover" | "reservas") =>
 const gananciaDe = (cs: Celda[]) => ganancia(totalizar(cs));
 
 const hasta = (cs: Celda[], mes: string) => cs.filter((c) => c.mes <= mes);
+
+/**
+ * Los números que Marcos midió a mano salen de UN archivo concreto. Anclar la
+ * comprobación a ese archivo, y no a "lo que haya en la base", es lo que la
+ * mantiene válida: los exports posteriores de Airbnb traen reservas que en el
+ * momento del export viejo todavía no se habían cobrado, así que el total del
+ * departamento crece legítimamente y una expectativa fija se caería sola.
+ */
+const celdasDelArchivo = (archivo: string, codigo: string) => {
+  const id = porCodigo.get(codigo);
+  return agregarPorDeptoMes(
+    todasLasFilas.filter((f) => f.archivo === archivo),
+    comisionPorDepto,
+  ).celdas.filter((c) => c.depto_id === id);
+};
 
 beforeAll(async () => {
   if (!hayBase) return;
@@ -97,11 +116,12 @@ beforeAll(async () => {
       db
         .from("movimientos_economicos")
         .select(
-          "categoria, monto, cobrado, tarifa_limpieza, moneda, fecha, depto_id, grupo_con_coanfitrion, cuenta_id",
+          "archivo, categoria, monto, cobrado, tarifa_limpieza, moneda, fecha, depto_id, grupo_con_coanfitrion, cuenta_id",
         ) as never,
   );
 
-  const filas: FilaAgregable[] = crudas.map((m) => ({
+  const filas: (FilaAgregable & { archivo: string })[] = crudas.map((m) => ({
+    archivo: m.archivo,
     categoria: m.categoria,
     monto: m.monto,
     cobrado: m.cobrado,
@@ -125,6 +145,9 @@ beforeAll(async () => {
     (m) => m.categoria !== "payout" && m.depto_id === null,
   ).length;
   cuentasSinClasificar = cuentas.filter((c) => c.clasificacion !== "mth" && c.clasificacion !== "propietario").length;
+
+  todasLasFilas = filas;
+  comisionPorDepto = comision;
 
   const r = agregarPorDeptoMes(filas, comision);
   celdas = r.celdas;
@@ -196,6 +219,10 @@ describe.skipIf(!hayBase)("el motor sobre los datos reales", () => {
     const UNIDADES = ["05", "06", "07", "08", "09", "11", "12", "33"].map(
       (n) => `ED TALC ${n}`,
     );
+    /** El export sobre el que se hizo la validación a mano. */
+    const ARCHIVO = "airbnb_01_2026-05_2026 (28).csv";
+    const deEseArchivo = () =>
+      UNIDADES.flatMap((u) => hasta(celdasDelArchivo(ARCHIVO, u), "2026-05"));
 
     it("las ocho unidades tienen movimientos propios", () => {
       for (const u of UNIDADES) {
@@ -204,18 +231,23 @@ describe.skipIf(!hayBase)("el motor sobre los datos reales", () => {
     });
 
     it("de enero a mayo la ganancia da lo medido a mano", () => {
-      const todas = UNIDADES.flatMap((u) => hasta(deDepto(u), "2026-05"));
-      expect(gananciaDe(todas)).toBeCloseTo(12117.44, 0);
+      expect(gananciaDe(deEseArchivo())).toBeCloseTo(12117.44, 0);
     });
 
     it("de enero a mayo el percibido da lo medido a mano", () => {
-      const todas = UNIDADES.flatMap((u) => hasta(deDepto(u), "2026-05"));
-      expect(sumar(todas, "percibido")).toBeCloseTo(12040.27, 0);
+      expect(sumar(deEseArchivo(), "percibido")).toBeCloseTo(12040.27, 0);
     });
 
     it("la brecha se explica por los cobros de resolución sin comisionar", () => {
-      const todas = UNIDADES.flatMap((u) => hasta(deDepto(u), "2026-05"));
-      expect(saldoPropietario(totalizar(todas))).toBeCloseTo(-77.17, 0);
+      expect(saldoPropietario(totalizar(deEseArchivo()))).toBeCloseTo(-77.17, 0);
+    });
+
+    it("los exports posteriores agregan reservas, no las corrigen", () => {
+      // El archivo de julio trae reservas de enero a mayo que en el export de
+      // mayo todavía no se habían cobrado. El total del departamento crece y
+      // eso está bien: lo que no puede pasar es que baje.
+      const conTodo = UNIDADES.flatMap((u) => hasta(deDepto(u), "2026-05"));
+      expect(gananciaDe(conTodo)).toBeGreaterThanOrEqual(gananciaDe(deEseArchivo()));
     });
   });
 

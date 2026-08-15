@@ -76,6 +76,17 @@
   --color-dato-soft: #e7effa;
   --color-dato-text: #14498a; /* 7,71:1 */
 
+  /* Violeta = excepción. El único estado que se sale del camino normal:
+     un reclamo escalado a mediación. */
+  --color-excepcion-soft: #f1ebfb;
+  --color-excepcion-text: #5b21b6; /* sobre soft 7,71:1 */
+
+  /* Alerta de vencimiento: más saturada que "en proceso", para que salte en
+     una tabla llena. Lleva punto además del color (señal no cromática). */
+  --color-alerta-soft: #fbe0d1;
+  --color-alerta-text: #7c2d12; /* sobre soft 7,44:1 */
+  --color-alerta-punto: #c2410c; /* 4,92:1 sobre soft */
+
   /* ---- Tipografía ---- */
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;

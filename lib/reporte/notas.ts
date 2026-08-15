@@ -8,6 +8,13 @@
  * Funciones puras, con tests. `hoy` siempre entra desde afuera (hoyAR).
  */
 
+import {
+  BORDE_PLAZO as BORDE_POR_PLAZO,
+  TONO_PLAZO,
+  type Plazo,
+  type Tono,
+} from "@/lib/estados";
+
 export type Seccion = "anuncio" | "pendiente";
 export type EstadoNota = "pendiente" | "hecho";
 
@@ -152,20 +159,24 @@ export function contarUrgentes(notas: Nota[], hoy: string): number {
   return notas.filter((n) => requiereAtencion(estadoDePlazo(n, hoy))).length;
 }
 
-export const BORDE_PLAZO: Record<EstadoPlazo, string> = {
-  vencido: "border-l-red-500",
-  hoy: "border-l-amber-500",
-  proximo: "border-l-amber-700",
-  tranquilo: "border-l-slate-700",
-  sin_fecha: "border-l-slate-700",
-  hecho: "border-l-emerald-700",
+/**
+ * El color del plazo sale del mapa único (`lib/estados.ts`). Acá solo se
+ * traduce el nombre del estado: esta pantalla dice "sin_fecha" y el mapa
+ * dice "sin_plazo", que es lo mismo contado por reclamos.
+ */
+const COMO_PLAZO: Record<EstadoPlazo, Plazo> = {
+  vencido: "vencido",
+  hoy: "hoy",
+  proximo: "proximo",
+  tranquilo: "tranquilo",
+  sin_fecha: "sin_plazo",
+  hecho: "hecho",
 };
 
-export const TEXTO_PLAZO: Record<EstadoPlazo, string> = {
-  vencido: "text-red-300",
-  hoy: "text-amber-300",
-  proximo: "text-amber-400",
-  tranquilo: "text-slate-400",
-  sin_fecha: "text-slate-500",
-  hecho: "text-emerald-400",
-};
+export const BORDE_PLAZO: Record<EstadoPlazo, string> = Object.fromEntries(
+  Object.entries(COMO_PLAZO).map(([e, p]) => [e, BORDE_POR_PLAZO[p]]),
+) as Record<EstadoPlazo, string>;
+
+export const TONO_PLAZO_NOTA: Record<EstadoPlazo, Tono> = Object.fromEntries(
+  Object.entries(COMO_PLAZO).map(([e, p]) => [e, TONO_PLAZO[p]]),
+) as Record<EstadoPlazo, Tono>;

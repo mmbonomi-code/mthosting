@@ -17,10 +17,11 @@ import {
   DIAS_PARA_PRESENTAR,
   DIAS_REALES_AIRBNB,
   textoDePlazo,
-  TEXTO_SEMAFORO,
+  TONO_SEMAFORO,
   type EstadoReclamo,
 } from "@/lib/reclamos/plazos";
 import { ETIQUETA_ESTADO } from "@/lib/reclamos/estados";
+import Badge from "@/app/componentes/Badge";
 import { ETIQUETA_CATEGORIA } from "@/lib/reclamos/categorias";
 import BuscadorReserva from "./BuscadorReserva";
 import FiltrosReclamos from "./FiltrosReclamos";
@@ -243,13 +244,11 @@ export default async function Reclamos({
                     <span className="font-medium text-tinta">
                       {r.depto_codigo ?? "Sin departamento"}
                     </span>
-                    <span
-                      className={`rounded-full bg-fondo px-2 py-0.5 text-xs ${
-                        TEXTO_SEMAFORO[r.semaforo]
-                      }`}
-                    >
+                    {/* La píldora lleva su propio fondo. Antes iba sobre gris
+                        con el texto de color y no se leía. */}
+                    <Badge tono={TONO_SEMAFORO[r.semaforo]}>
                       {textoDePlazo(r.dias)}
-                    </span>
+                    </Badge>
                   </span>
                   <span className="mt-0.5 block truncate text-sm text-tinta-suave">
                     {ETIQUETA_CATEGORIA[r.categoria] ?? r.categoria} ·{" "}

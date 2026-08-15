@@ -10,12 +10,13 @@ import {
   plazosDeReclamo,
   semaforoDeReclamo,
   textoDePlazo,
-  TEXTO_SEMAFORO,
+  TONO_SEMAFORO,
   type EstadoReclamo,
 } from "@/lib/reclamos/plazos";
 import { ESTADOS_FINALES, ETIQUETA_ESTADO } from "@/lib/reclamos/estados";
 import { ETIQUETA_CATEGORIA } from "@/lib/reclamos/categorias";
 import { formatearMonto } from "@/lib/reclamos/lista";
+import Badge from "@/app/componentes/Badge";
 import Acordeon from "./Acordeon";
 import AccionesEstado from "./AccionesEstado";
 import DetalleReclamo from "./DetalleReclamo";
@@ -199,13 +200,13 @@ export default async function FichaReclamo({
         </dl>
 
         {plazos ? (
-          <div
-            className={`rounded-md bg-fondo px-3 py-2.5 text-sm ${
-              TEXTO_SEMAFORO[plazo.semaforo]
-            }`}
-          >
-            <strong>{textoDePlazo(plazo.dias)}</strong>
-            <p className="text-tinta-suave">
+          <div className="rounded-md border border-borde bg-superficie px-3 py-2.5 text-sm">
+            {/* En píldora: sobre un panel gris, un texto de color se confunde
+                con el párrafo que viene abajo. */}
+            <Badge tono={TONO_SEMAFORO[plazo.semaforo]}>
+              {textoDePlazo(plazo.dias)}
+            </Badge>
+            <p className="mt-1.5 text-tinta-suave">
               Centro de resoluciones hasta el{" "}
               {formatearFechaAR(plazos.limite_resolucion)}: un día antes de que Airbnb
               cierre los {DIAS_REALES_AIRBNB} del check-out. AirCover hasta el{" "}

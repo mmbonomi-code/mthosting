@@ -3,7 +3,13 @@ import { notFound, redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
-import { plazosDeReclamo, semaforoDeReclamo, textoDePlazo, TEXTO_SEMAFORO } from "@/lib/reclamos/plazos";
+import {
+  plazosDeReclamo,
+  semaforoDeReclamo,
+  textoDePlazo,
+  TONO_SEMAFORO,
+} from "@/lib/reclamos/plazos";
+import Badge from "@/app/componentes/Badge";
 import { crearReclamo } from "../acciones";
 import SinAcceso from "../SinAcceso";
 
@@ -88,8 +94,10 @@ export default async function NuevoReclamo({
         </dl>
 
         {plazos ? (
-          <p className={`text-sm ${TEXTO_SEMAFORO[estado.semaforo]}`}>
-            <strong>{textoDePlazo(estado.dias)}.</strong>{" "}
+          <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
+            <Badge tono={TONO_SEMAFORO[estado.semaforo]}>
+              {textoDePlazo(estado.dias)}
+            </Badge>
             <span className="text-tinta-suave">
               Centro de resoluciones hasta el {formatearFechaAR(plazos.limite_resolucion)}.
               Si el huésped no paga, AirCover hasta el{" "}

@@ -22,6 +22,12 @@
  */
 
 import { sumarDias } from "../fechas";
+import {
+  BORDE_PLAZO as BORDE_POR_PLAZO,
+  TONO_PLAZO,
+  type Plazo,
+  type Tono,
+} from "../estados";
 
 export type EstadoReclamo =
   | "borrador"
@@ -137,20 +143,25 @@ export function textoDePlazo(dias: number | null): string {
   return `Vence en ${dias} días`;
 }
 
-/** Clases del borde izquierdo, igual que el semáforo de las limpiezas. */
-export const BORDE_SEMAFORO: Record<Semaforo, string> = {
-  vencido: "border-l-red-500",
-  urgente: "border-l-red-600",
-  proximo: "border-l-amber-600",
-  tranquilo: "border-l-slate-700",
-  sin_plazo: "border-l-slate-800",
+/**
+ * El color sale del mapa único (`lib/estados.ts`). Acá solo se traduce el
+ * nombre: este semáforo distingue "vencido" de "urgente" —ya se pasó contra
+ * está por pasarse— y el mapa los llama vencido y hoy.
+ */
+const COMO_PLAZO: Record<Semaforo, Plazo> = {
+  vencido: "vencido",
+  urgente: "hoy",
+  proximo: "proximo",
+  tranquilo: "tranquilo",
+  sin_plazo: "sin_plazo",
 };
 
-/** Colores del texto del plazo. */
-export const TEXTO_SEMAFORO: Record<Semaforo, string> = {
-  vencido: "text-red-300",
-  urgente: "text-red-300",
-  proximo: "text-amber-300",
-  tranquilo: "text-slate-400",
-  sin_plazo: "text-slate-500",
-};
+/** Clases del borde izquierdo, igual que el semáforo de las limpiezas. */
+export const BORDE_SEMAFORO: Record<Semaforo, string> = Object.fromEntries(
+  Object.entries(COMO_PLAZO).map(([s, p]) => [s, BORDE_POR_PLAZO[p]]),
+) as Record<Semaforo, string>;
+
+/** La píldora del plazo: fondo y texto juntos, no un color de texto suelto. */
+export const TONO_SEMAFORO: Record<Semaforo, Tono> = Object.fromEntries(
+  Object.entries(COMO_PLAZO).map(([s, p]) => [s, TONO_PLAZO[p]]),
+) as Record<Semaforo, Tono>;

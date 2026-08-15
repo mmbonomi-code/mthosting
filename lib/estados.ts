@@ -49,6 +49,8 @@ export type Tono = {
 const INERTE = "bg-warm-100 text-warm-600";
 const ESPERANDO = "bg-dato-soft text-dato-text";
 const AHORA = "bg-accent text-tinta-inversa font-semibold";
+/** La versión callada del acento, para lo que avisa sin exigir nada todavía. */
+const AHORA_SUAVE = "bg-accent-soft text-accent-soft-text";
 const CERRADO_BIEN = "bg-exito-soft text-exito-text";
 const CERRADO_MAL = "bg-error text-tinta-inversa font-semibold";
 const EXCEPCION = "bg-excepcion-soft text-excepcion-text";
@@ -181,6 +183,59 @@ export const TONO_VENCIMIENTO: Tono = { clases: URGENTE, punto: true };
  */
 export const TONO_ALARMA: Tono = { clases: URGENTE, punto: true };
 
+// ---------------------------------------------------------------------------
+// Plazos: "Hoy", "En 2 días", "Vencido hace 3 días"
+// ---------------------------------------------------------------------------
+
+/**
+ * Cuánto falta para que algo venza. Lo usan los pendientes del Reporte y los
+ * reclamos: cuentan los días distinto pero significan lo mismo.
+ *
+ * Van en PÍLDORA, no en texto de color suelto. Un "En 2 días" escrito en
+ * naranja al lado de una fecha gris no se lee como una alarma, se lee como
+ * una fecha más; la forma cerrada es lo que lo separa del resto de la línea
+ * (Marcos, 15/08/2026).
+ */
+export type Plazo =
+  | "vencido"
+  | "hoy"
+  | "proximo"
+  | "tranquilo"
+  | "sin_plazo"
+  | "hecho";
+
+export const TONO_PLAZO: Record<Plazo, Tono> = {
+  // Ya se pasó: es lo peor que puede decir esta columna.
+  vencido: { clases: CERRADO_MAL },
+  // Se vence hoy: todavía se llega, pero hay que moverse.
+  hoy: { clases: URGENTE, punto: true },
+  // Está en el horizonte. Suave: avisa sin gritar.
+  proximo: { clases: AHORA_SUAVE },
+  tranquilo: { clases: INERTE },
+  sin_plazo: { clases: INERTE },
+  hecho: { clases: CERRADO_BIEN },
+};
+
+/** Genéricas: cada pantalla escribe el texto real ("En 2 días", "Hoy"). */
+export const ETIQUETA_PLAZO: Record<Plazo, string> = {
+  vencido: "Vencido",
+  hoy: "Vence hoy",
+  proximo: "Vence pronto",
+  tranquilo: "Con tiempo",
+  sin_plazo: "Sin fecha",
+  hecho: "Hecho",
+};
+
+/** El filete izquierdo de la fila, que acompaña a la píldora. */
+export const BORDE_PLAZO: Record<Plazo, string> = {
+  vencido: "border-l-error",
+  hoy: "border-l-accent",
+  proximo: "border-l-aviso",
+  tranquilo: "border-l-borde-fuerte",
+  sin_plazo: "border-l-borde-fuerte",
+  hecho: "border-l-primary",
+};
+
 /**
  * Fila que vence: fondo tenue y filete al costado.
  *
@@ -196,7 +251,7 @@ export const FILA_VENCE = "bg-accent-soft border-l-[3px] border-l-accent";
  * existen en dos dominios con colores distintos y se pisarían.
  */
 export const CATALOGO: {
-  dominio: "reserva" | "limpieza" | "reclamo" | "alerta";
+  dominio: "reserva" | "limpieza" | "reclamo" | "alerta" | "plazo";
   estado: string;
   etiqueta: string;
   tono: Tono;
@@ -231,4 +286,10 @@ export const CATALOGO: {
     etiqueta: "Sin asignar",
     tono: TONO_ALARMA,
   },
+  ...Object.entries(TONO_PLAZO).map(([estado, tono]) => ({
+    dominio: "plazo" as const,
+    estado,
+    etiqueta: ETIQUETA_PLAZO[estado as Plazo],
+    tono,
+  })),
 ];

@@ -6,9 +6,10 @@ import {
   BORDE_PLAZO,
   estadoDePlazo,
   textoDePlazo,
-  TEXTO_PLAZO,
+  TONO_PLAZO_NOTA,
   type Nota,
 } from "@/lib/reporte/notas";
+import Badge from "@/app/componentes/Badge";
 import CamposNota from "./CamposNota";
 import type { EstadoFormulario } from "@/lib/reporte/tipos";
 
@@ -140,9 +141,11 @@ export default function FilaNota({
           <p className="whitespace-pre-wrap text-sm text-tinta-suave">{nota.detalle}</p>
         )}
         <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs">
-          <span className={TEXTO_PLAZO[plazo]}>
+          {/* En píldora, no en texto de color: al lado de una fecha gris, un
+              "En 2 días" naranja se lee como otra fecha más. */}
+          <Badge tono={TONO_PLAZO_NOTA[plazo]}>
             {textoDePlazo({ ...nota, estado: hecho ? "hecho" : "pendiente" }, hoy)}
-          </span>
+          </Badge>
           {fechas && <span className="text-tinta-tenue">· {fechas}</span>}
           {nota.depto_codigo && (
             <span className="text-exito-text">· {nota.depto_codigo}</span>

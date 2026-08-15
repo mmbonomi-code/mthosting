@@ -13,7 +13,7 @@ describe("el mapa de estados", () => {
     expect(Object.keys(TONO_RESERVA)).toHaveLength(5);
     expect(Object.keys(TONO_LIMPIEZA)).toHaveLength(6);
     expect(Object.keys(TONO_RECLAMO)).toHaveLength(7);
-    expect(CATALOGO).toHaveLength(20);
+    expect(CATALOGO).toHaveLength(26);
   });
 
   it("ningún estado se queda sin color", () => {
@@ -47,6 +47,8 @@ describe("el mapa de estados", () => {
       "reclamo/rechazado",
       "alerta/vencimiento",
       "alerta/sin_asignar",
+      "plazo/vencido",
+      "plazo/hoy",
     ]);
   });
 
@@ -73,7 +75,11 @@ describe("las señales que no son de color", () => {
 
   it("solo las alarmas dependen de una señal extra", () => {
     const conPunto = CATALOGO.filter((c) => c.tono.punto);
-    expect(conPunto.map((c) => c.estado)).toEqual(["vencimiento", "sin_asignar"]);
+    expect(conPunto.map((c) => c.estado)).toEqual([
+      "vencimiento",
+      "sin_asignar",
+      "hoy",
+    ]);
   });
 });
 

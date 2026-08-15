@@ -289,8 +289,13 @@ export default async function Caja({
             <li key={m.id}>
               <Link
                 href={`/caja/${m.id}`}
-                className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border-y border-r border-y-borde border-r-borde border-l-4 bg-superficie px-4 py-2.5 transition-colors hover:border-y-borde-fuerte hover:border-r-borde-fuerte ${
-                  m.tipo === "ingreso" ? "border-l-primary" : "border-l-borde-control"
+                /* El ingreso se pinta entero, no con un filete de 4px: en una
+                   lista de 55 movimientos donde casi todo es gasto, lo que
+                   entra tiene que saltar sin buscarlo. */
+                className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border-y border-r border-y-borde border-r-borde border-l-4 px-4 py-2.5 transition-colors hover:border-y-borde-fuerte hover:border-r-borde-fuerte ${
+                  m.tipo === "ingreso"
+                    ? "border-l-primary bg-exito-soft"
+                    : "border-l-borde-control bg-superficie"
                 }`}
               >
                 <span className="w-14 shrink-0 text-xs tabular-nums text-tinta-tenue">
@@ -306,7 +311,7 @@ export default async function Caja({
                   </span>
                   <span className="flex flex-wrap items-center gap-x-2 text-xs">
                     {m.depto_codigo && (
-                      <span className="text-exito-text">{m.depto_codigo}</span>
+                      <span className="font-medium text-primary">{m.depto_codigo}</span>
                     )}
                     {estaPendienteDeCobro(m) && (
                       <span className="rounded-full bg-aviso-soft px-2 py-0.5 text-aviso-text">

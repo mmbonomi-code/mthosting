@@ -146,25 +146,33 @@ function Fila({ evento }: { evento: Evento }) {
           )}
         </span>
         <span className="min-w-0 flex-1">
-          {/* Lo importante: qué departamento y cómo se coordinó el acceso */}
-          <span className="block truncate font-mono text-sm font-semibold text-tinta">
-            {r.depto?.codigo}
-            {/* Acento cuando va una persona, verde cuando el huésped entra
-                solo: de un vistazo se ve qué ocupa al equipo. */}
-            {textoAcceso && (
-              <span
-                className={`font-sans font-normal ${
-                  accesoPresencial ? "text-accent-soft-text" : "text-exito-text"
-                }`}
-              >
-                {" "}
-                · {textoAcceso}
-              </span>
-            )}
+          {/* Lo importante: qué departamento y cómo se coordinó el acceso.
+              El lápiz va FUERA de lo que se recorta: es una señal, y una
+              señal que a veces aparece y a veces no según el largo del
+              texto no sirve para nada. */}
+          <span className="flex items-baseline gap-1">
+            <span className="min-w-0 flex-1 truncate font-mono text-sm font-semibold text-tinta">
+              {r.depto?.codigo}
+              {/* Acento cuando va una persona, verde cuando el huésped entra
+                  solo: de un vistazo se ve qué ocupa al equipo. */}
+              {textoAcceso && (
+                <span
+                  className={`font-sans font-semibold ${
+                    accesoPresencial ? "text-accent" : "text-exito"
+                  }`}
+                >
+                  {" "}
+                  · {textoAcceso}
+                </span>
+              )}
+            </span>
             {/* Hay algo escrito en las observaciones: se avisa acá para que
                 no haya que entrar a cada ficha a buscarlo. */}
             {evento.observaciones && (
-              <span title={evento.observaciones} className="ml-2 text-dato">
+              <span
+                title={evento.observaciones}
+                className="shrink-0 text-base leading-none text-dato"
+              >
                 ✎
               </span>
             )}
@@ -173,9 +181,11 @@ function Fila({ evento }: { evento: Evento }) {
             {r.huesped_nombre ?? "Sin nombre"}
             {r.depto?.barrio && ` · ${r.depto.barrio}`}
           </span>
-          {/* Los pendientes, a la vista: es lo que hay que resolver */}
+          {/* Los pendientes, a la vista: es lo que hay que resolver, y es la
+              razón por la que esta fila está marcada. Va en el acento pleno
+              y en negrita, no atenuado. */}
           {!coordinado && (
-            <span className="mt-0.5 block text-xs font-medium text-accent-soft-text">
+            <span className="mt-0.5 block text-xs font-semibold text-accent">
               {faltantes.join(" · ")}
             </span>
           )}

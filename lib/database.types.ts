@@ -1162,10 +1162,12 @@ export type Database = {
       limpiezas: {
         Row: {
           asignado_a: string | null
+          cancelada_manual: boolean
           created_at: string
           depto_id: string
           estado: Database["public"]["Enums"]["limpieza_estado"]
           fecha: string
+          fecha_manual: boolean
           hora_checkout: string | null
           hora_fin: string | null
           hora_inicio: string | null
@@ -1187,10 +1189,12 @@ export type Database = {
         }
         Insert: {
           asignado_a?: string | null
+          cancelada_manual?: boolean
           created_at?: string
           depto_id: string
           estado?: Database["public"]["Enums"]["limpieza_estado"]
           fecha: string
+          fecha_manual?: boolean
           hora_checkout?: string | null
           hora_fin?: string | null
           hora_inicio?: string | null
@@ -1212,10 +1216,12 @@ export type Database = {
         }
         Update: {
           asignado_a?: string | null
+          cancelada_manual?: boolean
           created_at?: string
           depto_id?: string
           estado?: Database["public"]["Enums"]["limpieza_estado"]
           fecha?: string
+          fecha_manual?: boolean
           hora_checkout?: string | null
           hora_fin?: string | null
           hora_inicio?: string | null

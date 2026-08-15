@@ -57,8 +57,41 @@ construir.
   endurecen en Fase 2, antes de que entre el personal de limpieza.
 - `service_role` key SOLO en server. Jamás en el cliente ni en el repo.
 - Secretos en `.env.local` (gitignored) y en las env vars de Vercel.
-- Credenciales de Airbnb: en texto plano por decisión del dueño (01/08/2026),
-  visibles solo por rol admin cuando se endurezca RLS en Fase 2.
+- Credenciales de Airbnb: en texto plano por decisión del dueño (01/08/2026).
+  En la ficha del departamento las ven **manager y administración**, y nadie
+  más (13/08/2026). Es una restricción de PANTALLA: en la base siguen legibles
+  para cualquier usuario autenticado hasta que se endurezca RLS en Fase 2.
+
+## Identidad visual
+
+La fuente de verdad es `docs/IDENTIDAD-VISUAL.md`. **Leerlo antes de construir
+cualquier pantalla.** No hay variantes ni alternativas: lo que dice ese
+documento es final, y si contradice a cualquier otra cosa, gana él.
+
+Lo que no se discute:
+
+- **Modo claro únicamente.** Fondo `#FAF9F7`, superficie `#FFFFFF`, texto
+  `#1A1815`. No hay modo oscuro y no se improvisa uno.
+- **Ningún color escrito a mano.** Todo sale de los tokens. Si hace falta un
+  color que no está, se agrega al sistema, no a la pantalla.
+- El ámbar `#E8A33D` vive **solo adentro del isotipo**. Nunca en la interfaz:
+  el único acento es `#C2410C`.
+- **Los estados salen de un mapa único** `estado → {bg, text, borde?, punto?}`,
+  no de condicionales sueltos por pantalla. La lógica de color es transversal:
+  gris inerte · azul esperando a otro · naranja pasando ahora · verde cerrado
+  bien · rojo cerrado mal · violeta excepción.
+- Señal **no cromática** obligatoria en "tentativa" (borde punteado) y en
+  "vence pronto" (punto), para no depender solo del color.
+- Tipografía IBM Plex Sans y Mono, con `tabular-nums` en todo lo que sea
+  columna de números o de fechas.
+- Fila de tabla 40px. En el celular, ningún elemento tocable por debajo de
+  44px de alto.
+- El anillo de foco es verde, 2px con 2px de separación. Nunca el azul del
+  navegador.
+
+Los archivos del handoff están en `docs/identidad/` tal como llegaron.
+Sirven de referencia; ojo que `tailwind.config.ts` está escrito para la
+versión 3 y el proyecto usa la 4, donde el tema vive en el CSS.
 
 ## Diseño responsive
 

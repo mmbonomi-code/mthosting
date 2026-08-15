@@ -23,9 +23,11 @@ export default function FormularioVincular({
       <p className="rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
         ✓ Anuncio vinculado.{" "}
         {estado.asignadas === 1
-          ? "1 reserva asignada."
-          : `${estado.asignadas} reservas asignadas.`}{" "}
-        Las próximas importaciones lo resuelven solas.
+          ? "1 reserva asignada"
+          : `${estado.asignadas} reservas asignadas`}
+        {estado.limpiezas > 0 &&
+          `, con ${estado.limpiezas === 1 ? "su limpieza" : `sus ${estado.limpiezas} limpiezas`}`}
+        . Ya aparecen en el día. Las próximas importaciones lo resuelven solas.
       </p>
     );
   }

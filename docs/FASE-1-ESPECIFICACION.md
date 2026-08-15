@@ -865,7 +865,8 @@ Referencias: ✓ puede · — no ve la pantalla · ✗ ve pero no puede
 | Emitir el PDF del día | ✓ | ✓ | ✓ | ✓ | — | — |
 | **Reservas** |
 | Ver datos del huésped (nombre y contacto) | ✓ | ✓ | — | ✓ | solo nombre | — |
-| Editar datos que vienen de Airbnb | ✓ | ✓ | — | ✗ | — | — |
+| Cargar una reserva a mano | ✓ | ✓ | — | ✓ | — | — |
+| Editar datos que vienen de Airbnb | ✓ | ✓ | — | ✓ | — | — |
 | Descartar una reserva | ✓ | ✓ | — | ✗ | — | — |
 | Importar archivos | ✓ | ✓ | — | — | — | — |
 | Asignar departamento a reserva sin mapear | ✓ | ✓ | — | ✓ | — | — |
@@ -873,7 +874,7 @@ Referencias: ✓ puede · — no ve la pantalla · ✗ ve pero no puede
 | **Departamentos** |
 | Ver ficha e inventario | ✓ | ✓ | ✓ | ✓ | solo asignados | solo propios |
 | Editar departamento e inventario | ✓ | ✓ | — | ✗ | — | — |
-| Ver credenciales de Airbnb | ✓ | — | — | — | — | — |
+| Ver credenciales de Airbnb | ✓ | ✓ | — | — | — | — |
 | **Configuración** |
 | Valores de limpieza (tarifas) | ✓ | ✓ | — | — | — | — |
 | Puntos de acceso, personas, feriados | ✓ | ✓ | — | — | — | — |
@@ -893,6 +894,20 @@ Notas:
   usuario autenticado— y se endurece en la Fase 2, antes de que entre el
   personal de limpieza. Esta tabla describe el destino, no lo que hoy impide
   la base.
+- **Coordinación y reservas, ajuste del 14/08/2026 (decisión del dueño):** el
+  coordinador **sí** carga reservas a mano y edita las existentes. Antes esta
+  tabla lo dejaba afuera por miedo a que una fecha mal escrita moviera
+  limpiezas. Pesó más lo otro: es quien primero se entera de un cambio, y
+  obligarlo a pedírselo a la manager dejaba la reserva desactualizada más
+  tiempo. Descartar una reserva sigue siendo de manager y administración.
+- **Gobernanta, ajuste del 13/08/2026 (decisión del dueño):** ve **solo
+  Limpiezas y Departamentos**, y nada más. Respecto de la tabla de arriba eso
+  saca dos cosas: el **resumen del día** y la **lectura del reporte**. Las
+  fichas de departamento las consulta pero no las edita, así que tampoco entra
+  al alta, a la edición ni al inventario.
+  Está implementado en `lib/secciones.ts` y lo aplica `proxy.ts`, que es por
+  donde pasan todas las direcciones. Es la primera restricción que se hace por
+  ruta y no adentro de un módulo; el resto de la tabla sigue pendiente.
 - El rol **`gobernanta`** es un híbrido: reparte limpiezas (como coordinador)
   y además tiene sus propias limpiezas y la vista de limpiadora (como
   limpieza). Su pantalla propia es la **vista de distribución** (§3.11). No ve
@@ -903,9 +918,12 @@ Notas:
   describe lo que verá en Fase 2. Se define ahora para que las políticas RLS
   no haya que rehacerlas después.
 - El rol `propietario` es de Fase 4.
-- `manager` no ve las credenciales de Airbnb de los propietarios. Es la única
-  capacidad reservada exclusivamente a `admin` además de la gestión de
-  usuarios.
+- **Credenciales de Airbnb, corregido el 13/08/2026 (decisión del dueño):** las
+  ven `manager` y `admin`. Antes esta nota decía que eran exclusivas de `admin`,
+  pero el manager las necesita para operar. La única capacidad que queda
+  reservada a `admin` es la gestión de usuarios.
+  Hasta ese día la ficha se las mostraba a **cualquier usuario autenticado**;
+  ahora la pantalla las esconde al resto.
 - **Puntos de acceso**: ABM completo.
 - **Personas**: ABM completo.
 - **Tarifas**: carga de un juego de valores con fecha `desde`.

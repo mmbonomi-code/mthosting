@@ -9,11 +9,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../database.types";
 import {
   planificarLimpiezas,
-  type Bloqueo,
   type EventoExistente,
   type LimpiezaExistente,
   type ReservaPlan,
 } from "./planificar";
+
+const CAMPOS_LIMPIEZA =
+  "id, depto_id, reserva_id, rol_reserva, fecha, estado, urgente, prox_checkin, fecha_manual, cancelada_manual";
 
 type Cliente = SupabaseClient<Database>;
 
@@ -30,6 +32,36 @@ const VENTANA_DIAS = 365;
 function correrDias(fecha: string, dias: number): string {
   const [a, m, d] = fecha.split("-").map(Number);
   return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10);
+}
+
+/** Cuántas filas devuelve la base de una sola vez. Pasado eso, corta. */
+const TOPE_POR_CONSULTA = 1000;
+
+/**
+ * Trae TODAS las filas de una consulta, de a tandas.
+ *
+ * La base devuelve como máximo mil filas y NO avisa cuando corta: la consulta
+ * sale bien y con menos datos. Acá eso no es un detalle de rendimiento, es un
+ * error de cálculo — con el contexto incompleto el planificador cree que un
+ * departamento no tuvo salida anterior y genera un repaso que no va.
+ *
+ * Pasó de verdad el 14/08/2026, cuando las reservas pasaron de mil.
+ */
+async function traerTodo<T>(
+  armarConsulta: (desde: number, hasta: number) => PromiseLike<{
+    data: T[] | null;
+    error: { message: string } | null;
+  }>,
+  queCosa: string,
+): Promise<T[]> {
+  const filas: T[] = [];
+  for (let desde = 0; ; desde += TOPE_POR_CONSULTA) {
+    const { data, error } = await armarConsulta(desde, desde + TOPE_POR_CONSULTA - 1);
+    if (error) throw new Error(`No se pudo leer ${queCosa}: ${error.message}`);
+    const tanda = data ?? [];
+    filas.push(...tanda);
+    if (tanda.length < TOPE_POR_CONSULTA) return filas;
+  }
 }
 
 export async function generarLimpiezas(
@@ -64,47 +96,67 @@ export async function generarLimpiezas(
   const desde = correrDias(fechas.sort()[0] ?? hoy, -VENTANA_DIAS);
   const hasta = correrDias(fechas[fechas.length - 1] ?? hoy, VENTANA_DIAS);
 
-  const { data: contexto, error: errorContexto } = await supabase
-    .from("reservas")
-    .select("id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout, cancelada, descartada")
-    .in("depto_id", deptos)
-    .eq("cancelada", false)
-    .eq("descartada", false)
-    .gte("fecha_checkout", desde)
-    .lte("fecha_checkin", hasta);
-  if (errorContexto) {
-    throw new Error(`No se pudo leer el contexto de reservas: ${errorContexto.message}`);
-  }
+  const contexto = await traerTodo<ReservaPlan>(
+    (a, b) =>
+      supabase
+        .from("reservas")
+        .select(
+          "id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout, cancelada, descartada",
+        )
+        .in("depto_id", deptos)
+        .eq("cancelada", false)
+        .eq("descartada", false)
+        .gte("fecha_checkout", desde)
+        .lte("fecha_checkin", hasta)
+        .order("id")
+        .range(a, b),
+    "el contexto de reservas",
+  );
 
-  // 3. Bloqueos, eventos y limpiezas que ya existen.
+  // 3. Eventos y limpiezas que ya existen.
+  //
+  // Las limpiezas se traen por DOS caminos y se juntan: las de las reservas
+  // del lote (para saber si mover o cancelar la de cada reserva) y todas las
+  // del departamento en la ventana de fechas (para saber qué días ya están
+  // ocupados, incluidas las cargadas a mano, que no cuelgan de una reserva).
   const idsReservas = reservas.map((r) => r.id);
 
-  const { data: bloqueos } = await supabase
-    .from("bloqueos")
-    .select("depto_id, fecha_desde, fecha_hasta")
-    .in("depto_id", deptos)
-    .eq("activo", true);
-
   const eventos: EventoExistente[] = [];
-  const limpiezas: LimpiezaExistente[] = [];
+  const porId = new Map<string, LimpiezaExistente>();
+
+  const delDepto = await traerTodo<LimpiezaExistente>(
+    (a, b) =>
+      supabase
+        .from("limpiezas")
+        .select(CAMPOS_LIMPIEZA)
+        .in("depto_id", deptos)
+        .gte("fecha", desde)
+        .lte("fecha", hasta)
+        .order("id")
+        .range(a, b) as unknown as PromiseLike<{
+        data: LimpiezaExistente[] | null;
+        error: { message: string } | null;
+      }>,
+    "las limpiezas del departamento",
+  );
+  for (const l of delDepto) porId.set(l.id, l);
+
   for (let i = 0; i < idsReservas.length; i += 200) {
     const tanda = idsReservas.slice(i, i + 200);
     const [{ data: ev }, { data: li }] = await Promise.all([
       supabase.from("eventos_estadia").select("id, reserva_id, tipo, estado").in("reserva_id", tanda),
-      supabase
-        .from("limpiezas")
-        .select("id, reserva_id, rol_reserva, fecha, estado, urgente, prox_checkin")
-        .in("reserva_id", tanda),
+      supabase.from("limpiezas").select(CAMPOS_LIMPIEZA).in("reserva_id", tanda),
     ]);
     eventos.push(...((ev ?? []) as EventoExistente[]));
-    limpiezas.push(...((li ?? []) as LimpiezaExistente[]));
+    for (const l of (li ?? []) as LimpiezaExistente[]) porId.set(l.id, l);
   }
+
+  const limpiezas = [...porId.values()];
 
   // 4. Decidir.
   const plan = planificarLimpiezas({
     reservas,
     contexto: (contexto ?? []) as ReservaPlan[],
-    bloqueos: (bloqueos ?? []) as Bloqueo[],
     eventos,
     limpiezas,
     hoy,

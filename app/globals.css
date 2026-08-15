@@ -1,26 +1,130 @@
 @import "tailwindcss";
 
+/* ===========================================================================
+   Identidad visual de MTHosting — docs/IDENTIDAD-VISUAL.md
+   Isotipo "Barras" · paleta "Bosque profundo + terracota" · modo claro único.
+
+   Los tokens van en `@theme` y no en un tailwind.config.ts: este proyecto usa
+   Tailwind 4, donde el tema vive en el CSS. El `tailwind.config.ts` que trae
+   el handoff está escrito para la versión 3 y acá NO lo lee nadie — si se
+   pega tal cual no falla, simplemente ningún color existe. Queda en
+   docs/identidad/ como referencia.
+
+   Todos los pares de texto y fondo cumplen WCAG AA; el contraste está anotado
+   al lado de cada uno para que no se retoquen a ojo.
+
+   La paleta de fábrica de Tailwind (slate, emerald, amber…) sigue disponible
+   a propósito: las pantallas todavía sin migrar la usan. Se saca en el último
+   paso, cuando no quede ninguna.
+   =========================================================================== */
+
+@theme {
+  /* ---- Marca ---- */
+  --color-primary: #14532d; /* blanco encima 9,11:1 */
+  --color-primary-hover: #0f4023; /* 11,81:1 */
+  --color-primary-active: #0a2e19; /* 14,81:1 */
+  --color-primary-soft: #e4efe8;
+  --color-primary-soft-text: #0f4325; /* sobre soft 9,63:1 */
+
+  /* El único acento de la interfaz. */
+  --color-accent: #c2410c; /* blanco encima 5,18:1 */
+  --color-accent-hover: #9a3412; /* 7,31:1 */
+  --color-accent-soft: #fdf0e9;
+  --color-accent-soft-text: #9a3412; /* sobre soft 6,55:1 */
+
+  /* ---- Neutrales cálidos: el motor de la app ---- */
+  --color-warm-50: #faf9f7;
+  --color-warm-100: #f2f0ec;
+  --color-warm-200: #e5e1da;
+  --color-warm-300: #cfc9bf;
+  --color-warm-400: #8c8478; /* 3,69:1 sobre blanco — sirve para UI */
+  --color-warm-500: #6e6a62; /* 5,38:1 */
+  --color-warm-600: #5c564c; /* 7,27:1 */
+  --color-warm-700: #403b34; /* 10,74:1 */
+  --color-warm-800: #2a2621; /* 14,25:1 */
+  --color-warm-900: #1a1815; /* 17,72:1 */
+
+  /* ---- Superficies ---- */
+  --color-fondo: #faf9f7;
+  --color-superficie: #ffffff;
+  --color-superficie-alt: #f2f0ec; /* encabezado de tabla, filas alternas */
+  --color-superficie-hover: #f5f3ef;
+  --color-superficie-elegida: #e4efe8;
+
+  /* ---- Bordes ---- */
+  --color-borde: #e5e1da;
+  --color-borde-fuerte: #cfc9bf;
+  --color-borde-control: #8c8478; /* input, checkbox, radio */
+
+  /* ---- Texto ---- */
+  --color-tinta: #1a1815; /* principal */
+  --color-tinta-suave: #5c564c; /* secundario */
+  --color-tinta-tenue: #6e6a62; /* atenuado */
+  --color-tinta-inversa: #ffffff;
+
+  /* ---- Semánticos ---- */
+  --color-exito: #0f7a46;
+  --color-exito-soft: #e6f4ec;
+  --color-exito-text: #0b5a33; /* sobre soft 7,33:1 */
+  --color-aviso: #a16207;
+  --color-aviso-soft: #fbf0d9;
+  --color-aviso-text: #7a4a05; /* 6,61:1 */
+  --color-error: #b42318;
+  --color-error-soft: #fcebe9;
+  --color-error-text: #8a1c13; /* 8,07:1 */
+  --color-dato: #1a5fb4;
+  --color-dato-soft: #e7effa;
+  --color-dato-text: #14498a; /* 7,71:1 */
+
+  /* Violeta = excepción. El único estado que se sale del camino normal:
+     un reclamo escalado a mediación. */
+  --color-excepcion-soft: #f1ebfb;
+  --color-excepcion-text: #5b21b6; /* sobre soft 7,71:1 */
+
+  /* Alerta de vencimiento: más saturada que "en proceso", para que salte en
+     una tabla llena. Lleva punto además del color (señal no cromática). */
+  --color-alerta-soft: #fbe0d1;
+  --color-alerta-text: #7c2d12; /* sobre soft 7,44:1 */
+  --color-alerta-punto: #c2410c; /* 4,92:1 sobre soft */
+
+  /* ---- Tipografía ---- */
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* ---- Forma y densidad ---- */
+  --radius-sm: 3px; /* badges, inputs, botones */
+  --radius-md: 4px; /* tarjetas, tablas */
+  --radius-lg: 8px; /* modales */
+
+  --shadow-sm: 0 1px 2px rgba(26, 24, 21, 0.06);
+  --shadow-md: 0 4px 12px rgba(26, 24, 21, 0.08);
+
+  /* Densidad media, confirmada en el handoff. */
+  --spacing-fila: 40px;
+  /* Nada tocable por debajo de esto en el celular. */
+  --spacing-toque: 44px;
+}
+
+/* El ámbar #E8A33D del isotipo NO es un token a propósito: vive solo dentro
+   del logo y no tiene que estar al alcance de una pantalla. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-fondo);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+}
+
+/* Nunca el anillo azul del navegador. */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Las columnas de números y de fechas alinean una debajo de la otra. */
+table {
+  font-variant-numeric: tabular-nums;
 }

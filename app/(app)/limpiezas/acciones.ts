@@ -208,11 +208,53 @@ export async function editarLimpieza(
   if (!fecha || !tipo) return { error: "La fecha y el tipo son obligatorios." };
 
   const supabase = await crearClienteServidor();
+
+  // Mover una limpieza a un día que ya tiene otra deja las dos: mismo control
+  // que en el alta.
+  const { data: actual } = await supabase
+    .from("limpiezas")
+    .select(
+      "depto_id, fecha, rol_reserva, reserva:reservas(fecha_checkin, fecha_checkout)",
+    )
+    .eq("id", limpiezaId)
+    .maybeSingle();
+  if (actual && actual.fecha !== fecha) {
+    const { data: yaHay } = await supabase
+      .from("limpiezas")
+      .select("id")
+      .eq("depto_id", actual.depto_id)
+      .eq("fecha", fecha)
+      .neq("estado", "cancelada")
+      .neq("id", limpiezaId)
+      .limit(1)
+      .maybeSingle();
+    if (yaHay) {
+      return {
+        error: "Ese departamento ya tiene una limpieza ese día. Elegí otra fecha.",
+      };
+    }
+  }
+
+  // Si la fecha que elige la persona NO es la que le tocaría por la reserva,
+  // queda fijada: la importación no la vuelve a mover. Y si la devuelve a su
+  // día natural, vuelve a seguir la reserva sola, sin tener que destildar
+  // nada. Sin esto, la limpieza volvía a su lugar en cada importación.
+  const natural =
+    actual?.rol_reserva === "entrada"
+      ? (actual.reserva as { fecha_checkin: string | null } | null)?.fecha_checkin
+      : (actual?.reserva as { fecha_checkout: string | null } | null)?.fecha_checkout;
+
   const { error } = await supabase
     .from("limpiezas")
     // La hora de salida no se edita acá: sale de lo coordinado en el
     // check-out de la reserva.
-    .update({ fecha, tipo, notas: texto(fd, "notas") })
+    .update({
+      fecha,
+      tipo,
+      notas: texto(fd, "notas"),
+      // Una limpieza suelta, sin reserva, siempre lleva fecha puesta a mano.
+      fecha_manual: natural == null ? true : fecha !== natural,
+    })
     .eq("id", limpiezaId);
   if (error) return { error: "No se pudo guardar. Probá de nuevo." };
 
@@ -221,19 +263,35 @@ export async function editarLimpieza(
   return null;
 }
 
-/** Las limpiezas no se borran nunca: pasan a cancelada. */
+/**
+ * Las limpiezas no se borran nunca: pasan a cancelada.
+ *
+ * Queda marcada como cancelada A MANO para que la importación no la reviva.
+ * El planificador tiene una regla que devuelve a pendiente las limpiezas
+ * canceladas —sirve para cuando una reserva descartada reaparece— y sin esta
+ * marca no distinguía quién la había cancelado.
+ */
 export async function cancelarLimpieza(limpiezaId: string) {
   const supabase = await crearClienteServidor();
-  await supabase.from("limpiezas").update({ estado: "cancelada" }).eq("id", limpiezaId);
+  await supabase
+    .from("limpiezas")
+    .update({ estado: "cancelada", cancelada_manual: true })
+    .eq("id", limpiezaId);
   revalidatePath("/limpiezas");
+  revalidatePath("/semana");
   redirect("/limpiezas");
 }
 
+/** Volver atrás la cancelación: deja de estar decidida a mano. */
 export async function reactivarLimpieza(limpiezaId: string) {
   const supabase = await crearClienteServidor();
-  await supabase.from("limpiezas").update({ estado: "pendiente" }).eq("id", limpiezaId);
+  await supabase
+    .from("limpiezas")
+    .update({ estado: "pendiente", cancelada_manual: false })
+    .eq("id", limpiezaId);
   revalidatePath(`/limpiezas/${limpiezaId}`);
   revalidatePath("/limpiezas");
+  revalidatePath("/semana");
 }
 
 /**
@@ -254,6 +312,25 @@ export async function crearLimpieza(
   }
 
   const supabase = await crearClienteServidor();
+
+  // Un departamento no puede tener dos limpiezas el mismo día (decisión del
+  // dueño, 13/08/2026). Se corta acá, antes de crearla: hasta ahora la
+  // pantalla dejaba cargar una encima de la que ya había generado el sistema,
+  // y quedaban las dos sin que nadie se enterara.
+  const { data: yaHay } = await supabase
+    .from("limpiezas")
+    .select("id, tipo")
+    .eq("depto_id", deptoId)
+    .eq("fecha", fecha)
+    .neq("estado", "cancelada")
+    .limit(1)
+    .maybeSingle();
+  if (yaHay) {
+    return {
+      error:
+        "Ese departamento ya tiene una limpieza ese día. Si hay que cambiarle algo, editá la que está en vez de cargar otra.",
+    };
+  }
 
   // Si ese día hay un huésped adentro, la limpieza queda vinculada a su
   // reserva con rol "durante": es una limpieza de estadía en curso.

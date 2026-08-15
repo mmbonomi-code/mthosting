@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { rolDelUsuario } from "@/lib/permisos";
+import { puedeEntrar } from "@/lib/secciones";
 import {
   ETIQUETA_ACUERDO_PAGO,
   ETIQUETA_AMBIENTES,
@@ -75,6 +77,10 @@ export default async function FichaDepartamento({
 
   if (!depto) notFound();
 
+  const rol = await rolDelUsuario(supabase);
+  const veCredenciales = rol === "admin" || rol === "manager";
+  const puedeEditar = puedeEntrar(rol, `/departamentos/${id}/editar`);
+
   const [{ data: aliases }, { data: catalogo }, { data: inventario }, { data: banos }] =
     await Promise.all([
       supabase
@@ -144,20 +150,24 @@ export default async function FichaDepartamento({
           </div>
           <p className="text-slate-400">{depto.nombre_interno}</p>
         </div>
-        <div className="flex gap-2">
-          <Link
-            href={`/departamentos/${id}/equipamiento`}
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
-          >
-            Equipamiento
-          </Link>
-          <Link
-            href={`/departamentos/${id}/editar`}
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
-          >
-            Editar
-          </Link>
-        </div>
+        {/* Quien solo consulta la ficha no ve los botones que no puede abrir:
+            si no, el enlace lo rebota y parece que el sistema falla. */}
+        {puedeEditar && (
+          <div className="flex gap-2">
+            <Link
+              href={`/departamentos/${id}/equipamiento`}
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+            >
+              Equipamiento
+            </Link>
+            <Link
+              href={`/departamentos/${id}/editar`}
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+            >
+              Editar
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Bloque fijo: lo más consultado (§3.5.quater) */}
@@ -242,24 +252,32 @@ export default async function FichaDepartamento({
           <Dato etiqueta="Acuerdo de pago">
             {depto.acuerdo_pago ? ETIQUETA_ACUERDO_PAGO[depto.acuerdo_pago] : "—"}
           </Dato>
-          <Dato etiqueta="Usuario de Airbnb">
-            {depto.airbnb_user && (
-              <span className="flex items-center gap-2">
-                <span className="font-mono">{depto.airbnb_user}</span>
-                <BotonCopiar texto={depto.airbnb_user} />
-              </span>
-            )}
-          </Dato>
-          <div className="sm:col-span-2">
-            <Dato etiqueta="Contraseña de Airbnb">
-              {depto.airbnb_pass && (
-                <span className="flex items-center gap-2">
-                  <span className="font-mono">{depto.airbnb_pass}</span>
-                  <BotonCopiar texto={depto.airbnb_pass} />
-                </span>
-              )}
-            </Dato>
-          </div>
+          {/* Las credenciales de Airbnb son de manager y administración
+              (decisión del dueño, 13/08/2026). Están guardadas en texto plano,
+              así que la ficha no las muestra a nadie más: hasta ahora las veía
+              cualquiera que abriera un departamento. */}
+          {veCredenciales && (
+            <>
+              <Dato etiqueta="Usuario de Airbnb">
+                {depto.airbnb_user && (
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono">{depto.airbnb_user}</span>
+                    <BotonCopiar texto={depto.airbnb_user} />
+                  </span>
+                )}
+              </Dato>
+              <div className="sm:col-span-2">
+                <Dato etiqueta="Contraseña de Airbnb">
+                  {depto.airbnb_pass && (
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono">{depto.airbnb_pass}</span>
+                      <BotonCopiar texto={depto.airbnb_pass} />
+                    </span>
+                  )}
+                </Dato>
+              </div>
+            </>
+          )}
         </dl>
       </Acordeon>
 

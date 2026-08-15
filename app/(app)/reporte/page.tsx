@@ -30,6 +30,7 @@ import {
   cambiarEstadoEquipamiento,
   crearEquipamiento,
   crearNota,
+  editarEquipamiento,
   editarNota,
 } from "./acciones";
 
@@ -299,8 +300,13 @@ export default async function Reporte({
                 key={e.id}
                 equipo={e}
                 hoy={hoy}
+                editar={async (_previo, fd) => {
+                  "use server";
+                  return editarEquipamiento(e.id, fd);
+                }}
                 cambiarEstado={cambiarEstadoEquipamiento.bind(null, e.id)}
                 archivar={archivarEquipamiento.bind(null, e.id)}
+                departamentos={departamentos ?? []}
                 puedeEscribir={puedeEscribir}
               />
             ))}

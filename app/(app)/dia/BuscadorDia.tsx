@@ -28,7 +28,7 @@ export default function BuscadorDia({
       {q && (
         <Link
           href={`/dia?fecha=${fecha}`}
-          className="flex h-11 shrink-0 items-center rounded-lg border border-slate-700 px-3 text-sm text-slate-300 hover:bg-slate-800"
+          className="flex h-11 shrink-0 items-center rounded-md border border-borde-control px-3 text-sm text-tinta-suave transition-colors hover:bg-superficie-hover"
         >
           Limpiar
         </Link>

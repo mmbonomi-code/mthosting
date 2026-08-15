@@ -6,6 +6,9 @@ import { faltantesDeEvento } from "@/lib/eventos/faltantes";
 import { momentoDeEvento } from "@/lib/eventos/reglas";
 import { puedeEditarReservas } from "@/lib/reservas/permisos";
 import { describirAcceso, esAccesoPresencial } from "@/lib/eventos/etiquetas";
+import { TONO_LIMPIEZA, TONO_RESERVA } from "@/lib/estados";
+import Badge from "@/app/componentes/Badge";
+import { clsBoton } from "@/app/componentes/Boton";
 import BuscadorDia from "./BuscadorDia";
 import NavegadorFecha from "./NavegadorFecha";
 import AvisosDelDia from "./AvisosDelDia";
@@ -123,30 +126,35 @@ function Fila({ evento }: { evento: Evento }) {
     <li>
       <Link
         href={`/dia/${evento.id}`}
-        className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 transition-colors hover:border-y-slate-600 hover:border-r-slate-600 ${
-          coordinado ? "border-l-emerald-600" : "border-l-amber-600"
+        /* Una sola alarma por fila: lo que le falta algo toma el fondo del
+           acento y el filete; el detalle va abajo en texto, sin badge que
+           repita la misma señal. */
+        className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-borde border-l-[3px] px-4 py-3 transition-colors ${
+          coordinado
+            ? "border-l-primary bg-superficie hover:bg-superficie-hover"
+            : "border-l-accent bg-accent-soft"
         }`}
       >
         <span className="w-16 shrink-0">
-          <span className="block text-base font-semibold tabular-nums text-white">
+          <span className="block font-mono text-base font-semibold tabular-nums text-tinta">
             {hora ?? "—"}
           </span>
           {fechaEvento && (
-            <span className="block text-xs tabular-nums text-slate-500">
+            <span className="block text-xs tabular-nums text-tinta-tenue">
               {formatearFechaAR(fechaEvento).slice(0, 5)}
             </span>
           )}
         </span>
         <span className="min-w-0 flex-1">
           {/* Lo importante: qué departamento y cómo se coordinó el acceso */}
-          <span className="block truncate font-medium text-slate-100">
+          <span className="block truncate font-mono text-sm font-semibold text-tinta">
             {r.depto?.codigo}
-            {/* Amarillo cuando va una persona, verde cuando el huésped entra
+            {/* Acento cuando va una persona, verde cuando el huésped entra
                 solo: de un vistazo se ve qué ocupa al equipo. */}
             {textoAcceso && (
               <span
-                className={`font-normal ${
-                  accesoPresencial ? "text-amber-300" : "text-emerald-300"
+                className={`font-sans font-normal ${
+                  accesoPresencial ? "text-accent-soft-text" : "text-exito-text"
                 }`}
               >
                 {" "}
@@ -156,50 +164,35 @@ function Fila({ evento }: { evento: Evento }) {
             {/* Hay algo escrito en las observaciones: se avisa acá para que
                 no haya que entrar a cada ficha a buscarlo. */}
             {evento.observaciones && (
-              <span title={evento.observaciones} className="ml-2 text-sky-300">
+              <span title={evento.observaciones} className="ml-2 text-dato">
                 ✎
               </span>
             )}
           </span>
-          <span className="block truncate text-sm text-slate-400">
+          <span className="block truncate text-sm text-tinta-suave">
             {r.huesped_nombre ?? "Sin nombre"}
             {r.depto?.barrio && ` · ${r.depto.barrio}`}
           </span>
-          {/* Los pendientes, a la vista, igual que el "Late" */}
+          {/* Los pendientes, a la vista: es lo que hay que resolver */}
           {!coordinado && (
-            <span className="mt-0.5 block text-xs text-amber-300">
+            <span className="mt-0.5 block text-xs font-medium text-accent-soft-text">
               {faltantes.join(" · ")}
             </span>
           )}
         </span>
         <span className="flex shrink-0 flex-wrap justify-end gap-1">
           {/* Vino del calendario y todavía no la confirmó el archivo de
-              Airbnb: faltan el teléfono y los datos del huésped. */}
+              Airbnb: faltan el teléfono y los datos del huésped. El borde
+              punteado la distingue sin depender del color. */}
           {!r.datos_completos && (
-            <span className="rounded-full bg-violet-950 px-2 py-0.5 text-xs text-violet-300">
-              Tentativa
-            </span>
+            <Badge tono={TONO_RESERVA.tentativa}>Tentativa</Badge>
           )}
-          {coordinado && (
-            <span className="rounded-full bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
-              Coordinado
-            </span>
-          )}
+          {coordinado && <Badge tono={TONO_LIMPIEZA.hecha}>Coordinado</Badge>}
           {evento.late_checkout && (
-            <span className="rounded-full bg-amber-950 px-2 py-0.5 text-xs text-amber-300">
-              Late
-            </span>
+            <Badge tono={TONO_LIMPIEZA.en_curso}>Late</Badge>
           )}
-          {movido && (
-            <span className="rounded-full bg-sky-950 px-2 py-0.5 text-xs text-sky-300">
-              Movido
-            </span>
-          )}
-          {r.cancelada && (
-            <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs text-red-300">
-              Cancelada
-            </span>
-          )}
+          {movido && <Badge tono={TONO_RESERVA.en_curso}>Movido</Badge>}
+          {r.cancelada && <Badge tono={TONO_RESERVA.cancelada}>Cancelada</Badge>}
         </span>
       </Link>
     </li>
@@ -310,7 +303,7 @@ export default async function DelDia({
       <BuscadorDia q={q} fecha={fecha} />
 
       {q ? (
-        <p className="text-sm text-slate-400">
+        <p className="text-sm tabular-nums text-tinta-suave">
           {eventos.length} resultado{eventos.length === 1 ? "" : "s"} para
           &ldquo;{q}&rdquo;
         </p>
@@ -319,24 +312,32 @@ export default async function DelDia({
           <NavegadorFecha fecha={fecha} />
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-semibold capitalize tracking-tight text-white">
-                {nombreDelDia(fecha)} {formatearFechaAR(fecha)}
+              <h1 className="text-[28px] font-semibold capitalize leading-tight tracking-tight text-tinta">
+                {nombreDelDia(fecha)}{" "}
+                <span className="tabular-nums">{formatearFechaAR(fecha)}</span>
                 {fecha === hoy && (
-                  <span className="ml-2 rounded-full bg-slate-700 px-2 py-0.5 align-middle text-xs font-normal text-slate-200">
+                  <span className="ml-2 rounded-full bg-warm-100 px-2 py-0.5 align-middle text-xs font-medium text-warm-600">
                     hoy
                   </span>
                 )}
               </h1>
-              <p className="text-sm text-slate-400">
+              {/* El resumen antes del detalle: lo que falta coordinar se ve
+                  sin recorrer las dos listas. */}
+              <p className="text-sm tabular-nums text-tinta-suave">
                 {llegadas.length} llegada{llegadas.length === 1 ? "" : "s"} ·{" "}
                 {salidas.length} salida{salidas.length === 1 ? "" : "s"}
-                {sinCoordinar > 0 && ` · ${sinCoordinar} sin coordinar`}
+                {sinCoordinar > 0 && (
+                  <span className="font-medium text-accent-soft-text">
+                    {" "}
+                    · {sinCoordinar} sin coordinar
+                  </span>
+                )}
               </p>
             </div>
             {puedeEditar && (
               <Link
                 href={`/reservas/nueva?fecha=${fecha}`}
-                className="shrink-0 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+                className={`shrink-0 ${clsBoton("primario")}`}
               >
                 + Reserva
               </Link>
@@ -349,22 +350,22 @@ export default async function DelDia({
       {!q && <AvisosDelDia fecha={fecha} />}
 
       {eventos.length === 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-300">
+        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center shadow-sm">
+          <p className="text-tinta-suave">
             {q ? "No se encontró nada con esa búsqueda." : "No hay movimientos este día."}
           </p>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           <section className="flex flex-col gap-2">
-            <h2 className="border-b border-slate-800 pb-1 font-medium text-white">
+            <h2 className="border-b border-borde pb-1 font-semibold text-tinta">
               Llegadas
-              <span className="ml-2 text-sm font-normal text-slate-500">
+              <span className="ml-2 text-sm font-normal tabular-nums text-tinta-tenue">
                 {llegadas.length}
               </span>
             </h2>
             {llegadas.length === 0 ? (
-              <p className="py-3 text-sm text-slate-600">Sin llegadas.</p>
+              <p className="py-3 text-sm text-tinta-tenue">Sin llegadas.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {llegadas.map((e) => (
@@ -375,14 +376,14 @@ export default async function DelDia({
           </section>
 
           <section className="flex flex-col gap-2">
-            <h2 className="border-b border-slate-800 pb-1 font-medium text-white">
+            <h2 className="border-b border-borde pb-1 font-semibold text-tinta">
               Salidas
-              <span className="ml-2 text-sm font-normal text-slate-500">
+              <span className="ml-2 text-sm font-normal tabular-nums text-tinta-tenue">
                 {salidas.length}
               </span>
             </h2>
             {salidas.length === 0 ? (
-              <p className="py-3 text-sm text-slate-600">Sin salidas.</p>
+              <p className="py-3 text-sm text-tinta-tenue">Sin salidas.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {salidas.map((e) => (

@@ -108,12 +108,17 @@ export default async function AvisosDelDia({ fecha }: { fecha: string }) {
   if (vigentes.length === 0 && equipos.length === 0) return null;
 
   return (
-    <section className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-4">
+    // Fondo de aviso con filete al costado: es el bloque que no se puede
+    // pasar por alto, porque es la razón de ser del módulo.
+    <section className="flex flex-col gap-2 rounded-md border border-borde border-l-[3px] border-l-aviso bg-aviso-soft p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-aviso-text">
           Para tener en cuenta
         </h2>
-        <Link href="/reporte" className="text-xs text-slate-500 hover:text-slate-300">
+        <Link
+          href="/reporte"
+          className="text-xs text-aviso-text/80 transition-colors hover:text-aviso-text"
+        >
           Ver el reporte →
         </Link>
       </div>
@@ -121,36 +126,44 @@ export default async function AvisosDelDia({ fecha }: { fecha: string }) {
       <ul className="flex flex-col gap-1.5">
         {vigentes.map((n) => (
           <li key={n.id} className="text-sm">
-            <span className="text-slate-200">
+            <span className="text-tinta">
               {n.depto_codigo && (
-                <span className="font-medium text-emerald-300">{n.depto_codigo} · </span>
+                <span className="font-semibold text-primary">{n.depto_codigo} · </span>
               )}
               {n.titulo}
             </span>
-            {n.detalle && <span className="text-slate-500"> — {n.detalle}</span>}
+            {n.detalle && <span className="text-tinta-suave"> — {n.detalle}</span>}
+            {/* Lo que hay que hacer HOY va marcado; lo que solo hay que saber,
+                no. Si se marcara todo, no se distinguiría nada. */}
             {n.seccion === "pendiente" && (
-              <span className="ml-1 text-xs text-amber-300">(vence hoy)</span>
+              <span className="ml-1.5 rounded-full bg-accent-hover px-2 py-0.5 text-xs font-semibold text-tinta-inversa">
+                vence hoy
+              </span>
             )}
           </li>
         ))}
 
         {equipos.map((e) => (
           <li key={e.id} className="text-sm">
-            <span className="text-slate-200">
+            <span className="text-tinta">
               {e.depto_codigo && (
-                <span className="font-medium text-emerald-300">{e.depto_codigo} · </span>
+                <span className="font-semibold text-primary">{e.depto_codigo} · </span>
               )}
               {ETIQUETA_TIPO[e.tipo]}
               {e.huesped_nombre && (
-                <span className="text-slate-500"> para {e.huesped_nombre}</span>
+                <span className="text-tinta-suave"> para {e.huesped_nombre}</span>
               )}
             </span>
             {seEntregaEl(e, fecha) ? (
-              <span className="ml-1 text-xs text-amber-300">— hay que llevarla hoy</span>
+              <span className="ml-1.5 rounded-full bg-accent-hover px-2 py-0.5 text-xs font-semibold text-tinta-inversa">
+                hay que llevarla hoy
+              </span>
             ) : seRetiraEl(e, fecha) ? (
-              <span className="ml-1 text-xs text-amber-300">— hay que retirarla hoy</span>
+              <span className="ml-1.5 rounded-full bg-accent-hover px-2 py-0.5 text-xs font-semibold text-tinta-inversa">
+                hay que retirarla hoy
+              </span>
             ) : (
-              <span className="ml-1 text-xs text-slate-500">
+              <span className="ml-1 text-xs tabular-nums text-tinta-suave">
                 — hasta el {formatearFechaAR(e.fecha_hasta)}
               </span>
             )}

@@ -7,6 +7,9 @@ import { puedeVerCaja } from "@/lib/caja/permisos";
 import { esManagerOAdmin, rolDelUsuario } from "@/lib/permisos";
 import { inicioDelRol, puedeEntrar } from "@/lib/secciones";
 import { cerrarSesion } from "@/app/ingresar/acciones";
+import { LogoHorizontal } from "@/app/componentes/Logo";
+import { clsBoton } from "@/app/componentes/Boton";
+import Navegacion, { type ItemMenu } from "./Navegacion";
 
 export default async function LayoutApp({
   children,
@@ -49,77 +52,56 @@ export default async function LayoutApp({
       : Promise.resolve(0),
   ]);
 
+  const items: ItemMenu[] = [
+    { href: "/", texto: "Inicio", pendientes: 0 },
+    { href: "/dia", texto: "Día", pendientes: 0 },
+    { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
+    { href: "/reporte", texto: "Reporte", pendientes: reporteUrgente },
+    ...(verCaja ? [{ href: "/caja", texto: "Caja", pendientes: 0 }] : []),
+    ...(verReclamos
+      ? [{ href: "/reclamos", texto: "Reclamos", pendientes: reclamosUrgentes }]
+      : []),
+    { href: "/semana", texto: "Limpiezas", pendientes: 0 },
+    { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
+    { href: "/propietarios", texto: "Propietarios", pendientes: 0 },
+    // Configuración del sistema: manager y administración (spec §3.8).
+    ...(esConfiguracion
+      ? [
+          { href: "/personas", texto: "Personas", pendientes: 0 },
+          { href: "/tarifas", texto: "Valores", pendientes: 0 },
+        ]
+      : []),
+    { href: "/puntos-acceso", texto: "Accesos", pendientes: 0 },
+    { href: "/parametros", texto: "Parámetros", pendientes: 0 },
+    { href: "/importar", texto: "Importar", pendientes: 0 },
+    { href: "/exportar", texto: "Exportar", pendientes: 0 },
+    { href: "/ical", texto: "Calendarios", pendientes: 0 },
+    { href: "/bandeja", texto: "Sin asignar", pendientes: sinAsignar ?? 0 },
+    // El menú ofrece exactamente lo que el guardián deja abrir. Es la misma
+    // función en los dos lados: si se separan, aparecen enlaces que rebotan.
+  ].filter((item) => puedeEntrar(rol, item.href));
+
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-slate-900">
-      <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
+    <div className="flex min-h-full flex-1 flex-col bg-fondo">
+      <header className="sticky top-0 z-10 border-b border-borde bg-superficie/95 backdrop-blur">
         <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          {/* Al nombre lo lleva a su pantalla de entrada, que no es la misma
+          {/* Al logo lo lleva a su pantalla de entrada, que no es la misma
               para todos los roles. */}
           <Link href={inicioDelRol(rol)} className="shrink-0">
-            <span className="text-lg font-semibold tracking-tight text-white">
-              MTHosting
-            </span>
+            <LogoHorizontal alto={26} tono="color" />
           </Link>
           <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-slate-400 sm:block">
+            <span className="hidden text-sm text-tinta-suave sm:block">
               {persona?.nombre ?? user?.email}
             </span>
             <form action={cerrarSesion}>
-              <button
-                type="submit"
-                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-slate-800"
-              >
+              <button type="submit" className={clsBoton("discreto")}>
                 Salir
               </button>
             </form>
           </div>
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-2 pb-2 sm:px-4">
-          {[
-            { href: "/", texto: "Inicio", pendientes: 0 },
-            { href: "/dia", texto: "Día", pendientes: 0 },
-            { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
-            { href: "/reporte", texto: "Reporte", pendientes: reporteUrgente },
-            ...(verCaja ? [{ href: "/caja", texto: "Caja", pendientes: 0 }] : []),
-            ...(verReclamos
-              ? [{ href: "/reclamos", texto: "Reclamos", pendientes: reclamosUrgentes }]
-              : []),
-            { href: "/semana", texto: "Limpiezas", pendientes: 0 },
-            { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
-            { href: "/propietarios", texto: "Propietarios", pendientes: 0 },
-            // Configuración del sistema: manager y administración (spec §3.8).
-            ...(esConfiguracion
-              ? [
-                  { href: "/personas", texto: "Personas", pendientes: 0 },
-                  { href: "/tarifas", texto: "Valores", pendientes: 0 },
-                ]
-              : []),
-            { href: "/puntos-acceso", texto: "Accesos", pendientes: 0 },
-            { href: "/parametros", texto: "Parámetros", pendientes: 0 },
-            { href: "/importar", texto: "Importar", pendientes: 0 },
-            { href: "/exportar", texto: "Exportar", pendientes: 0 },
-            { href: "/ical", texto: "Calendarios", pendientes: 0 },
-            { href: "/bandeja", texto: "Sin asignar", pendientes: sinAsignar ?? 0 },
-          ]
-            // El menú ofrece exactamente lo que el guardián deja abrir. Es la
-            // misma función en los dos lados: si se separan, aparecen enlaces
-            // que rebotan.
-            .filter((item) => puedeEntrar(rol, item.href))
-            .map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
-              >
-                {item.texto}
-                {item.pendientes > 0 && (
-                  <span className="rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-slate-900">
-                    {item.pendientes}
-                  </span>
-                )}
-              </Link>
-            ))}
-        </nav>
+        <Navegacion items={items} />
       </header>
       {children}
     </div>

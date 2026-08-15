@@ -26,9 +26,10 @@ export default async function LayoutEconomico({
 
   return (
     <div className="flex flex-1 flex-col">
-      <nav className="flex gap-1 overflow-x-auto border-b border-slate-800 px-4 py-2 sm:px-6">
+      <nav className="flex gap-1 overflow-x-auto border-b border-borde px-4 py-2 sm:px-6">
         {[
           { href: "/economico", texto: "Resumen" },
+          { href: "/economico/validacion", texto: "Validación" },
           { href: "/economico/importar", texto: "Importar" },
           { href: "/economico/anuncios", texto: "Anuncios sin mapear" },
           { href: "/economico/cuentas", texto: "Cuentas de payout" },
@@ -37,7 +38,7 @@ export default async function LayoutEconomico({
           <Link
             key={item.href}
             href={item.href}
-            className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+            className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm text-tinta-suave transition-colors hover:bg-superficie-hover hover:text-tinta"
           >
             {item.texto}
           </Link>

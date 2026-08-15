@@ -237,12 +237,40 @@ Implicancias:
 percibido_payout = Σ 'Cobrado' de Payouts a cuenta MTH que NO son fondos en custodia
 ```
 
-**Exclusión de fondos en custodia — importante.** Un payout que entra a una cuenta MTH no siempre es ingreso de MTHosting: en muchos casos es la plata del propietario, que MTHosting cobra y después le gira por fuera de Airbnb. Contarla como percibido inflaría el número y volvería inservible la brecha (los desvíos reales son de decenas de dólares; los flujos de custodia, de cientos por reserva).
+**⚠️ CAMBIO DE CRITERIO — Marcos, 15/08/2026. Los fondos en custodia SÍ suman a PERCIBIDO.**
 
-**Regla de detección, automática, sin configuración por departamento:**
+La versión anterior de esta sección los excluía, con el argumento de que
+contarlos inflaría el número y volvería inservible la brecha. **Se decidió lo
+contrario, y por una razón mejor:**
 
-- Payout a cuenta MTH **cuyo grupo contiene una línea `Cobro como coanfitrión`** → la comisión ya se cobró por ese canal; el payout es **custodia** → **NO suma a PERCIBIDO**.
-- Payout a cuenta MTH **sin línea de coanfitrión en el grupo** → es ingreso propio → **suma a PERCIBIDO**.
+> Si entró a MTHosting, ya sea por coanfitrión o porque está nuestra cuenta en
+> el payout, tiene que ir a percibido. Ya sé que no es ganancia. Después vamos a
+> sacar diferencia entre la ganancia y lo percibido; en esos casos puede ser que
+> le debamos o bien nos deban.
+
+O sea que **la brecha deja de ser un residuo de conciliación y pasa a ser el
+saldo con el propietario**, que es un número con significado propio:
+
+- brecha **positiva** → entró más de lo que corresponde: MTHosting le debe.
+- brecha **negativa** → entró menos: le deben a MTHosting.
+
+Ejemplo con el caso ARENALES 2 de más abajo: entran 415,06 (87,57 de coanfitrión
++ 327,49 de payout), la ganancia es 83,01, y los 332,05 de diferencia son
+exactamente lo que hay que girarle al propietario.
+
+**No hay doble conteo**, que era la otra objeción: el payout ya viene NETO de lo
+derivado al coanfitrión, así que los dos juntos dan el bruto de la reserva una
+sola vez (87,57 + 327,49 = 415,06).
+
+**Regla, automática, sin configuración por departamento:**
+
+- Payout a cuenta **MTH** → **suma a PERCIBIDO**, haya o no línea de coanfitrión
+  en el grupo.
+- Payout a cuenta de **propietario** o **sin clasificar** → no entró a
+  MTHosting, **no suma**.
+- Los payout cuyo grupo trae coanfitrión se siguen marcando (`es_custodia`),
+  pero solo como **informativo**: dice cuánto de lo percibido es plata ajena.
+  Ya está adentro de percibido y no se resta.
 
 Caso real que motiva la regla (ARENALES 2, "Silencioso depto en Recoleta"):
 
@@ -254,7 +282,11 @@ Payout → MT Hosting, Checking 4343     327,49   ← plata del propietario (cus
 
 Volumen medido en el histórico: de los payouts a cuentas 4343, **624 grupos (USD 73.864) tienen línea de coanfitrión** (custodia) y **64 (USD 1.861) no la tienen** (ingreso propio).
 
-Los fondos en custodia **se guardan igual** (campo `es_custodia`), pero **no se exponen en esta etapa**. Quedan persistidos y correctamente imputados por departamento y mes para habilitar la **etapa 2** del módulo: el control de giros a propietarios (cuánto se cobró en nombre de cada propietario, cuánto se le giró, saldo pendiente). No construir esa pantalla ahora; solo asegurar que el dato quede bien guardado y no se pierda.
+Los fondos en custodia se guardan marcados (`es_custodia`) y **sí entran a
+percibido** (ver el cambio de criterio arriba). La marca queda para la **etapa 2**:
+el control de giros a propietarios —cuánto se cobró en nombre de cada uno,
+cuánto se le giró, saldo pendiente—, que ahora tiene un punto de partida
+directo, porque la brecha ya ES ese saldo.
 
 **No hay doble conteo entre los dos orígenes.** Está verificado: el importe de cada `Payout` **ya viene neto de lo derivado al coanfitrión**. Ejemplo real del histórico:
 

@@ -5,10 +5,17 @@
  *
  *   GANANCIA  — lo que MTHosting DEBERÍA ganar. Es la comisión ordinaria del
  *               departamento, siempre. Define la rentabilidad.
- *   PERCIBIDO — lo que realmente ENTRÓ. Es control de cobranza, no de
- *               rentabilidad: puede estar muy por encima o por debajo.
+ *   PERCIBIDO — todo lo que ENTRÓ a MTHosting, por el canal que sea: la línea
+ *               de coanfitrión y los payout que fueron a una cuenta propia.
+ *               No es rentabilidad y no pretende serlo.
  *   AIRCOVER  — indemnizaciones por daños. Se informan aparte y no entran a
  *               ninguna de las dos (decisión de Marcos, 15/08/2026).
+ *
+ * LA BRECHA (percibido − ganancia) ES EL SALDO CON EL PROPIETARIO, no un
+ * error de conciliación (decisión de Marcos, 15/08/2026). Positiva: entró más
+ * de lo que corresponde y MTHosting le debe. Negativa: le deben a MTHosting.
+ * Por eso el percibido incluye la plata del propietario que pasó por una
+ * cuenta de MTHosting: sacarla haría desaparecer justamente la deuda.
  *
  * LA REGLA QUE NO SE PUEDE ROMPER: la ganancia NUNCA se calcula sobre lo
  * cobrado. Cuando MTHosting cobra de más es recupero de gastos que puso, no
@@ -65,7 +72,12 @@ export type Aporte = {
   ganancia: number;
   percibido: number;
   aircover: number;
-  /** Plata del propietario que pasó por una cuenta MTH. Insumo de la etapa 2. */
+  /**
+   * Cuánto del percibido entró por un payout a cuenta MTH cuyo grupo traía
+   * línea de coanfitrión, o sea plata que en el fondo es del propietario.
+   * Es INFORMATIVO: ya está adentro de `percibido`, no se resta. Sirve para
+   * la cuenta corriente con propietarios de la etapa 2.
+   */
   custodia: number;
 };
 
@@ -125,12 +137,25 @@ export function aporteDeMovimiento(
   if (m.categoria === "payout") {
     const cobrado = aUsd(Number(m.cobrado ?? 0), m.moneda, m.tc_usd);
     if (cobrado === null) return null;
-    // A cuenta del propietario: no es plata de MTHosting en ningún sentido.
+    // A cuenta del propietario: no pasó por MTHosting, no entró.
     if (m.clase_cuenta !== "mth") return { ...CERO };
-    // A cuenta MTH pero con coanfitrión en el grupo: la comisión ya entró por
-    // ese canal, así que esto es plata del propietario en tránsito.
-    if (m.grupo_con_coanfitrion) return { ...CERO, custodia: cobrado };
-    return { ...CERO, percibido: cobrado };
+    // A cuenta de MTHosting: ENTRÓ, y por eso es percibido (decisión de
+    // Marcos, 15/08/2026). Que una parte sea del propietario no cambia que
+    // haya entrado; eso lo dice la brecha contra la ganancia, que bajo este
+    // criterio ES el saldo con el propietario: si percibido supera a la
+    // ganancia, MTHosting le debe; si queda por debajo, le deben.
+    //
+    // No hay doble conteo con la línea de coanfitrión del mismo grupo: el
+    // payout ya viene NETO de lo derivado al coanfitrión. Los dos juntos dan
+    // el bruto de la reserva, una sola vez.
+    //
+    // `custodia` se sigue midiendo, pero solo como informativo: cuánto de lo
+    // que entró era plata de un propietario. No se resta de percibido.
+    return {
+      ...CERO,
+      percibido: cobrado,
+      custodia: m.grupo_con_coanfitrion ? cobrado : 0,
+    };
   }
 
   if (EXTRA.has(m.categoria)) {
@@ -209,5 +234,10 @@ export function agregarPorDeptoMes(
   };
 }
 
-/** La brecha: percibido − ganancia. Positiva no es error, puede ser recupero. */
+/**
+ * La brecha: percibido − ganancia. Es el SALDO con el propietario.
+ *
+ * Positiva, MTHosting cobró más de lo que le corresponde: le debe. Negativa,
+ * le deben a MTHosting. Nunca es "un error a corregir".
+ */
 export const brecha = (c: Aporte): number => c.percibido - c.ganancia;

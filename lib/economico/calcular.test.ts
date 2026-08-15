@@ -101,10 +101,11 @@ describe("el percibido", () => {
     cerca(a?.custodia, 0);
   });
 
-  it("un payout a cuenta MTH CON coanfitrión en el grupo es custodia", () => {
-    // ARENALES 2: el payout de 327,49 a la 4343 es plata del propietario; lo
-    // de MTHosting son los 87,57 del coanfitrión. Contar las dos puntas
-    // inflaría el percibido y volvería inservible la brecha.
+  it("un payout a cuenta MTH CON coanfitrión también entra: es plata que entró", () => {
+    // ARENALES 2: payout de 327,49 a la 4343, con coanfitrión de 87,57 en el
+    // mismo grupo. Los 327,49 son en el fondo del propietario, pero ENTRARON
+    // a una cuenta de MTHosting (decisión de Marcos, 15/08/2026). Se marcan
+    // como custodia para la etapa 2, sin restarlos.
     const a = aporteDeMovimiento(
       mov({
         categoria: "payout",
@@ -114,8 +115,39 @@ describe("el percibido", () => {
       }),
       20,
     );
-    cerca(a?.percibido, 0);
+    cerca(a?.percibido, 327.49);
     cerca(a?.custodia, 327.49);
+  });
+
+  it("el payout y su coanfitrión no se pisan: juntos dan el bruto, una vez", () => {
+    // Reserva 415,06 = coanfitrión 87,57 + payout 327,49. El payout ya viene
+    // neto de lo derivado al coanfitrión, así que sumarlos no duplica nada.
+    const coanfitrion = aporteDeMovimiento(
+      mov({ categoria: "coanfitrion", monto: -87.57 }),
+      20,
+    );
+    const payout = aporteDeMovimiento(
+      mov({
+        categoria: "payout",
+        cobrado: 327.49,
+        clase_cuenta: "mth",
+        grupo_con_coanfitrion: true,
+      }),
+      20,
+    );
+    cerca(coanfitrion!.percibido + payout!.percibido, 415.06);
+  });
+
+  it("la brecha es el saldo con el propietario", () => {
+    // Entró el bruto de 415,06 y la ganancia es la comisión de 83,01.
+    // La diferencia es lo que MTHosting le debe al propietario.
+    const total = {
+      ganancia: 83.01,
+      percibido: 415.06,
+      aircover: 0,
+      custodia: 327.49,
+    };
+    cerca(brecha(total), 332.05);
   });
 });
 

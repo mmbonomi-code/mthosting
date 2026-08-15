@@ -64,7 +64,7 @@ function datosDelFormulario(fd: FormData) {
 export async function crearReserva(fd: FormData): Promise<EstadoFormulario> {
   const supabase = await crearClienteServidor();
   if (!(await puedeEditarReservas(supabase))) {
-    return { error: "Solo manager y administración pueden cargar reservas." };
+    return { error: "Solo coordinación, manager y administración pueden cargar reservas." };
   }
 
   const origen = (texto(fd, "tipo") ?? "directa") as OrigenManual;
@@ -142,7 +142,7 @@ export async function editarReserva(
 ): Promise<EstadoFormulario> {
   const supabase = await crearClienteServidor();
   if (!(await puedeEditarReservas(supabase))) {
-    return { error: "Solo manager y administración pueden editar reservas." };
+    return { error: "Solo coordinación, manager y administración pueden editar reservas." };
   }
 
   const { data: actual } = await supabase

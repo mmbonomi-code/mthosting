@@ -865,7 +865,8 @@ Referencias: ✓ puede · — no ve la pantalla · ✗ ve pero no puede
 | Emitir el PDF del día | ✓ | ✓ | ✓ | ✓ | — | — |
 | **Reservas** |
 | Ver datos del huésped (nombre y contacto) | ✓ | ✓ | — | ✓ | solo nombre | — |
-| Editar datos que vienen de Airbnb | ✓ | ✓ | — | ✗ | — | — |
+| Cargar una reserva a mano | ✓ | ✓ | — | ✓ | — | — |
+| Editar datos que vienen de Airbnb | ✓ | ✓ | — | ✓ | — | — |
 | Descartar una reserva | ✓ | ✓ | — | ✗ | — | — |
 | Importar archivos | ✓ | ✓ | — | — | — | — |
 | Asignar departamento a reserva sin mapear | ✓ | ✓ | — | ✓ | — | — |
@@ -893,6 +894,12 @@ Notas:
   usuario autenticado— y se endurece en la Fase 2, antes de que entre el
   personal de limpieza. Esta tabla describe el destino, no lo que hoy impide
   la base.
+- **Coordinación y reservas, ajuste del 14/08/2026 (decisión del dueño):** el
+  coordinador **sí** carga reservas a mano y edita las existentes. Antes esta
+  tabla lo dejaba afuera por miedo a que una fecha mal escrita moviera
+  limpiezas. Pesó más lo otro: es quien primero se entera de un cambio, y
+  obligarlo a pedírselo a la manager dejaba la reserva desactualizada más
+  tiempo. Descartar una reserva sigue siendo de manager y administración.
 - **Gobernanta, ajuste del 13/08/2026 (decisión del dueño):** ve **solo
   Limpiezas y Departamentos**, y nada más. Respecto de la tabla de arriba eso
   saca dos cosas: el **resumen del día** y la **lectura del reporte**. Las

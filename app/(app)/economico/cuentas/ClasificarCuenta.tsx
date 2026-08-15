@@ -6,9 +6,9 @@ import { clasificarCuenta } from "../acciones";
 type Clasificacion = "mth" | "propietario" | "sin_clasificar";
 
 const OPCIONES: { valor: Clasificacion; texto: string; activo: string }[] = [
-  { valor: "mth", texto: "De MTHosting", activo: "border-emerald-500 bg-emerald-950/40 text-emerald-200" },
-  { valor: "propietario", texto: "Del propietario", activo: "border-sky-500 bg-sky-950/40 text-sky-200" },
-  { valor: "sin_clasificar", texto: "Sin decidir", activo: "border-amber-500 bg-amber-950/40 text-amber-200" },
+  { valor: "mth", texto: "De MTHosting", activo: "border-primary bg-primary-soft text-primary-soft-text" },
+  { valor: "propietario", texto: "Del propietario", activo: "border-dato bg-dato-soft text-dato-text" },
+  { valor: "sin_clasificar", texto: "Sin decidir", activo: "border-accent bg-accent-soft text-accent-soft-text" },
 ];
 
 export default function ClasificarCuenta({
@@ -46,7 +46,7 @@ export default function ClasificarCuenta({
             className={`rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:opacity-60 ${
               valor === o.valor
                 ? o.activo
-                : "border-slate-700 text-slate-400 hover:bg-slate-800"
+                : "border-borde-control text-tinta-suave hover:bg-superficie-alt"
             }`}
           >
             {o.texto}
@@ -54,7 +54,7 @@ export default function ClasificarCuenta({
         ))}
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-300">
+        <p role="alert" className="text-sm text-error-text">
           {error}
         </p>
       )}

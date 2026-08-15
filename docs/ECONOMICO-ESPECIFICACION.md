@@ -149,13 +149,28 @@ GANANCIA = comision + Tarifa de limpieza
 
 **⚠️ AirCover — categoría propia, con asignación manual.** Los reembolsos de AirCover por daños llegan como `Cobro de la resolución` pero con `Detalles` que contiene "Reembolso de AirCover" (detectar por ese texto). **No son ingreso del alquiler y no se comisionan automáticamente**: según el caso pueden corresponder al propietario (daño en el inmueble) o a MTHosting (gasto que absorbió MTH). No se puede decidir desde el CSV.
 
-Tratamiento:
-- Se importan y se guardan con categoría `AIRCOVER`, imputados a su departamento y mes.
-- **No suman a GANANCIA ni a PERCIBIDO** mientras estén sin asignar.
-- Aparecen en una **bandeja "AirCover a asignar"** donde Marcos marca cada uno como *de MTHosting* o *del propietario*. Al asignarlo a MTHosting suma a la ganancia del departamento en el mes del movimiento; al asignarlo al propietario queda registrado pero no impacta.
-- Son montos chicos pero el criterio importa: comisionarlos automáticamente equivale a cobrarle comisión al propietario sobre una indemnización por daños que suele corresponderle entera.
+**Tratamiento — DECIDIDO (Marcos, 15/08/2026): el AirCover queda FUERA.**
 
-Caso real de referencia: KENNEDY 1, HMYEW9WZZX, USD 6,00 el 26/04/2026.
+- Se importan y se guardan con categoría `AIRCOVER`, imputados a su departamento y mes.
+- **Nunca suman a GANANCIA ni a PERCIBIDO.** No es "mientras estén sin asignar":
+  es definitivo para esta etapa. La ganancia de un departamento no se mueve por
+  una indemnización de daños.
+- Se **informan aparte**, como una tercera cifra al lado de ganancia y percibido.
+  El dato está, se ve, y no contamina la rentabilidad.
+- **No se construye la bandeja de asignación por ahora.** El campo
+  `aircover_destino` queda en el modelo para cuando se decida caso por caso,
+  pero ninguna pantalla lo pide todavía.
+
+Por qué: comisionarlos automáticamente equivale a cobrarle comisión al
+propietario sobre una indemnización que suele corresponderle entera. Y al revés,
+cuando el gasto lo absorbió MTHosting la compensación es **100% suya**, no el
+20% — o sea que ninguno de los dos tratamientos automáticos es correcto. Como no
+se puede decidir desde el CSV, no se decide: se informa.
+
+Caso real de referencia: KENNEDY 1, HMYEW9WZZX, USD 6,00 el 26/04/2026,
+"Reembolso de AirCover por daños para la resolución CLSF-05854607". Es la única
+diferencia entre el cálculo de la app y la planilla de control de Marcos, que lo
+comisionaba al 20% (1,20 en abril).
 
 **Política de redondeo — definirla una sola vez y aplicarla en todo el módulo.** Calcular y almacenar **con todos los decimales**; redondear **solo en la presentación**. Nunca redondear el importe de cada movimiento antes de sumarlo: sobre KENNEDY 1 esa diferencia de criterio ya produjo desvíos de 1 a 2 centavos por mes contra la tabla dinámica de control de Marcos. Las sumas de la app tienen que reproducirse exactamente en una dinámica de Excel sobre los mismos datos.
 - El `% comisión` debe poder **variar en el tiempo** por departamento (vigencia desde/hasta). Si el modelo actual solo guarda un valor único, agregá versionado — hay departamentos donde la comisión cambió. Si preferís no versionar todavía, dejalo preparado con una tabla `departamento_comision(depto_id, pct, vigente_desde)` y tomá la vigente a la `Fecha` de la fila.

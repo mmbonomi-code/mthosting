@@ -71,31 +71,31 @@ export default async function PorCobrar() {
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href="/caja" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/caja" className="text-sm text-tinta-suave hover:text-tinta">
         ← Volver a la caja
       </Link>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Por cobrar</h1>
-        <p className="text-sm text-slate-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">Por cobrar</h1>
+        <p className="text-sm text-tinta-suave">
           Gastos que puso MTHosting y el propietario tiene que devolver.
         </p>
       </div>
 
       {deuda.length === 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-300">No hay nada pendiente de cobro.</p>
+        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-suave">No hay nada pendiente de cobro.</p>
         </div>
       ) : (
         <>
-          <section className="rounded-xl border border-amber-900/60 bg-amber-950/30 p-4">
-            <span className="text-xs uppercase tracking-wide text-amber-400">
+          <section className="rounded-md border border-aviso/60 bg-aviso-soft/30 p-4">
+            <span className="text-xs uppercase tracking-wide text-aviso-text">
               Total pendiente
             </span>
-            <p className="text-3xl font-semibold tabular-nums text-amber-200">
+            <p className="text-3xl font-semibold tabular-nums text-aviso-text">
               {pesos(total)}
             </p>
-            <p className="text-xs text-amber-400/80">
+            <p className="text-xs text-aviso-text/80">
               {movimientos.length} movimiento{movimientos.length === 1 ? "" : "s"} en{" "}
               {deuda.length} departamento{deuda.length === 1 ? "" : "s"}
             </p>

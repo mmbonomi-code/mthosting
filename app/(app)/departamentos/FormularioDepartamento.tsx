@@ -63,8 +63,8 @@ function Seccion({
   children: React.ReactNode;
 }) {
   return (
-    <fieldset className="rounded-xl border border-slate-800 p-4">
-      <legend className="px-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
+    <fieldset className="rounded-md border border-borde p-4">
+      <legend className="px-2 text-sm font-semibold uppercase tracking-wide text-tinta-suave">
         {titulo}
       </legend>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
@@ -104,9 +104,9 @@ function Casilla({
         type="checkbox"
         name={nombre}
         defaultChecked={defaultChecked}
-        className="size-5 accent-white"
+        className="size-5 accent-primary"
       />
-      <span className="text-base text-slate-200">{etiqueta}</span>
+      <span className="text-base text-tinta">{etiqueta}</span>
     </label>
   );
 }
@@ -199,7 +199,7 @@ export default function FormularioDepartamento({
               </option>
             ))}
           </select>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-tinta-tenue">
             De acá sale el valor de cada limpieza de este departamento.
           </span>
         </Campo>
@@ -260,7 +260,7 @@ export default function FormularioDepartamento({
             className={clsEntrada}
           />
         </Campo>
-        <p className="text-xs text-slate-500 sm:col-span-2">
+        <p className="text-xs text-tinta-tenue sm:col-span-2">
           El total de camas se calcula solo: es la suma de estas cuatro.
         </p>
       </Seccion>
@@ -453,7 +453,7 @@ export default function FormularioDepartamento({
       {estado?.error && (
         <p
           role="alert"
-          className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300"
+          className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text"
         >
           {estado.error}
         </p>

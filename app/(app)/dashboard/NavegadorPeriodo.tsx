@@ -31,17 +31,17 @@ export default function NavegadorPeriodo({
         <Link
           href={`/dashboard?mes=${sumarMeses(mes, -1)}`}
           aria-label="Mes anterior"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-borde-control text-tinta-suave hover:bg-superficie-alt"
         >
           ←
         </Link>
-        <span className="flex h-11 flex-1 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 px-3 text-base capitalize text-white">
+        <span className="flex h-11 flex-1 items-center justify-center rounded-md border border-borde-control bg-superficie-alt px-3 text-base capitalize text-tinta">
           {esRangoLibre ? "Rango elegido" : nombreDelMes(mes)}
         </span>
         <Link
           href={`/dashboard?mes=${sumarMeses(mes, 1)}`}
           aria-label="Mes siguiente"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-borde-control text-tinta-suave hover:bg-superficie-alt"
         >
           →
         </Link>
@@ -57,35 +57,35 @@ export default function NavegadorPeriodo({
           }}
         >
           <label className="flex flex-col gap-1">
-            <span className="text-xs uppercase tracking-wide text-slate-500">Desde</span>
+            <span className="text-xs uppercase tracking-wide text-tinta-tenue">Desde</span>
             <input
               type="date"
               name="desde"
               defaultValue={desde}
               required
-              className="h-11 rounded-lg border border-slate-700 bg-slate-800 px-3 text-base text-white outline-none focus:border-slate-400"
+              className="h-11 rounded-md border border-borde-control bg-superficie-alt px-3 text-base text-tinta outline-none focus:border-primary"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs uppercase tracking-wide text-slate-500">Hasta</span>
+            <span className="text-xs uppercase tracking-wide text-tinta-tenue">Hasta</span>
             <input
               type="date"
               name="hasta"
               defaultValue={hasta}
               required
-              className="h-11 rounded-lg border border-slate-700 bg-slate-800 px-3 text-base text-white outline-none focus:border-slate-400"
+              className="h-11 rounded-md border border-borde-control bg-superficie-alt px-3 text-base text-tinta outline-none focus:border-primary"
             />
           </label>
           <button
             type="submit"
-            className="h-11 rounded-lg bg-white px-4 text-sm font-semibold text-slate-900 hover:bg-slate-200"
+            className="h-11 rounded-md bg-primary px-4 text-sm font-semibold text-tinta-inversa hover:bg-primary-hover"
           >
             Ver
           </button>
           {esRangoLibre && (
             <Link
               href="/dashboard"
-              className="flex h-11 items-center rounded-lg border border-slate-700 px-4 text-sm text-slate-300 hover:bg-slate-800"
+              className="flex h-11 items-center rounded-md border border-borde-control px-4 text-sm text-tinta-suave hover:bg-superficie-alt"
             >
               Volver al mes
             </Link>
@@ -95,7 +95,7 @@ export default function NavegadorPeriodo({
         <button
           type="button"
           onClick={() => setAbierto(true)}
-          className="self-start text-sm text-slate-400 underline decoration-slate-700 underline-offset-4 hover:text-white"
+          className="self-start text-sm text-tinta-suave underline decoration-borde-fuerte underline-offset-4 hover:text-tinta"
         >
           Elegir un rango de fechas
         </button>

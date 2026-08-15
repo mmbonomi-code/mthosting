@@ -24,10 +24,10 @@ function Dato({
 }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">
+      <dt className="text-xs uppercase tracking-wide text-tinta-tenue">
         {etiqueta}
       </dt>
-      <dd className="text-base text-slate-200">{children ?? "—"}</dd>
+      <dd className="text-base text-tinta">{children ?? "—"}</dd>
     </div>
   );
 }
@@ -42,21 +42,21 @@ function Acordeon({
   children: React.ReactNode;
 }) {
   return (
-    <details className="group rounded-xl border border-slate-800">
-      <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-white [&::-webkit-details-marker]:hidden">
+    <details className="group rounded-md border border-borde">
+      <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-tinta [&::-webkit-details-marker]:hidden">
         <span className="font-medium">{titulo}</span>
         <span className="flex items-center gap-3">
           {resumen && (
-            <span className="hidden max-w-64 truncate text-sm text-slate-500 sm:block">
+            <span className="hidden max-w-64 truncate text-sm text-tinta-tenue sm:block">
               {resumen}
             </span>
           )}
-          <span className="text-slate-500 transition-transform group-open:rotate-180">
+          <span className="text-tinta-tenue transition-transform group-open:rotate-180">
             ▾
           </span>
         </span>
       </summary>
-      <div className="border-t border-slate-800 px-4 py-4">{children}</div>
+      <div className="border-t border-borde px-4 py-4">{children}</div>
     </details>
   );
 }
@@ -134,21 +134,21 @@ export default async function FichaDepartamento({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="font-mono text-2xl font-bold tracking-tight text-white">
+            <h1 className="font-mono text-2xl font-bold tracking-tight text-tinta">
               {depto.codigo}
             </h1>
             {depto.estado === "suspendido" && (
-              <span className="rounded-full bg-amber-950 px-2.5 py-0.5 text-xs font-medium text-amber-300">
+              <span className="rounded-full bg-aviso-soft px-2.5 py-0.5 text-xs font-medium text-aviso-text">
                 Suspendido
               </span>
             )}
             {!depto.activo && (
-              <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+              <span className="rounded-full bg-warm-100 px-2.5 py-0.5 text-xs font-medium text-tinta-suave">
                 Inactivo
               </span>
             )}
           </div>
-          <p className="text-slate-400">{depto.nombre_interno}</p>
+          <p className="text-tinta-suave">{depto.nombre_interno}</p>
         </div>
         {/* Quien solo consulta la ficha no ve los botones que no puede abrir:
             si no, el enlace lo rebota y parece que el sistema falla. */}
@@ -156,13 +156,13 @@ export default async function FichaDepartamento({
           <div className="flex gap-2">
             <Link
               href={`/departamentos/${id}/equipamiento`}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+              className="rounded-md border border-borde-control px-4 py-2 text-sm font-medium text-tinta-suave transition-colors hover:bg-superficie-alt"
             >
               Equipamiento
             </Link>
             <Link
               href={`/departamentos/${id}/editar`}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+              className="rounded-md border border-borde-control px-4 py-2 text-sm font-medium text-tinta-suave transition-colors hover:bg-superficie-alt"
             >
               Editar
             </Link>
@@ -171,7 +171,7 @@ export default async function FichaDepartamento({
       </div>
 
       {/* Bloque fijo: lo más consultado (§3.5.quater) */}
-      <dl className="grid grid-cols-2 gap-4 rounded-xl border border-slate-700 bg-slate-800/60 p-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-4 rounded-md border border-borde-control bg-superficie p-4 sm:grid-cols-3">
         <div className="col-span-2 sm:col-span-3">
           <Dato etiqueta="Dirección">{depto.direccion}</Dato>
         </div>
@@ -203,7 +203,7 @@ export default async function FichaDepartamento({
             {depto.propietario_telefono && (
               <a
                 href={`tel:${depto.propietario_telefono}`}
-                className="underline decoration-slate-600 underline-offset-4"
+                className="underline decoration-borde-fuerte underline-offset-4"
               >
                 {depto.propietario_telefono}
               </a>
@@ -216,7 +216,7 @@ export default async function FichaDepartamento({
             {depto.encargado_telefono && (
               <a
                 href={`tel:${depto.encargado_telefono}`}
-                className="underline decoration-slate-600 underline-offset-4"
+                className="underline decoration-borde-fuerte underline-offset-4"
               >
                 {depto.encargado_telefono}
               </a>
@@ -228,7 +228,7 @@ export default async function FichaDepartamento({
                 href={depto.url_publicacion}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline decoration-slate-600 underline-offset-4"
+                className="underline decoration-borde-fuerte underline-offset-4"
               >
                 Abrir anuncio ↗
               </a>
@@ -240,7 +240,7 @@ export default async function FichaDepartamento({
                 href={depto.url_mapa}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline decoration-slate-600 underline-offset-4"
+                className="underline decoration-borde-fuerte underline-offset-4"
               >
                 Abrir mapa ↗
               </a>
@@ -309,7 +309,7 @@ export default async function FichaDepartamento({
                     <li key={bano.id}>
                       {ETIQUETA_TIPO_BANO[bano.tipo]}
                       {bano.detalle && (
-                        <span className="text-slate-500"> — {bano.detalle}</span>
+                        <span className="text-tinta-tenue"> — {bano.detalle}</span>
                       )}
                     </li>
                   ))}
@@ -338,13 +338,13 @@ export default async function FichaDepartamento({
                 >
                   <span
                     className={
-                      item.tiene ? "text-slate-200" : "text-slate-600"
+                      item.tiene ? "text-tinta" : "text-tinta-tenue"
                     }
                   >
                     {item.tiene ? "✓" : "—"} {item.nombre}
                   </span>
                   {item.detalle && (
-                    <span className="text-sm text-slate-500">
+                    <span className="text-sm text-tinta-tenue">
                       {item.detalle}
                     </span>
                   )}
@@ -395,7 +395,7 @@ export default async function FichaDepartamento({
         resumen={`${(aliases ?? []).filter((a) => a.activo).length} activos`}
       >
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-tinta-tenue">
             Los nombres de anuncio con los que este departamento aparece en los
             archivos de reservas. Si un anuncio se renombra en Airbnb, agregá
             el nombre nuevo acá (o va a caer en la bandeja de sin asignar).
@@ -404,15 +404,15 @@ export default async function FichaDepartamento({
             {(aliases ?? []).map((alias) => (
               <li
                 key={alias.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-md border border-borde px-3 py-2"
               >
                 <span className="min-w-0">
                   <span
-                    className={`block truncate ${alias.activo ? "text-slate-200" : "text-slate-500 line-through"}`}
+                    className={`block truncate ${alias.activo ? "text-tinta" : "text-tinta-tenue line-through"}`}
                   >
                     {alias.nombre_listing}
                   </span>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-tinta-tenue">
                     {ETIQUETA_CANAL[alias.canal]}
                   </span>
                 </span>
@@ -421,7 +421,7 @@ export default async function FichaDepartamento({
                 >
                   <button
                     type="submit"
-                    className="shrink-0 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700"
+                    className="shrink-0 rounded-md border border-borde-control px-2 py-1 text-xs text-tinta-suave transition-colors hover:bg-warm-100"
                   >
                     {alias.activo ? "Desactivar" : "Reactivar"}
                   </button>
@@ -429,7 +429,7 @@ export default async function FichaDepartamento({
               </li>
             ))}
             {(aliases ?? []).length === 0 && (
-              <li className="text-sm text-slate-500">
+              <li className="text-sm text-tinta-tenue">
                 Todavía no hay anuncios vinculados.
               </li>
             )}
@@ -439,7 +439,7 @@ export default async function FichaDepartamento({
       </Acordeon>
 
       <Acordeon titulo="Observación" resumen={depto.observacion ?? undefined}>
-        <p className="whitespace-pre-wrap text-slate-200">
+        <p className="whitespace-pre-wrap text-tinta">
           {depto.observacion ?? "Sin observaciones."}
         </p>
       </Acordeon>

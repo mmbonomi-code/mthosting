@@ -15,18 +15,18 @@ export default async function Feriados() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href="/tarifas" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/tarifas" className="text-sm text-tinta-suave hover:text-tinta">
         ← Volver a valores de limpieza
       </Link>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Feriados
-          <span className="ml-2 text-base font-normal text-slate-500">
+          <span className="ml-2 text-base font-normal text-tinta-tenue">
             {(feriados ?? []).length}
           </span>
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-suave">
           Las limpiezas de estos días se pagan doble, igual que los domingos.
         </p>
       </div>
@@ -34,7 +34,7 @@ export default async function Feriados() {
       <FormularioFeriado accion={agregarFeriado} hoy={hoy} />
 
       {(feriados ?? []).length === 0 ? (
-        <p className="py-8 text-center text-slate-500">
+        <p className="py-8 text-center text-tinta-tenue">
           Todavía no hay feriados cargados.
         </p>
       ) : (
@@ -42,18 +42,18 @@ export default async function Feriados() {
           {(feriados ?? []).map((f) => (
             <li
               key={f.id}
-              className="flex flex-wrap items-center gap-x-4 rounded-lg border border-slate-800 px-4 py-2.5"
+              className="flex flex-wrap items-center gap-x-4 rounded-md border border-borde px-4 py-2.5"
             >
-              <span className="w-28 shrink-0 text-slate-200">
+              <span className="w-28 shrink-0 text-tinta">
                 {formatearFechaAR(f.fecha)}
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm text-slate-400">
+              <span className="min-w-0 flex-1 truncate text-sm text-tinta-suave">
                 {f.descripcion ?? ""}
               </span>
               <form action={quitarFeriado.bind(null, f.id)}>
                 <button
                   type="submit"
-                  className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700"
+                  className="rounded-md border border-borde-control px-2 py-1 text-xs text-tinta-suave transition-colors hover:bg-warm-100"
                 >
                   Quitar
                 </button>

@@ -20,13 +20,13 @@ export default async function PuntosAcceso() {
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">
+          <h1 className="text-2xl font-semibold tracking-tight text-tinta">
             Puntos de acceso
-            <span className="ml-2 text-base font-normal text-slate-500">
+            <span className="ml-2 text-base font-normal text-tinta-tenue">
               {lista.length}
             </span>
           </h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-tinta-suave">
             Candados, sobres y valijas. Un mismo punto puede servir a varios
             departamentos. Con las flechas subís los que más usás: en ese orden
             aparecen al coordinar.
@@ -38,7 +38,7 @@ export default async function PuntosAcceso() {
       </div>
 
       {lista.length === 0 ? (
-        <p className="py-12 text-center text-slate-500">
+        <p className="py-12 text-center text-tinta-tenue">
           Todavía no hay puntos de acceso cargados.
         </p>
       ) : (
@@ -46,7 +46,7 @@ export default async function PuntosAcceso() {
           {lista.map((p, i) => (
             <li
               key={p.id}
-              className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 px-3 py-2"
+              className="flex items-center gap-2 rounded-md border border-borde bg-superficie px-3 py-2"
             >
               <span className="flex shrink-0 flex-col">
                 <form action={moverPuntoAcceso.bind(null, p.id, "arriba")}>
@@ -54,7 +54,7 @@ export default async function PuntosAcceso() {
                     type="submit"
                     disabled={i === 0}
                     aria-label="Subir"
-                    className="flex h-6 w-7 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent"
+                    className="flex h-6 w-7 items-center justify-center rounded text-tinta-suave transition-colors hover:bg-warm-100 hover:text-tinta disabled:opacity-25 disabled:hover:bg-transparent"
                   >
                     ▲
                   </button>
@@ -64,7 +64,7 @@ export default async function PuntosAcceso() {
                     type="submit"
                     disabled={i === lista.length - 1}
                     aria-label="Bajar"
-                    className="flex h-6 w-7 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent"
+                    className="flex h-6 w-7 items-center justify-center rounded text-tinta-suave transition-colors hover:bg-warm-100 hover:text-tinta disabled:opacity-25 disabled:hover:bg-transparent"
                   >
                     ▼
                   </button>
@@ -75,26 +75,26 @@ export default async function PuntosAcceso() {
                 href={`/puntos-acceso/${p.id}/editar`}
                 className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 py-1"
               >
-                <span className="w-24 shrink-0 text-sm text-emerald-300">
+                <span className="w-24 shrink-0 text-sm text-exito-text">
                   {METODOS_ACCESO[p.metodo]}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-slate-200">
+                  <span className="block truncate text-tinta">
                     {p.ubicacion}
                     {p.identificador && (
-                      <span className="ml-2 font-mono text-sm text-slate-400">
+                      <span className="ml-2 font-mono text-sm text-tinta-suave">
                         {p.identificador}
                       </span>
                     )}
                   </span>
-                  <span className="block text-xs text-slate-500">
+                  <span className="block text-xs text-tinta-tenue">
                     {[p.sirve_checkin ? "entrada" : null, p.sirve_checkout ? "salida" : null]
                       .filter(Boolean)
                       .join(" · ") || "no se usa"}
                   </span>
                 </span>
                 {!p.activo && (
-                  <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+                  <span className="rounded-full bg-warm-100 px-2.5 py-0.5 text-xs font-medium text-tinta-suave">
                     Inactivo
                   </span>
                 )}

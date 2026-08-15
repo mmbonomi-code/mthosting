@@ -10,8 +10,8 @@ import SinAcceso from "../SinAcceso";
 function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</dt>
-      <dd className="text-base text-slate-200">{children ?? "—"}</dd>
+      <dt className="text-xs uppercase tracking-wide text-tinta-tenue">{etiqueta}</dt>
+      <dd className="text-base text-tinta">{children ?? "—"}</dd>
     </div>
   );
 }
@@ -57,21 +57,21 @@ export default async function NuevoReclamo({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href="/reclamos" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/reclamos" className="text-sm text-tinta-suave hover:text-tinta">
         ← Volver a reclamos
       </Link>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Nuevo reclamo
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-suave">
           Reserva <span className="font-mono">{reserva.codigo_reserva}</span>
         </p>
       </div>
 
-      <section className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-800/40 p-4">
-        <p className="text-lg font-medium text-white">
+      <section className="flex flex-col gap-4 rounded-md border border-borde bg-superficie p-4">
+        <p className="text-lg font-medium text-tinta">
           {reserva.huesped_nombre ?? "Sin nombre"}
         </p>
         <dl className="grid grid-cols-2 gap-4">
@@ -90,14 +90,14 @@ export default async function NuevoReclamo({
         {plazos ? (
           <p className={`text-sm ${TEXTO_SEMAFORO[estado.semaforo]}`}>
             <strong>{textoDePlazo(estado.dias)}.</strong>{" "}
-            <span className="text-slate-400">
+            <span className="text-tinta-suave">
               Centro de resoluciones hasta el {formatearFechaAR(plazos.limite_resolucion)}.
               Si el huésped no paga, AirCover hasta el{" "}
               {formatearFechaAR(plazos.limite_aircover)}.
             </span>
           </p>
         ) : (
-          <p className="text-sm text-amber-300">
+          <p className="text-sm text-aviso-text">
             Esta reserva no tiene fecha de check-out, así que no se pueden calcular los
             plazos.
           </p>
@@ -107,13 +107,13 @@ export default async function NuevoReclamo({
       <form action={crearReclamo.bind(null, reserva.id)}>
         <button
           type="submit"
-          className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200"
+          className="rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover"
         >
           Crear reclamo
         </button>
       </form>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-tinta-tenue">
         Se crea como borrador. El motivo y el monto se cargan en la ficha, y las fotos
         que haya subido la limpieza en ese check-out se adjuntan solas.
       </p>

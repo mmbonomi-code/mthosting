@@ -27,16 +27,16 @@ export default async function NuevoMovimiento() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href="/caja" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/caja" className="text-sm text-tinta-suave hover:text-tinta">
         ← Volver a la caja
       </Link>
 
-      <h1 className="text-2xl font-semibold tracking-tight text-white">
+      <h1 className="text-2xl font-semibold tracking-tight text-tinta">
         Nuevo movimiento
       </h1>
 
       {!cotizacionHoy && (
-        <p className="rounded-lg bg-slate-800/60 px-4 py-3 text-sm text-slate-400">
+        <p className="rounded-md bg-superficie px-4 py-3 text-sm text-tinta-suave">
           Todavía no cargaste la cotización de hoy. El movimiento se guarda igual;
           el valor en dólares aparece cuando la cargues en{" "}
           <Link href="/caja/cotizaciones" className="underline underline-offset-4">

@@ -6,9 +6,9 @@ import { clsBotonPrimario } from "@/lib/ui";
 
 function Contador({ etiqueta, valor }: { etiqueta: string; valor: number }) {
   return (
-    <div className="rounded-lg border border-slate-800 px-4 py-3">
-      <div className="text-2xl font-semibold text-white">{valor}</div>
-      <div className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</div>
+    <div className="rounded-md border border-borde px-4 py-3">
+      <div className="text-2xl font-semibold text-tinta">{valor}</div>
+      <div className="text-xs uppercase tracking-wide text-tinta-tenue">{etiqueta}</div>
     </div>
   );
 }
@@ -31,7 +31,7 @@ export default function BotonSincronizar({
       </div>
 
       {estado?.resultado === "error" && (
-        <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text">
           {estado.error}
         </p>
       )}
@@ -47,11 +47,11 @@ export default function BotonSincronizar({
           </div>
 
           {estado.resumen.avisos.length > 0 && (
-            <div className="rounded-xl border border-amber-900 bg-amber-950/40 px-4 py-3">
-              <h3 className="text-sm font-semibold text-amber-300">
+            <div className="rounded-md border border-aviso bg-aviso-soft/40 px-4 py-3">
+              <h3 className="text-sm font-semibold text-aviso-text">
                 Avisos ({estado.resumen.avisos.length})
               </h3>
-              <ul className="mt-2 flex flex-col gap-1 text-sm text-amber-200/80">
+              <ul className="mt-2 flex flex-col gap-1 text-sm text-aviso-text/80">
                 {estado.resumen.avisos.map((a, i) => (
                   <li key={i}>• {a}</li>
                 ))}

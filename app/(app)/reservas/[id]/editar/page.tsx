@@ -60,24 +60,24 @@ export default async function EditarReserva({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href={urlVolver} className="text-sm text-slate-400 hover:text-white">
+      <Link href={urlVolver} className="text-sm text-tinta-suave hover:text-tinta">
         ← Volver
       </Link>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           {creada ? "Reserva creada" : "Editar reserva"}
         </h1>
-        <p className="flex flex-wrap items-center gap-x-2 text-sm text-slate-400">
+        <p className="flex flex-wrap items-center gap-x-2 text-sm text-tinta-suave">
           <span className="font-mono">{reserva.codigo_reserva}</span>
           <span>· {ORIGEN[reserva.origen] ?? reserva.origen}</span>
           {!reserva.datos_completos && (
-            <span className="rounded-full bg-violet-950 px-2 py-0.5 text-xs text-violet-300">
+            <span className="rounded-full bg-excepcion-soft px-2 py-0.5 text-xs text-excepcion-text">
               Tentativa
             </span>
           )}
           {reserva.cancelada && (
-            <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs text-red-300">
+            <span className="rounded-full bg-error-soft px-2 py-0.5 text-xs text-error-text">
               Cancelada
             </span>
           )}
@@ -85,7 +85,7 @@ export default async function EditarReserva({
       </div>
 
       {creada && (
-        <p className="rounded-lg bg-emerald-950/60 px-4 py-3 text-sm text-emerald-200">
+        <p className="rounded-md bg-exito-soft/60 px-4 py-3 text-sm text-exito-text">
           ✓ Ya están armados el check-in, el check-out y la limpieza.{" "}
           {reserva.fecha_checkin && (
             <>Entra el {formatearFechaAR(reserva.fecha_checkin)}.</>
@@ -94,7 +94,7 @@ export default async function EditarReserva({
       )}
 
       {!reserva.datos_completos && (
-        <p className="rounded-lg bg-violet-950/40 px-4 py-3 text-sm text-violet-200">
+        <p className="rounded-md bg-excepcion-soft/40 px-4 py-3 text-sm text-excepcion-text">
           Esta reserva la trajo el calendario, así que solo se conocen las fechas.
           Cargale el nombre y el teléfono y deja de figurar como tentativa.
         </p>

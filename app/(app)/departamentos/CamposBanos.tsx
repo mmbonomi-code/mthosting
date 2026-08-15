@@ -17,7 +17,7 @@ export default function CamposBanos({
   return (
     <div className="flex flex-col gap-3 sm:col-span-2">
       {banos.length === 0 && (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-tinta-tenue">
           Este departamento todavía no tiene baños cargados.
         </p>
       )}
@@ -46,7 +46,7 @@ export default function CamposBanos({
             onClick={() =>
               setBanos((previos) => previos.filter((_, i) => i !== indice))
             }
-            className="h-11 shrink-0 rounded-lg border border-slate-700 px-4 text-sm text-slate-300 transition-colors hover:bg-slate-800"
+            className="h-11 shrink-0 rounded-md border border-borde-control px-4 text-sm text-tinta-suave transition-colors hover:bg-superficie-alt"
           >
             Quitar
           </button>
@@ -62,13 +62,13 @@ export default function CamposBanos({
               { tipo: "completo_ducha", detalle: "" },
             ])
           }
-          className="h-11 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+          className="h-11 rounded-md border border-borde-control px-4 text-sm font-medium text-tinta-suave transition-colors hover:bg-superficie-alt"
         >
           + Agregar baño
         </button>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-tinta-tenue">
         La cantidad de baños se cuenta sola, según cuántos agregues.
       </p>
     </div>

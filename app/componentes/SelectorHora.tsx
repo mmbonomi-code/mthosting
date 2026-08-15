@@ -14,7 +14,7 @@ const HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTOS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
 
 const clsParte =
-  "h-11 flex-1 rounded-lg border border-slate-700 bg-slate-800 px-2 text-center text-base text-white outline-none focus:border-slate-400";
+  "h-11 flex-1 rounded-md border border-borde-control bg-superficie-alt px-2 text-center text-base text-tinta outline-none focus:border-primary";
 
 export default function SelectorHora({
   name,
@@ -56,7 +56,7 @@ export default function SelectorHora({
           </option>
         ))}
       </select>
-      <span className="text-slate-500">:</span>
+      <span className="text-tinta-tenue">:</span>
       <select
         value={minuto}
         onChange={(e) => cambiar(hora || "00", e.target.value)}

@@ -35,22 +35,22 @@ export default function BuscadorReserva() {
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="self-start rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200"
+        className="self-start rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover"
       >
         + Cargar reclamo
       </button>
 
       {abierto && (
         <div
-          className="fixed inset-0 z-20 flex items-start justify-center bg-slate-950/70 p-4 pt-20"
+          className="fixed inset-0 z-20 flex items-start justify-center bg-fondo p-4 pt-20"
           onClick={cerrar}
         >
           <div
-            className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900"
+            className="flex w-full max-w-lg flex-col overflow-hidden rounded-md border border-borde-control bg-fondo"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="border-b border-slate-800 px-4 py-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <div className="border-b border-borde px-4 py-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-tinta-suave">
                 Buscar reserva
               </h2>
             </div>
@@ -68,19 +68,19 @@ export default function BuscadorReserva() {
 
             <div className="max-h-80 overflow-y-auto">
               {q.trim().length < 2 ? (
-                <p className="px-4 pb-4 text-sm text-slate-500">
+                <p className="px-4 pb-4 text-sm text-tinta-tenue">
                   Escribí al menos dos letras.
                 </p>
               ) : buscando ? (
-                <p className="px-4 pb-4 text-sm text-slate-500">Buscando…</p>
+                <p className="px-4 pb-4 text-sm text-tinta-tenue">Buscando…</p>
               ) : resultados.length === 0 ? (
-                <p className="px-4 pb-4 text-sm text-slate-500">
+                <p className="px-4 pb-4 text-sm text-tinta-tenue">
                   Ninguna reserva coincide. Probá con el código completo.
                 </p>
               ) : (
                 <ul className="flex flex-col">
                   {resultados.map((r) => (
-                    <li key={r.id} className="border-t border-slate-800">
+                    <li key={r.id} className="border-t border-borde">
                       <button
                         type="button"
                         onClick={() => {
@@ -91,22 +91,22 @@ export default function BuscadorReserva() {
                               : `/reclamos/nuevo?reserva=${r.id}`,
                           );
                         }}
-                        className="w-full px-4 py-3 text-left transition-colors hover:bg-slate-800"
+                        className="w-full px-4 py-3 text-left transition-colors hover:bg-superficie-alt"
                       >
                         <span className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium text-slate-100">
+                          <span className="font-medium text-tinta">
                             {r.huesped_nombre ?? "Sin nombre"}
                           </span>
-                          <span className="font-mono text-sm text-slate-400">
+                          <span className="font-mono text-sm text-tinta-suave">
                             {r.codigo_reserva}
                           </span>
                           {r.reclamo_id && (
-                            <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
+                            <span className="rounded-full bg-superficie-alt px-2 py-0.5 text-xs text-tinta-suave">
                               ya tiene reclamo
                             </span>
                           )}
                         </span>
-                        <span className="mt-0.5 block text-sm text-slate-500">
+                        <span className="mt-0.5 block text-sm text-tinta-tenue">
                           {r.depto ?? "Sin departamento"}
                           {r.fecha_checkin && r.fecha_checkout && (
                             <>
@@ -123,11 +123,11 @@ export default function BuscadorReserva() {
               )}
             </div>
 
-            <div className="flex justify-end border-t border-slate-800 px-4 py-3">
+            <div className="flex justify-end border-t border-borde px-4 py-3">
               <button
                 type="button"
                 onClick={cerrar}
-                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800"
+                className="rounded-md border border-borde-control px-3 py-1.5 text-sm text-tinta-suave hover:bg-superficie-alt"
               >
                 Cancelar
               </button>

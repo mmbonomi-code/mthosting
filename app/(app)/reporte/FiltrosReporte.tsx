@@ -84,10 +84,10 @@ export default function FiltrosReporte({
         )}
         <Link
           href={url({ cerrados: verCerrados ? "" : "1" })}
-          className={`flex items-center rounded-lg border px-3 py-2 text-sm transition-colors ${
+          className={`flex items-center rounded-md border px-3 py-2 text-sm transition-colors ${
             verCerrados
-              ? "border-slate-400 bg-slate-800 text-white"
-              : "border-slate-700 text-slate-300 hover:bg-slate-800"
+              ? "border-borde-fuerte bg-superficie-alt text-tinta"
+              : "border-borde-control text-tinta-suave hover:bg-superficie-alt"
           }`}
         >
           {etiquetaCerrados}
@@ -102,8 +102,8 @@ export default function FiltrosReporte({
             href={url({ responsable: "" })}
             className={`rounded-full px-3 py-1 text-sm transition-colors ${
               responsable === ""
-                ? "bg-slate-700 text-white"
-                : "text-slate-400 hover:bg-slate-800"
+                ? "bg-warm-100 text-tinta"
+                : "text-tinta-suave hover:bg-superficie-alt"
             }`}
           >
             Todos
@@ -114,8 +114,8 @@ export default function FiltrosReporte({
               href={url({ responsable: r.id })}
               className={`rounded-full px-3 py-1 text-sm transition-colors ${
                 responsable === r.id
-                  ? "bg-slate-700 text-white"
-                  : "text-slate-400 hover:bg-slate-800"
+                  ? "bg-warm-100 text-tinta"
+                  : "text-tinta-suave hover:bg-superficie-alt"
               }`}
             >
               {r.nombre}
@@ -125,8 +125,8 @@ export default function FiltrosReporte({
             href={url({ responsable: "sin_asignar" })}
             className={`rounded-full px-3 py-1 text-sm transition-colors ${
               responsable === "sin_asignar"
-                ? "bg-slate-700 text-white"
-                : "text-slate-400 hover:bg-slate-800"
+                ? "bg-warm-100 text-tinta"
+                : "text-tinta-suave hover:bg-superficie-alt"
             }`}
           >
             Sin asignar

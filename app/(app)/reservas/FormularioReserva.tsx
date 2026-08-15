@@ -54,7 +54,7 @@ export default function FormularioReserva({
   return (
     <form action={enviar} className="flex flex-col gap-4">
       {avisoAirbnb && (
-        <p className="rounded-lg bg-amber-950/40 px-4 py-3 text-sm text-amber-200">
+        <p className="rounded-md bg-aviso-soft/40 px-4 py-3 text-sm text-aviso-text">
           {avisoAirbnb}
         </p>
       )}
@@ -62,38 +62,38 @@ export default function FormularioReserva({
       {esAlta && (
         <fieldset className="flex flex-col gap-2">
           <legend className={clsEtiqueta}>¿De dónde sale esta reserva?</legend>
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-700 px-3 py-2.5 transition-colors hover:bg-slate-800/60">
+          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-borde-control px-3 py-2.5 transition-colors hover:bg-superficie">
             <input
               type="radio"
               name="tipo"
               value="directa"
               checked={tipo === "directa"}
               onChange={() => setTipo("directa")}
-              className="mt-1 size-4 accent-white"
+              className="mt-1 size-4 accent-primary"
             />
             <span>
-              <span className="block text-sm text-slate-100">
+              <span className="block text-sm text-tinta">
                 Reserva directa, fuera de Airbnb
               </span>
-              <span className="block text-xs text-slate-500">
+              <span className="block text-xs text-tinta-tenue">
                 Le generamos un código propio. Ninguna importación la va a tocar.
               </span>
             </span>
           </label>
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-700 px-3 py-2.5 transition-colors hover:bg-slate-800/60">
+          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-borde-control px-3 py-2.5 transition-colors hover:bg-superficie">
             <input
               type="radio"
               name="tipo"
               value="airbnb"
               checked={tipo === "airbnb"}
               onChange={() => setTipo("airbnb")}
-              className="mt-1 size-4 accent-white"
+              className="mt-1 size-4 accent-primary"
             />
             <span>
-              <span className="block text-sm text-slate-100">
+              <span className="block text-sm text-tinta">
                 De Airbnb, todavía no importada
               </span>
-              <span className="block text-xs text-slate-500">
+              <span className="block text-xs text-tinta-tenue">
                 Con el código real, la próxima importación la completa sola en vez
                 de duplicarla.
               </span>
@@ -117,7 +117,7 @@ export default function FormularioReserva({
       ) : (
         <div className="flex flex-col gap-1.5">
           <span className={clsEtiqueta}>Código de reserva</span>
-          <p className="font-mono text-base text-slate-300">{valores.codigo_reserva}</p>
+          <p className="font-mono text-base text-tinta-suave">{valores.codigo_reserva}</p>
         </div>
       )}
 
@@ -155,7 +155,7 @@ export default function FormularioReserva({
             placeholder="+54 9 11 4428-2700"
             className={clsEntrada}
           />
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-tinta-tenue">
             Si es argentino y le falta el 9 después del +54, se lo agregamos solo.
           </span>
         </label>
@@ -183,7 +183,7 @@ export default function FormularioReserva({
             className={clsEntrada}
             required
           />
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-tinta-tenue">
             {noches === null
               ? "La salida tiene que ser posterior a la entrada."
               : `${noches} noche${noches === 1 ? "" : "s"}.`}
@@ -236,12 +236,12 @@ export default function FormularioReserva({
       </label>
 
       {estado && "error" in estado && (
-        <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text">
           {estado.error}
         </p>
       )}
       {estado && "ok" in estado && (
-        <p className="rounded-lg bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
+        <p className="rounded-md bg-exito-soft px-4 py-3 text-sm text-exito-text">
           ✓ {estado.ok}
         </p>
       )}
@@ -250,20 +250,20 @@ export default function FormularioReserva({
         <button
           type="submit"
           disabled={pendiente}
-          className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
+          className="rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover disabled:opacity-60"
         >
           {pendiente ? "Guardando…" : esAlta ? "Crear reserva" : "Guardar cambios"}
         </button>
         <Link
           href={urlCancelar}
-          className="rounded-lg border border-slate-700 px-5 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800"
+          className="rounded-md border border-borde-control px-5 py-2.5 text-sm text-tinta-suave transition-colors hover:bg-superficie-alt"
         >
           Cancelar
         </Link>
       </div>
 
       {esAlta && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-tinta-tenue">
           Al crearla se arman solos el check-in, el check-out y la limpieza, igual
           que con una reserva importada.
         </p>

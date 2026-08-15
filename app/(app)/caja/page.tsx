@@ -54,9 +54,9 @@ function Numero({
 }) {
   const contenido = (
     <>
-      <span className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</span>
+      <span className="text-xs uppercase tracking-wide text-tinta-tenue">{etiqueta}</span>
       <span className={`text-2xl font-semibold tabular-nums ${color}`}>{valor}</span>
-      {detalle && <span className="text-xs text-slate-500">{detalle}</span>}
+      {detalle && <span className="text-xs text-tinta-tenue">{detalle}</span>}
     </>
   );
 
@@ -64,7 +64,7 @@ function Numero({
     return (
       <Link
         href={href}
-        className="flex flex-col gap-0.5 rounded-lg transition-colors hover:bg-slate-800/60"
+        className="flex flex-col gap-0.5 rounded-md transition-colors hover:bg-superficie"
       >
         {contenido}
       </Link>
@@ -201,21 +201,21 @@ export default async function Caja({
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Caja</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="text-2xl font-semibold tracking-tight text-tinta">Caja</h1>
+          <p className="text-sm text-tinta-suave">
             Ingresos y egresos. El saldo es el de este momento.
           </p>
         </div>
         <div className="flex gap-2">
           <Link
             href="/caja/por-cobrar"
-            className="rounded-lg border border-slate-700 px-3 py-2.5 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+            className="rounded-md border border-borde-control px-3 py-2.5 text-sm text-tinta transition-colors hover:bg-superficie-alt"
           >
             Por cobrar
           </Link>
           <Link
             href="/caja/nuevo"
-            className="rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200"
+            className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover"
           >
             + Movimiento
           </Link>
@@ -223,28 +223,28 @@ export default async function Caja({
       </div>
 
       {/* Lo que Maguie necesita para hacer caja */}
-      <section className="grid grid-cols-2 gap-4 rounded-xl border border-slate-800 bg-slate-800/40 p-4 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 rounded-md border border-borde bg-superficie p-4 sm:grid-cols-4">
         <Numero
           etiqueta="Saldo actual"
           valor={pesos(Number(saldoActual ?? 0))}
           detalle="al día de hoy"
-          color={Number(saldoActual ?? 0) < 0 ? "text-red-300" : "text-white"}
+          color={Number(saldoActual ?? 0) < 0 ? "text-error-text" : "text-tinta"}
         />
         <Numero
           etiqueta="Ingresos del mes"
           valor={pesos(totalPorTipo(movimientos, "ingreso"))}
-          color="text-emerald-300"
+          color="text-exito-text"
         />
         <Numero
           etiqueta="Egresos del mes"
           valor={pesos(totalPorTipo(movimientos, "egreso"))}
-          color="text-red-300"
+          color="text-error-text"
         />
         <Numero
           etiqueta="Por cobrar"
           valor={pesos(porCobrar)}
           detalle="reembolsos pendientes →"
-          color={porCobrar > 0 ? "text-amber-300" : "text-slate-400"}
+          color={porCobrar > 0 ? "text-aviso-text" : "text-tinta-suave"}
           href="/caja/por-cobrar"
         />
       </section>
@@ -264,7 +264,7 @@ export default async function Caja({
       />
 
       {soloPorCobrar ? (
-        <p className="text-xs text-amber-300">
+        <p className="text-xs text-aviso-text">
           {visibles.length} pendiente{visibles.length === 1 ? "" : "s"} de cobro, de
           toda la historia — no solo de este mes.{" "}
           <Link href="/caja/por-cobrar" className="underline underline-offset-4">
@@ -272,7 +272,7 @@ export default async function Caja({
           </Link>
         </p>
       ) : (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-tinta-tenue">
           {visibles.length} movimiento{visibles.length === 1 ? "" : "s"} ·{" "}
           {formatearFechaAR(desde)} al {formatearFechaAR(ultimoDia)} · arranca con{" "}
           {pesos(Number(saldoInicial ?? 0))}
@@ -280,8 +280,8 @@ export default async function Caja({
       )}
 
       {visibles.length === 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-300">No hay movimientos con estos filtros.</p>
+        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-suave">No hay movimientos con estos filtros.</p>
         </div>
       ) : (
         <ul className="flex flex-col gap-1.5">
@@ -289,32 +289,32 @@ export default async function Caja({
             <li key={m.id}>
               <Link
                 href={`/caja/${m.id}`}
-                className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-2.5 transition-colors hover:border-y-slate-600 hover:border-r-slate-600 ${
-                  m.tipo === "ingreso" ? "border-l-emerald-600" : "border-l-slate-700"
+                className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border-y border-r border-y-borde border-r-borde border-l-4 bg-superficie px-4 py-2.5 transition-colors hover:border-y-borde-fuerte hover:border-r-borde-fuerte ${
+                  m.tipo === "ingreso" ? "border-l-primary" : "border-l-borde-control"
                 }`}
               >
-                <span className="w-14 shrink-0 text-xs tabular-nums text-slate-500">
+                <span className="w-14 shrink-0 text-xs tabular-nums text-tinta-tenue">
                   {formatearFechaAR(m.fecha).slice(0, 5)}
                 </span>
 
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-slate-100">
+                  <span className="block truncate text-tinta">
                     {m.categoria_nombre ?? "Sin categoría"}
                     {m.descripcion && (
-                      <span className="font-normal text-slate-400"> · {m.descripcion}</span>
+                      <span className="font-normal text-tinta-suave"> · {m.descripcion}</span>
                     )}
                   </span>
                   <span className="flex flex-wrap items-center gap-x-2 text-xs">
                     {m.depto_codigo && (
-                      <span className="text-emerald-300">{m.depto_codigo}</span>
+                      <span className="text-exito-text">{m.depto_codigo}</span>
                     )}
                     {estaPendienteDeCobro(m) && (
-                      <span className="rounded-full bg-amber-950 px-2 py-0.5 text-amber-300">
+                      <span className="rounded-full bg-aviso-soft px-2 py-0.5 text-aviso-text">
                         por cobrar
                       </span>
                     )}
                     {m.reembolsable && m.fecha_cobro && (
-                      <span className="text-slate-500">
+                      <span className="text-tinta-tenue">
                         cobrado {formatearFechaAR(m.fecha_cobro)}
                         {m.forma_cobro && ` · ${m.forma_cobro}`}
                       </span>
@@ -325,19 +325,19 @@ export default async function Caja({
                 <span className="shrink-0 text-right">
                   <span
                     className={`block font-semibold tabular-nums ${
-                      m.tipo === "ingreso" ? "text-emerald-300" : "text-slate-100"
+                      m.tipo === "ingreso" ? "text-exito-text" : "text-tinta"
                     }`}
                   >
                     {m.tipo === "ingreso" ? "+" : "−"} {pesos(m.monto).replace("$ ", "")}
                   </span>
-                  <span className="block text-xs tabular-nums text-slate-500">
+                  <span className="block text-xs tabular-nums text-tinta-tenue">
                     {dolares(enDolares(m))}
                   </span>
                 </span>
 
                 {/* Con "por cobrar" no hay saldo: no es un período, es deuda. */}
                 {m.saldo !== null && (
-                  <span className="w-24 shrink-0 text-right text-xs tabular-nums text-slate-400">
+                  <span className="w-24 shrink-0 text-right text-xs tabular-nums text-tinta-suave">
                     {pesos(m.saldo)}
                   </span>
                 )}
@@ -347,18 +347,18 @@ export default async function Caja({
         </ul>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-        <Link href="/caja/cotizaciones" className="hover:text-slate-300">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-tinta-tenue">
+        <Link href="/caja/cotizaciones" className="hover:text-tinta-suave">
           Cotizaciones →
         </Link>
-        <Link href="/caja/categorias" className="hover:text-slate-300">
+        <Link href="/caja/categorias" className="hover:text-tinta-suave">
           Categorías →
         </Link>
         {pideCodigo && (
           <form action={bloquearCaja} className="ml-auto">
             <button
               type="submit"
-              className="rounded-lg border border-slate-800 px-2.5 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300"
+              className="rounded-md border border-borde px-2.5 py-1 text-xs text-tinta-tenue transition-colors hover:bg-superficie-alt hover:text-tinta-suave"
             >
               Cerrar la caja
             </button>

@@ -36,8 +36,8 @@ const MINUTOS_DE_FIRMA = 60;
 function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</dt>
-      <dd className="text-base text-slate-200">{children ?? "—"}</dd>
+      <dt className="text-xs uppercase tracking-wide text-tinta-tenue">{etiqueta}</dt>
+      <dd className="text-base text-tinta">{children ?? "—"}</dd>
     </div>
   );
 }
@@ -162,29 +162,29 @@ export default async function FichaReclamo({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href="/reclamos" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/reclamos" className="text-sm text-tinta-suave hover:text-tinta">
         ← Volver a reclamos
       </Link>
 
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-200">
+          <span className="rounded-full bg-superficie-alt px-2.5 py-0.5 text-xs font-medium text-tinta">
             {ETIQUETA_ESTADO[estado]}
           </span>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-tinta-tenue">
             {ETIQUETA_CATEGORIA[reclamo.categoria] ?? reclamo.categoria}
           </span>
         </div>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-tinta">
           {r.huesped_nombre ?? "Sin nombre"}
-          <span className="ml-3 font-mono text-lg font-normal text-emerald-300">
+          <span className="ml-3 font-mono text-lg font-normal text-exito-text">
             {depto?.codigo}
           </span>
         </h1>
       </div>
 
       {/* Bloque fijo: lo que viene de la reserva y no se edita acá */}
-      <section className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-800/40 p-4">
+      <section className="flex flex-col gap-4 rounded-md border border-borde bg-superficie p-4">
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Dato etiqueta="Código">
             <span className="font-mono">{r.codigo_reserva}</span>
@@ -200,12 +200,12 @@ export default async function FichaReclamo({
 
         {plazos ? (
           <div
-            className={`rounded-lg bg-slate-900/60 px-3 py-2.5 text-sm ${
+            className={`rounded-md bg-fondo px-3 py-2.5 text-sm ${
               TEXTO_SEMAFORO[plazo.semaforo]
             }`}
           >
             <strong>{textoDePlazo(plazo.dias)}</strong>
-            <p className="text-slate-400">
+            <p className="text-tinta-suave">
               Centro de resoluciones hasta el{" "}
               {formatearFechaAR(plazos.limite_resolucion)}: un día antes de que Airbnb
               cierre los {DIAS_REALES_AIRBNB} del check-out. AirCover hasta el{" "}
@@ -213,17 +213,17 @@ export default async function FichaReclamo({
             </p>
           </div>
         ) : (
-          <p className="rounded-lg bg-amber-950/40 px-3 py-2.5 text-sm text-amber-200">
+          <p className="rounded-md bg-aviso-soft/40 px-3 py-2.5 text-sm text-aviso-text">
             La reserva no tiene fecha de check-out: no se pueden calcular los plazos.
           </p>
         )}
 
         {/* El teléfono del huésped: el reclamo se negocia hablando con él
             antes de que Airbnb lo resuelva. */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">
+        <div className="flex flex-wrap items-center gap-2 border-t border-borde pt-3">
           {telefono ? (
             <>
-              <span className="font-mono text-sm text-slate-300">
+              <span className="font-mono text-sm text-tinta-suave">
                 {r.huesped_contacto}
               </span>
               <BotonCopiar texto={r.huesped_contacto!} />
@@ -231,13 +231,13 @@ export default async function FichaReclamo({
                 href={`https://wa.me/${telefono}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600"
+                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-tinta-inversa transition-colors hover:bg-primary-hover"
               >
                 WhatsApp
               </a>
             </>
           ) : (
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-tinta-tenue">
               Sin teléfono cargado
               {r.cancelada ? ": Airbnb lo borra al cancelar la reserva." : "."}
             </span>
@@ -248,7 +248,7 @@ export default async function FichaReclamo({
               href={reclamo.url_airbnb}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+              className="ml-auto rounded-md border border-borde-control px-3 py-1.5 text-sm text-tinta transition-colors hover:bg-superficie-alt"
             >
               Abrir el caso en Airbnb ↗
             </a>
@@ -270,7 +270,7 @@ export default async function FichaReclamo({
           soloLectura={cerrado}
         />
         {reclamo.monto_cobrado !== null && (
-          <p className="mt-3 rounded-lg bg-emerald-950/50 px-3 py-2 text-sm text-emerald-200">
+          <p className="mt-3 rounded-md bg-exito-soft/50 px-3 py-2 text-sm text-exito-text">
             Cobrado {formatearMonto(reclamo.monto_cobrado, reclamo.moneda)} de{" "}
             {formatearMonto(reclamo.monto_reclamado, reclamo.moneda)} reclamados.
           </p>
@@ -293,17 +293,17 @@ export default async function FichaReclamo({
               <span
                 className={`mt-1 size-3 shrink-0 rounded-full border-2 ${
                   h.hecho
-                    ? "border-emerald-500 bg-emerald-500"
-                    : "border-slate-600 bg-transparent"
+                    ? "border-exito bg-primary"
+                    : "border-borde-fuerte bg-transparent"
                 }`}
               />
               <span className="min-w-0">
                 <span
-                  className={`block text-sm ${h.hecho ? "text-slate-200" : "text-slate-500"}`}
+                  className={`block text-sm ${h.hecho ? "text-tinta" : "text-tinta-tenue"}`}
                 >
                   {h.titulo}
                 </span>
-                <span className="block text-xs text-slate-500">
+                <span className="block text-xs text-tinta-tenue">
                   {h.hecho ? momento(h.cuando) : "Pendiente"}
                   {h.titulo === "Cargado" && quienCargo?.nombre && ` · ${quienCargo.nombre}`}
                 </span>

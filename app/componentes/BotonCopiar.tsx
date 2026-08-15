@@ -14,7 +14,7 @@ export default function BotonCopiar({ texto }: { texto: string }) {
         setCopiado(true);
         setTimeout(() => setCopiado(false), 2000);
       }}
-      className="rounded-md border border-slate-700 px-2 py-1 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700"
+      className="rounded-md border border-borde-control px-2 py-1 text-xs font-medium text-tinta-suave transition-colors hover:bg-warm-100"
     >
       {copiado ? "✓ Copiado" : "Copiar"}
     </button>

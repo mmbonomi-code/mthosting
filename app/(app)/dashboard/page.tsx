@@ -21,14 +21,14 @@ const HAY_DATOS_DESDE = "2026-07-01";
 
 function Barra({ fila }: { fila: OcupacionDepto }) {
   return (
-    <div className="flex h-2 overflow-hidden rounded-full bg-slate-700">
+    <div className="flex h-2 overflow-hidden rounded-full bg-warm-100">
       <div
-        className="bg-emerald-500"
+        className="bg-primary"
         style={{ width: `${fila.pct_ocupado}%` }}
         title={`${fila.noches_ocupadas} noches ocupadas`}
       />
       <div
-        className="bg-amber-500"
+        className="bg-accent-hover"
         style={{ width: `${fila.pct_bloqueado}%` }}
         title={`${fila.noches_bloqueadas} noches bloqueadas`}
       />
@@ -49,9 +49,9 @@ function Numero({
 }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</span>
+      <span className="text-xs uppercase tracking-wide text-tinta-tenue">{etiqueta}</span>
       <span className={`text-3xl font-semibold tabular-nums ${color}`}>{valor}</span>
-      <span className="text-xs text-slate-500">{detalle}</span>
+      <span className="text-xs text-tinta-tenue">{detalle}</span>
     </div>
   );
 }
@@ -126,8 +126,8 @@ export default async function Dashboard({
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Dashboard</h1>
-        <p className="text-sm text-slate-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">Dashboard</h1>
+        <p className="text-sm text-tinta-suave">
           Ocupación de los {ids.length} departamentos en operación ·{" "}
           {formatearFechaAR(periodo.desde)} a {formatearFechaAR(ultimaNoche)}
         </p>
@@ -141,7 +141,7 @@ export default async function Dashboard({
       />
 
       {periodoIncompleto && (
-        <p className="rounded-lg bg-amber-950/40 px-4 py-3 text-sm text-amber-200">
+        <p className="rounded-md bg-aviso-soft/40 px-4 py-3 text-sm text-aviso-text">
           <strong>Ojo con este período:</strong> las reservas cargadas arrancan en{" "}
           {nombreDelMes("2026-07")}. Lo que se vea antes de esa fecha está
           incompleto, no vacío: falta importar el histórico de Airbnb.
@@ -149,29 +149,29 @@ export default async function Dashboard({
       )}
 
       {/* El total de la operación */}
-      <section className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-800/40 p-4">
+      <section className="flex flex-col gap-4 rounded-md border border-borde bg-superficie p-4">
         <div className="grid grid-cols-3 gap-4">
           <Numero
             etiqueta="Ocupado"
             valor={`${total.pct_ocupado}%`}
             detalle={`${total.noches_ocupadas} noches`}
-            color="text-emerald-300"
+            color="text-exito-text"
           />
           <Numero
             etiqueta="Bloqueado"
             valor={`${total.pct_bloqueado}%`}
             detalle={`${total.noches_bloqueadas} noches`}
-            color="text-amber-300"
+            color="text-aviso-text"
           />
           <Numero
             etiqueta="Libre"
             valor={`${total.pct_libre}%`}
             detalle={`${total.noches_libres} noches`}
-            color="text-slate-300"
+            color="text-tinta-suave"
           />
         </div>
         <Barra fila={total} />
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-400">
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-tinta-suave">
           <span>
             {total.reservas} reserva{total.reservas === 1 ? "" : "s"} empezaron en el
             período
@@ -179,13 +179,13 @@ export default async function Dashboard({
           {total.estadia_promedio !== null && (
             <span>
               Estadía promedio{" "}
-              <span className="text-slate-200">{total.estadia_promedio} noches</span>
+              <span className="text-tinta">{total.estadia_promedio} noches</span>
             </span>
           )}
           {total.pct_cancelacion !== null && (
             <span>
               Cancelación{" "}
-              <span className="text-slate-200">{total.pct_cancelacion}%</span> (
+              <span className="text-tinta">{total.pct_cancelacion}%</span> (
               {total.canceladas})
             </span>
           )}
@@ -195,15 +195,15 @@ export default async function Dashboard({
 
       {/* Departamento por departamento, del más ocupado al menos */}
       <section className="flex flex-col gap-2">
-        <h2 className="border-b border-slate-800 pb-1 font-medium text-white">
+        <h2 className="border-b border-borde pb-1 font-medium text-tinta">
           Por departamento
-          <span className="ml-2 text-sm font-normal text-slate-500">
+          <span className="ml-2 text-sm font-normal text-tinta-tenue">
             del más ocupado al menos
           </span>
         </h2>
 
         {ordenadas.length === 0 ? (
-          <p className="py-3 text-sm text-slate-600">
+          <p className="py-3 text-sm text-tinta-tenue">
             No hay departamentos en operación.
           </p>
         ) : (
@@ -213,24 +213,24 @@ export default async function Dashboard({
               return (
                 <li
                   key={fila.depto_id}
-                  className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3"
+                  className="flex flex-col gap-2 rounded-md border border-borde bg-superficie px-4 py-3"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                    <span className="min-w-0 truncate font-medium text-slate-100">
+                    <span className="min-w-0 truncate font-medium text-tinta">
                       {depto?.codigo}
                       {depto?.barrio && (
-                        <span className="font-normal text-slate-500">
+                        <span className="font-normal text-tinta-tenue">
                           {" "}
                           · {depto.barrio}
                         </span>
                       )}
                     </span>
                     <span className="tabular-nums">
-                      <span className="text-base font-semibold text-emerald-300">
+                      <span className="text-base font-semibold text-exito-text">
                         {fila.pct_ocupado}%
                       </span>
                       {fila.pct_bloqueado > 0 && (
-                        <span className="ml-2 text-sm text-amber-300">
+                        <span className="ml-2 text-sm text-aviso-text">
                           {fila.pct_bloqueado}% bloq.
                         </span>
                       )}
@@ -239,7 +239,7 @@ export default async function Dashboard({
 
                   <Barra fila={fila} />
 
-                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-500">
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-tinta-tenue">
                     <span className="tabular-nums">
                       {fila.noches_ocupadas} de {fila.noches_totales} noches
                     </span>
@@ -252,7 +252,7 @@ export default async function Dashboard({
                       </span>
                     )}
                     {fila.canceladas > 0 && (
-                      <span className="tabular-nums text-slate-400">
+                      <span className="tabular-nums text-tinta-suave">
                         {fila.pct_cancelacion}% cancelación ({fila.canceladas})
                       </span>
                     )}

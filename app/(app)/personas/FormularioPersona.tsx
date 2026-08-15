@@ -111,9 +111,9 @@ export default function FormularioPersona({
               type="checkbox"
               name={campo.nombre}
               defaultChecked={campo.valor ?? false}
-              className="size-5 accent-white"
+              className="size-5 accent-primary"
             />
-            <span className="text-base text-slate-200">{campo.etiqueta}</span>
+            <span className="text-base text-tinta">{campo.etiqueta}</span>
           </label>
         ))}
       </fieldset>
@@ -123,9 +123,9 @@ export default function FormularioPersona({
           type="checkbox"
           name="activo"
           defaultChecked={valores.activo ?? true}
-          className="size-5 accent-white"
+          className="size-5 accent-primary"
         />
-        <span className="text-base text-slate-200">
+        <span className="text-base text-tinta">
           Activa (al desactivar sale de los desplegables; el histórico queda)
         </span>
       </label>
@@ -133,7 +133,7 @@ export default function FormularioPersona({
       {estado?.error && (
         <p
           role="alert"
-          className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300 sm:col-span-2"
+          className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text sm:col-span-2"
         >
           {estado.error}
         </p>

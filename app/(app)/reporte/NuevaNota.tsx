@@ -33,7 +33,7 @@ export default function NuevaNota({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="self-start rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200"
+        className="self-start rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover"
       >
         + {seccion === "anuncio" ? "Nuevo aviso" : "Nuevo pendiente"}
       </button>
@@ -44,7 +44,7 @@ export default function NuevaNota({
     <form
       ref={formRef}
       action={enviar}
-      className="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-800/60 p-4"
+      className="flex flex-col gap-3 rounded-md border border-borde-control bg-superficie p-4"
     >
       <CamposNota
         seccion={seccion}
@@ -61,12 +61,12 @@ export default function NuevaNota({
       />
 
       {estado && "error" in estado && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-3 py-2 text-sm text-error-text">
           {estado.error}
         </p>
       )}
       {estado && "ok" in estado && (
-        <p className="rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+        <p className="rounded-md bg-exito-soft px-3 py-2 text-sm text-exito-text">
           ✓ {estado.ok} Podés seguir anotando.
         </p>
       )}
@@ -75,14 +75,14 @@ export default function NuevaNota({
         <button
           type="submit"
           disabled={pendiente}
-          className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-tinta-inversa hover:bg-primary-hover disabled:opacity-60"
         >
           {pendiente ? "Guardando…" : "Guardar"}
         </button>
         <button
           type="button"
           onClick={() => setAbierto(false)}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+          className="rounded-md border border-borde-control px-4 py-2 text-sm text-tinta-suave hover:bg-superficie-alt"
         >
           Cerrar
         </button>

@@ -51,7 +51,7 @@ export default async function EditarPersona({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-white">
+      <h1 className="text-2xl font-semibold tracking-tight text-tinta">
         {persona.nombre}
       </h1>
 
@@ -62,10 +62,10 @@ export default async function EditarPersona({
       />
 
       {puedeGestionarAcceso && (
-        <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
+        <section className="flex flex-col gap-3 rounded-md border border-borde p-4">
           <div>
-            <h2 className="font-medium text-white">Acceso al sistema</h2>
-            <p className="text-sm text-slate-400">
+            <h2 className="font-medium text-tinta">Acceso al sistema</h2>
+            <p className="text-sm text-tinta-suave">
               Las limpiadoras y la gobernanta necesitan usuario para entrar a la
               app desde el celular.
             </p>
@@ -74,16 +74,16 @@ export default async function EditarPersona({
           {persona.profile_id ? (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-emerald-300">
+                <p className="text-sm text-exito-text">
                   ✓ Entra a la app
                   {emailUsuario && (
-                    <span className="text-slate-400"> con {emailUsuario}</span>
+                    <span className="text-tinta-suave"> con {emailUsuario}</span>
                   )}
                 </p>
                 <form action={quitarAcceso.bind(null, id)}>
                   <button
                     type="submit"
-                    className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-slate-800"
+                    className="rounded-md border border-borde-control px-3 py-1.5 text-sm text-tinta-suave transition-colors hover:bg-superficie-alt"
                   >
                     Quitar acceso
                   </button>

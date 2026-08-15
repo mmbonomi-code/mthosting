@@ -20,7 +20,7 @@ export default function FormularioVincular({
 
   if (estado?.resultado === "ok") {
     return (
-      <p className="rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+      <p className="rounded-md bg-exito-soft px-3 py-2 text-sm text-exito-text">
         ✓ Anuncio vinculado.{" "}
         {estado.asignadas === 1
           ? "1 reserva asignada"
@@ -54,13 +54,13 @@ export default function FormularioVincular({
         <button
           type="submit"
           disabled={pendiente}
-          className="h-11 shrink-0 rounded-lg bg-white px-4 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
+          className="h-11 shrink-0 rounded-md bg-primary px-4 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover disabled:opacity-60"
         >
           {pendiente ? "Vinculando…" : "Vincular"}
         </button>
       </div>
       {estado?.resultado === "error" && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-3 py-2 text-sm text-error-text">
           {estado.error}
         </p>
       )}

@@ -35,22 +35,22 @@ export default async function Bandeja() {
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Reservas sin departamento
-          <span className="ml-2 text-base font-normal text-slate-500">
+          <span className="ml-2 text-base font-normal text-tinta-tenue">
             {reservas?.length ?? 0}
           </span>
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-suave">
           Anuncios que el sistema todavía no sabe a qué departamento
           corresponden. Se vinculan una sola vez.
         </p>
       </div>
 
       {porAnuncio.size === 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-300">No hay nada pendiente.</p>
-          <p className="mt-1 text-sm text-slate-500">
+        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-suave">No hay nada pendiente.</p>
+          <p className="mt-1 text-sm text-tinta-tenue">
             Todas las reservas importadas tienen su departamento asignado.
           </p>
         </div>
@@ -59,11 +59,11 @@ export default async function Bandeja() {
           {[...porAnuncio.entries()].map(([anuncio, delAnuncio]) => (
             <li
               key={anuncio}
-              className="flex flex-col gap-3 rounded-xl border border-amber-900/60 bg-amber-950/20 p-4"
+              className="flex flex-col gap-3 rounded-md border border-aviso/60 bg-aviso-soft/20 p-4"
             >
               <div>
-                <h2 className="font-medium text-white">{anuncio}</h2>
-                <p className="text-sm text-slate-400">
+                <h2 className="font-medium text-tinta">{anuncio}</h2>
+                <p className="text-sm text-tinta-suave">
                   {delAnuncio.length}{" "}
                   {delAnuncio.length === 1 ? "reserva" : "reservas"} esperando
                 </p>
@@ -71,8 +71,8 @@ export default async function Bandeja() {
 
               <ul className="flex flex-col gap-1 text-sm">
                 {delAnuncio.slice(0, 5).map((reserva) => (
-                  <li key={reserva.id} className="flex flex-wrap gap-x-3 text-slate-400">
-                    <span className="font-mono text-slate-300">
+                  <li key={reserva.id} className="flex flex-wrap gap-x-3 text-tinta-suave">
+                    <span className="font-mono text-tinta-suave">
                       {reserva.codigo_reserva}
                     </span>
                     <span>{reserva.huesped_nombre ?? "—"}</span>
@@ -86,12 +86,12 @@ export default async function Bandeja() {
                         : "—"}
                     </span>
                     {reserva.cancelada && (
-                      <span className="text-slate-600">cancelada</span>
+                      <span className="text-tinta-tenue">cancelada</span>
                     )}
                   </li>
                 ))}
                 {delAnuncio.length > 5 && (
-                  <li className="text-slate-500">
+                  <li className="text-tinta-tenue">
                     y {delAnuncio.length - 5} más…
                   </li>
                 )}

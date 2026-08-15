@@ -23,15 +23,15 @@ export default async function NuevaReserva({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href="/dia" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/dia" className="text-sm text-tinta-suave hover:text-tinta">
         ← Volver
       </Link>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Cargar reserva
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-suave">
           Para lo que no llega por la importación de Airbnb.
         </p>
       </div>

@@ -197,15 +197,15 @@ export default async function Reporte({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Reporte</h1>
-        <p className="text-sm text-slate-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">Reporte</h1>
+        <p className="text-sm text-tinta-suave">
           Lo que el back office se deja asentado. Cada cosa tiene su fecha y se
           marca hecha cuando se resuelve.
         </p>
       </div>
 
       {(urgentes > 0 || porLlevar > 0) && (
-        <p className="rounded-xl bg-red-950/60 px-4 py-3 text-sm text-red-200">
+        <p className="rounded-md bg-error-soft/60 px-4 py-3 text-sm text-error-text">
           {urgentes > 0 && (
             <>
               <strong>
@@ -215,7 +215,7 @@ export default async function Reporte({
             </>
           )}
           {porLlevar > 0 && (
-            <span className="text-red-300">
+            <span className="text-error-text">
               {porLlevar} {porLlevar === 1 ? "cuna o silla" : "cunas o sillas"} sin
               entregar.
             </span>
@@ -223,7 +223,7 @@ export default async function Reporte({
         </p>
       )}
 
-      <nav className="flex gap-1 border-b border-slate-800">
+      <nav className="flex gap-1 border-b border-borde">
         {PESTANIAS.map((p) => {
           const activa = p.valor === pestania;
           const cuenta =
@@ -238,13 +238,13 @@ export default async function Reporte({
               href={enlace(p.valor)}
               className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
                 activa
-                  ? "border-white text-white"
-                  : "border-transparent text-slate-400 hover:text-slate-200"
+                  ? "border-borde text-tinta"
+                  : "border-transparent text-tinta-suave hover:text-tinta"
               }`}
             >
               {p.texto}
               {cuenta > 0 && (
-                <span className="ml-1.5 text-xs text-slate-500">{cuenta}</span>
+                <span className="ml-1.5 text-xs text-tinta-tenue">{cuenta}</span>
               )}
             </Link>
           );
@@ -345,7 +345,7 @@ export default async function Reporte({
       )}
 
       {!puedeEscribir && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-tinta-tenue">
           Podés leer el reporte. Escribirlo es de back office, manager y
           administración.
         </p>
@@ -356,8 +356,8 @@ export default async function Reporte({
 
 function Vacio({ texto }: { texto: string }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-      <p className="text-slate-300">{texto}</p>
+    <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center">
+      <p className="text-tinta-suave">{texto}</p>
     </div>
   );
 }

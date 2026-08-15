@@ -35,10 +35,10 @@ export default async function Inicio() {
           action={crearPrimerAdmin}
           className="flex w-full max-w-sm flex-col gap-4 text-center"
         >
-          <h2 className="text-lg font-medium text-white">
+          <h2 className="text-lg font-medium text-tinta">
             Primer uso del sistema
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-tinta-suave">
             Todavía no hay personas cargadas. Creá tu ficha de administración
             para empezar.
           </p>
@@ -47,11 +47,11 @@ export default async function Inicio() {
             name="nombre"
             required
             placeholder="Tu nombre"
-            className="h-12 rounded-lg border border-slate-700 bg-slate-800 px-4 text-base text-white outline-none placeholder:text-slate-500 focus:border-slate-400"
+            className="h-12 rounded-md border border-borde-control bg-superficie-alt px-4 text-base text-tinta outline-none placeholder:text-tinta-tenue focus:border-primary"
           />
           <button
             type="submit"
-            className="h-12 rounded-lg bg-white text-base font-semibold text-slate-900 transition-colors hover:bg-slate-200"
+            className="h-12 rounded-md bg-primary text-base font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover"
           >
             Crear mi ficha de admin
           </button>
@@ -63,10 +63,10 @@ export default async function Inicio() {
   return (
     <main className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Hola, {persona?.nombre ?? user?.email}
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-suave">
           {persona?.rol ? NOMBRES_ROL[persona.rol] : "Sin rol asignado"}
         </p>
       </div>
@@ -74,25 +74,25 @@ export default async function Inicio() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           href="/departamentos"
-          className="rounded-xl border border-slate-800 bg-slate-800/50 p-5 transition-colors hover:border-slate-600"
+          className="rounded-md border border-borde bg-superficie p-5 transition-colors hover:border-borde-fuerte"
         >
-          <h2 className="font-medium text-white">Departamentos</h2>
-          <p className="mt-1 text-sm text-slate-400">
+          <h2 className="font-medium text-tinta">Departamentos</h2>
+          <p className="mt-1 text-sm text-tinta-suave">
             Fichas, direcciones, wifi y accesos
           </p>
         </Link>
         <Link
           href="/propietarios"
-          className="rounded-xl border border-slate-800 bg-slate-800/50 p-5 transition-colors hover:border-slate-600"
+          className="rounded-md border border-borde bg-superficie p-5 transition-colors hover:border-borde-fuerte"
         >
-          <h2 className="font-medium text-white">Propietarios</h2>
-          <p className="mt-1 text-sm text-slate-400">
+          <h2 className="font-medium text-tinta">Propietarios</h2>
+          <p className="mt-1 text-sm text-tinta-suave">
             Datos de contacto y acuerdos de pago
           </p>
         </Link>
       </div>
 
-      <p className="text-xs text-slate-600">
+      <p className="text-xs text-tinta-tenue">
         Fase 1 · Paso 2 — los módulos aparecen a medida que se construyen.
       </p>
     </main>

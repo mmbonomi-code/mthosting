@@ -57,7 +57,7 @@ export default function CamposNota({
             className={clsEntrada}
           />
           {!esAnuncio && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-tinta-tenue">
               Sin fecha no vence nunca y queda al fondo de la lista.
             </span>
           )}
@@ -72,7 +72,7 @@ export default function CamposNota({
               defaultValue={valores.fecha_hasta}
               className={clsEntrada}
             />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-tinta-tenue">
               Vacío: vale de la fecha de inicio en adelante.
             </span>
           </label>
@@ -109,7 +109,7 @@ export default function CamposNota({
             </option>
           ))}
         </select>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-tinta-tenue">
           Con departamento y fecha, el aviso aparece solo en la vista del día.
         </span>
       </label>

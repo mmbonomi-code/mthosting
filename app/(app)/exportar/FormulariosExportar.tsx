@@ -13,10 +13,10 @@ function Seccion({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
+    <section className="flex flex-col gap-3 rounded-md border border-borde p-4">
       <div>
-        <h2 className="font-medium text-white">{titulo}</h2>
-        <p className="text-sm text-slate-400">{descripcion}</p>
+        <h2 className="font-medium text-tinta">{titulo}</h2>
+        <p className="text-sm text-tinta-suave">{descripcion}</p>
       </div>
       {children}
     </section>
@@ -146,7 +146,7 @@ export default function FormulariosExportar({
               Google Contacts (CSV)
             </a>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-tinta-tenue">
             En el Excel el celular se escribe como texto: guardado como número
             se convierte en notación científica y el archivo llega roto.
           </p>

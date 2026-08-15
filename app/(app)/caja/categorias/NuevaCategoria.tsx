@@ -32,13 +32,13 @@ export default function NuevaCategoria({
         <button
           type="submit"
           disabled={pendiente}
-          className="rounded-lg bg-white px-4 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+          className="rounded-md bg-primary px-4 text-sm font-semibold text-tinta-inversa hover:bg-primary-hover disabled:opacity-60"
         >
           {pendiente ? "…" : "Agregar"}
         </button>
       </div>
       {estado && "error" in estado && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-3 py-2 text-sm text-error-text">
           {estado.error}
         </p>
       )}

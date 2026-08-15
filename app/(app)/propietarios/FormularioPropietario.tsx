@@ -86,15 +86,15 @@ export default function FormularioPropietario({
           type="checkbox"
           name="activo"
           defaultChecked={valores.activo ?? true}
-          className="size-5 accent-white"
+          className="size-5 accent-primary"
         />
-        <span className="text-base text-slate-200">Activo</span>
+        <span className="text-base text-tinta">Activo</span>
       </label>
 
       {estado?.error && (
         <p
           role="alert"
-          className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300 sm:col-span-2"
+          className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text sm:col-span-2"
         >
           {estado.error}
         </p>

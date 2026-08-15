@@ -6,11 +6,11 @@ import { clsBotonPrimario } from "@/lib/ui";
 
 function Contador({ etiqueta, valor, destacado = false }: { etiqueta: string; valor: number; destacado?: boolean }) {
   return (
-    <div className="rounded-lg border border-slate-800 px-4 py-3">
-      <div className={`text-2xl font-semibold ${destacado && valor > 0 ? "text-amber-300" : "text-white"}`}>
+    <div className="rounded-md border border-borde px-4 py-3">
+      <div className={`text-2xl font-semibold ${destacado && valor > 0 ? "text-aviso-text" : "text-tinta"}`}>
         {valor}
       </div>
-      <div className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</div>
+      <div className="text-xs uppercase tracking-wide text-tinta-tenue">{etiqueta}</div>
     </div>
   );
 }
@@ -23,9 +23,9 @@ export default function FormularioImportar() {
 
   return (
     <div className="flex flex-col gap-6">
-      <form action={enviar} className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+      <form action={enviar} className="flex flex-col gap-4 rounded-md border border-borde bg-superficie p-4">
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-slate-300">
+          <span className="text-sm font-medium text-tinta-suave">
             Archivos CSV de reservas de Airbnb
           </span>
           <input
@@ -34,9 +34,9 @@ export default function FormularioImportar() {
             accept=".csv,text/csv"
             multiple
             required
-            className="rounded-lg border border-dashed border-slate-600 bg-slate-800 px-4 py-6 text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-900"
+            className="rounded-md border border-dashed border-borde-fuerte bg-superficie-alt px-4 py-6 text-sm text-tinta-suave file:mr-4 file:rounded-md file:border-0 file:bg-superficie file:px-4 file:py-2 file:text-sm file:font-semibold file:text-tinta"
           />
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-tinta-tenue">
             Se pueden subir varios a la vez: se ordenan por la fecha del nombre
             y, si una reserva aparece en más de uno, gana el más reciente. Si un
             archivo está dañado, no se importa nada de nada.
@@ -50,7 +50,7 @@ export default function FormularioImportar() {
       </form>
 
       {estado?.resultado === "error" && (
-        <div role="alert" className="rounded-xl bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div role="alert" className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text">
           <p className="font-semibold">No se importó nada.</p>
           <p className="mt-1 whitespace-pre-wrap">{estado.error}</p>
         </div>
@@ -58,7 +58,7 @@ export default function FormularioImportar() {
 
       {estado?.resultado === "ok" && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-medium text-white">
+          <h2 className="text-lg font-medium text-tinta">
             Resultado del lote ({estado.resumen.archivos}{" "}
             {estado.resumen.archivos === 1 ? "archivo" : "archivos"},{" "}
             {estado.resumen.filas_total} reservas)
@@ -73,7 +73,7 @@ export default function FormularioImportar() {
           </div>
 
           <div>
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-tinta-tenue">
               Limpiezas
             </h3>
             <div className="grid grid-cols-3 gap-3">
@@ -84,11 +84,11 @@ export default function FormularioImportar() {
           </div>
 
           {estado.resumen.anomalias.length > 0 && (
-            <div className="rounded-xl border border-amber-900 bg-amber-950/40 px-4 py-3">
-              <h3 className="text-sm font-semibold text-amber-300">
+            <div className="rounded-md border border-aviso bg-aviso-soft/40 px-4 py-3">
+              <h3 className="text-sm font-semibold text-aviso-text">
                 Anomalías ({estado.resumen.anomalias.length})
               </h3>
-              <ul className="mt-2 flex flex-col gap-1 text-sm text-amber-200/80">
+              <ul className="mt-2 flex flex-col gap-1 text-sm text-aviso-text/80">
                 {estado.resumen.anomalias.map((anomalia, i) => (
                   <li key={i}>• {anomalia}</li>
                 ))}
@@ -97,9 +97,9 @@ export default function FormularioImportar() {
           )}
 
           {estado.resumen.advertencias.length > 0 && (
-            <div className="rounded-xl border border-slate-700 px-4 py-3">
-              <h3 className="text-sm font-semibold text-slate-300">Advertencias</h3>
-              <ul className="mt-2 flex flex-col gap-1 text-sm text-slate-400">
+            <div className="rounded-md border border-borde-control px-4 py-3">
+              <h3 className="text-sm font-semibold text-tinta-suave">Advertencias</h3>
+              <ul className="mt-2 flex flex-col gap-1 text-sm text-tinta-suave">
                 {estado.resumen.advertencias.map((advertencia, i) => (
                   <li key={i}>• {advertencia}</li>
                 ))}

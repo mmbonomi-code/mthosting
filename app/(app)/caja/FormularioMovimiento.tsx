@@ -78,12 +78,12 @@ export default function FormularioMovimiento({
         {(["egreso", "ingreso"] as const).map((t) => (
           <label
             key={t}
-            className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+            className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2.5 text-sm transition-colors ${
               tipo === t
                 ? t === "ingreso"
-                  ? "border-emerald-600 bg-emerald-950/40 text-emerald-200"
-                  : "border-slate-400 bg-slate-800 text-white"
-                : "border-slate-700 text-slate-400 hover:bg-slate-800/60"
+                  ? "border-exito bg-exito-soft/40 text-exito-text"
+                  : "border-borde-fuerte bg-superficie-alt text-tinta"
+                : "border-borde-control text-tinta-suave hover:bg-superficie"
             }`}
           >
             <input
@@ -131,8 +131,8 @@ export default function FormularioMovimiento({
       </div>
 
       {esCambio ? (
-        <div className="flex flex-col gap-3 rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-4">
-          <p className="text-xs uppercase tracking-wide text-emerald-400">
+        <div className="flex flex-col gap-3 rounded-md border border-exito/60 bg-exito-soft/20 p-4">
+          <p className="text-xs uppercase tracking-wide text-exito-text">
             Cambio de dólares
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -163,13 +163,13 @@ export default function FormularioMovimiento({
               />
             </label>
           </div>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-tinta-suave">
             Entran{" "}
-            <strong className="text-lg tabular-nums text-emerald-300">
+            <strong className="text-lg tabular-nums text-exito-text">
               {pesosCalculados === null ? "—" : `$ ${conPuntos(pesosCalculados)}`}
             </strong>
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-tinta-tenue">
             Los gastos que se paguen con esta plata van a costar a este tipo de
             cambio, no al dólar del día.
           </p>
@@ -186,7 +186,7 @@ export default function FormularioMovimiento({
             placeholder="367600"
             className={clsEntrada}
           />
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-tinta-tenue">
             Siempre positivo. El signo lo da si entra o sale.
           </span>
         </label>
@@ -223,19 +223,19 @@ export default function FormularioMovimiento({
 
       {/* El reembolso solo tiene sentido si hay a quién cobrárselo. */}
       {depto !== "" && (
-        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-700 px-3 py-2.5 transition-colors hover:bg-slate-800/60">
+        <label className="flex cursor-pointer items-start gap-3 rounded-md border border-borde-control px-3 py-2.5 transition-colors hover:bg-superficie">
           <input
             type="checkbox"
             name="reembolsable"
             checked={reembolsable}
             onChange={(e) => setReembolsable(e.target.checked)}
-            className="mt-0.5 size-5 accent-amber-400"
+            className="mt-0.5 size-5 accent-primary"
           />
           <span>
-            <span className="block text-base text-slate-100">
+            <span className="block text-base text-tinta">
               Lo reembolsa el propietario
             </span>
-            <span className="block text-xs text-slate-500">
+            <span className="block text-xs text-tinta-tenue">
               Queda pendiente de cobro hasta que lo marques cobrado.
             </span>
           </span>
@@ -243,12 +243,12 @@ export default function FormularioMovimiento({
       )}
 
       {estado && "error" in estado && (
-        <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text">
           {estado.error}
         </p>
       )}
       {estado && "ok" in estado && (
-        <p className="rounded-lg bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
+        <p className="rounded-md bg-exito-soft px-4 py-3 text-sm text-exito-text">
           ✓ {estado.ok}
         </p>
       )}
@@ -257,13 +257,13 @@ export default function FormularioMovimiento({
         <button
           type="submit"
           disabled={pendiente}
-          className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
+          className="rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover disabled:opacity-60"
         >
           {pendiente ? "Guardando…" : esAlta ? "Guardar movimiento" : "Guardar cambios"}
         </button>
         <Link
           href={urlCancelar}
-          className="rounded-lg border border-slate-700 px-5 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800"
+          className="rounded-md border border-borde-control px-5 py-2.5 text-sm text-tinta-suave transition-colors hover:bg-superficie-alt"
         >
           Cancelar
         </Link>

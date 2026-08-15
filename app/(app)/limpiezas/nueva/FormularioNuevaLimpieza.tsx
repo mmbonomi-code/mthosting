@@ -79,7 +79,7 @@ export default function FormularioNuevaLimpieza({
         <textarea name="notas" className={clsAreaTexto} />
       </label>
 
-      <p className="text-xs text-slate-500 sm:col-span-2">
+      <p className="text-xs text-tinta-tenue sm:col-span-2">
         Si ese día hay un huésped alojado, la limpieza queda vinculada a su
         reserva automáticamente.
       </p>
@@ -87,7 +87,7 @@ export default function FormularioNuevaLimpieza({
       {estado?.error && (
         <p
           role="alert"
-          className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300 sm:col-span-2"
+          className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text sm:col-span-2"
         >
           {estado.error}
         </p>

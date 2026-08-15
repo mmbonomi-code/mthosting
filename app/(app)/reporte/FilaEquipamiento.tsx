@@ -57,12 +57,12 @@ export default function FilaEquipamiento({
   const atrasada = equipo.estado === "pedido" && equipo.fecha_desde < hoy;
 
   const borde = atrasada
-    ? "border-l-red-500"
+    ? "border-l-error"
     : hayQueLlevarla || hayQueRetirarla
-      ? "border-l-amber-500"
+      ? "border-l-accent"
       : equipo.estado === "retirado"
-        ? "border-l-emerald-700"
-        : "border-l-slate-700";
+        ? "border-l-primary"
+        : "border-l-borde-control";
 
   const siguiente = SIGUIENTE[equipo.estado];
 
@@ -74,7 +74,7 @@ export default function FilaEquipamiento({
             enviar(fd);
             setEditando(false);
           }}
-          className="flex flex-col gap-3 rounded-xl border border-slate-600 bg-slate-800/60 p-4"
+          className="flex flex-col gap-3 rounded-md border border-borde-fuerte bg-superficie p-4"
         >
           <fieldset className="flex flex-col gap-1.5">
             <legend className={clsEtiqueta}>Qué es</legend>
@@ -82,14 +82,14 @@ export default function FilaEquipamiento({
               {TIPOS.map((t) => (
                 <label
                   key={t}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+                  className="flex cursor-pointer items-center gap-2 rounded-md border border-borde-control px-3 py-2 text-sm text-tinta transition-colors hover:bg-superficie-alt"
                 >
                   <input
                     type="radio"
                     name="tipo"
                     value={t}
                     defaultChecked={equipo.tipo === t}
-                    className="size-4 accent-white"
+                    className="size-4 accent-primary"
                   />
                   {ETIQUETA_TIPO[t]}
                 </label>
@@ -100,9 +100,9 @@ export default function FilaEquipamiento({
           {/* Colgado de una reserva, el departamento es el de ella: cambiarlo
               acá los dejaría diciendo cosas distintas. */}
           {equipo.reserva_id ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-tinta-tenue">
               Va con la reserva{" "}
-              <span className="font-mono text-slate-400">{equipo.codigo_reserva}</span>
+              <span className="font-mono text-tinta-suave">{equipo.codigo_reserva}</span>
               {equipo.depto_codigo && ` · ${equipo.depto_codigo}`}. Para cambiar de
               departamento, archivalo y anotalo de nuevo.
             </p>
@@ -161,14 +161,14 @@ export default function FilaEquipamiento({
             <button
               type="submit"
               disabled={guardando}
-              className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-tinta-inversa hover:bg-primary-hover disabled:opacity-60"
             >
               {guardando ? "Guardando…" : "Guardar"}
             </button>
             <button
               type="button"
               onClick={() => setEditando(false)}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              className="rounded-md border border-borde-control px-4 py-2 text-sm text-tinta-suave hover:bg-superficie-alt"
             >
               Cancelar
             </button>
@@ -180,47 +180,47 @@ export default function FilaEquipamiento({
 
   return (
     <li
-      className={`flex flex-wrap items-start gap-3 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 ${borde} ${
+      className={`flex flex-wrap items-start gap-3 rounded-md border-y border-r border-y-borde border-r-borde border-l-4 bg-superficie px-4 py-3 ${borde} ${
         pendiente ? "opacity-60" : ""
       }`}
     >
       <div className="min-w-0 flex-1">
-        <p className="font-medium text-slate-100">
+        <p className="font-medium text-tinta">
           {ETIQUETA_TIPO[equipo.tipo]}
-          <span className="font-normal text-emerald-300">
+          <span className="font-normal text-exito-text">
             {" "}
             · {equipo.depto_codigo ?? "Sin departamento"}
           </span>
         </p>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-suave">
           {formatearFechaAR(equipo.fecha_desde)} al{" "}
           {formatearFechaAR(equipo.fecha_hasta)}
           {equipo.huesped_nombre && ` · ${equipo.huesped_nombre}`}
           {equipo.codigo_reserva && (
-            <span className="font-mono text-slate-500"> · {equipo.codigo_reserva}</span>
+            <span className="font-mono text-tinta-tenue"> · {equipo.codigo_reserva}</span>
           )}
         </p>
         {equipo.notas && (
-          <p className="whitespace-pre-wrap text-sm text-slate-500">{equipo.notas}</p>
+          <p className="whitespace-pre-wrap text-sm text-tinta-tenue">{equipo.notas}</p>
         )}
         <p className="mt-0.5 text-xs">
           {atrasada ? (
-            <span className="text-red-300">
+            <span className="text-error-text">
               Tenía que estar el {formatearFechaAR(equipo.fecha_desde)} y sigue sin
               entregarse
             </span>
           ) : hayQueLlevarla ? (
-            <span className="text-amber-300">Hay que llevarla hoy</span>
+            <span className="text-aviso-text">Hay que llevarla hoy</span>
           ) : hayQueRetirarla ? (
-            <span className="text-amber-300">Hay que retirarla hoy</span>
+            <span className="text-aviso-text">Hay que retirarla hoy</span>
           ) : (
-            <span className="text-slate-500">
+            <span className="text-tinta-tenue">
               {ETIQUETA_ESTADO_EQUIPAMIENTO[equipo.estado]}
             </span>
           )}
         </p>
         {estado && "error" in estado && (
-          <p role="alert" className="mt-1 text-xs text-red-300">
+          <p role="alert" className="mt-1 text-xs text-error-text">
             {estado.error}
           </p>
         )}
@@ -233,7 +233,7 @@ export default function FilaEquipamiento({
               type="button"
               disabled={pendiente}
               onClick={() => iniciar(async () => cambiarEstado(siguiente))}
-              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 disabled:opacity-60"
+              className="rounded-md border border-borde-control px-3 py-1.5 text-xs text-tinta hover:bg-superficie-alt disabled:opacity-60"
             >
               {ACCION[equipo.estado]}
             </button>
@@ -241,7 +241,7 @@ export default function FilaEquipamiento({
           <button
             type="button"
             onClick={() => setEditando(true)}
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800"
+            className="rounded-md border border-borde-control px-3 py-1.5 text-xs text-tinta hover:bg-superficie-alt"
           >
             Editar
           </button>
@@ -249,7 +249,7 @@ export default function FilaEquipamiento({
             type="button"
             disabled={pendiente}
             onClick={() => iniciar(async () => archivar())}
-            className="rounded-lg px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-800 hover:text-slate-300 disabled:opacity-60"
+            className="rounded-md px-2 py-1.5 text-xs text-tinta-tenue hover:bg-superficie-alt hover:text-tinta-suave disabled:opacity-60"
           >
             Archivar
           </button>

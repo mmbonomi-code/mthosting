@@ -35,7 +35,7 @@ export function FormularioJuegoTarifas({
             defaultValue={hoy}
             className={clsEntrada}
           />
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-tinta-tenue">
             Toda limpieza de esa fecha en adelante toma estos valores.
           </span>
         </label>
@@ -66,7 +66,7 @@ export function FormularioJuegoTarifas({
       </div>
 
       {estado?.error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text">
           {estado.error}
         </p>
       )}
@@ -130,13 +130,13 @@ export function FormularioTarifaDepto({
         <button
           type="submit"
           disabled={pendiente}
-          className="h-11 shrink-0 rounded-lg bg-white px-4 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
+          className="h-11 shrink-0 rounded-md bg-primary px-4 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover disabled:opacity-60"
         >
           {pendiente ? "Guardando…" : "Agregar"}
         </button>
       </div>
       {estado?.error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-3 py-2 text-sm text-error-text">
           {estado.error}
         </p>
       )}

@@ -29,13 +29,13 @@ export default async function Cotizaciones() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href="/caja" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/caja" className="text-sm text-tinta-suave hover:text-tinta">
         ← Volver a la caja
       </Link>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Cotizaciones</h1>
-        <p className="text-sm text-slate-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">Cotizaciones</h1>
+        <p className="text-sm text-tinta-suave">
           El dólar de cada día. Al guardarlo se completan solos los movimientos de
           esa fecha que lo estaban esperando.
         </p>
@@ -50,12 +50,12 @@ export default async function Cotizaciones() {
       />
 
       {diasPendientes.length > 0 && (
-        <section className="rounded-xl border border-amber-900/60 bg-amber-950/30 p-4">
-          <h2 className="text-sm font-medium text-amber-200">
+        <section className="rounded-md border border-aviso/60 bg-aviso-soft/30 p-4">
+          <h2 className="text-sm font-medium text-aviso-text">
             {diasPendientes.length} día{diasPendientes.length === 1 ? "" : "s"} con
             movimientos sin cotización
           </h2>
-          <p className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-amber-400/90">
+          <p className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-aviso-text/90">
             {diasPendientes.slice(0, 40).map((f) => (
               <span key={f} className="tabular-nums">
                 {formatearFechaAR(f)}
@@ -67,14 +67,14 @@ export default async function Cotizaciones() {
       )}
 
       <section className="flex flex-col gap-2">
-        <h2 className="border-b border-slate-800 pb-1 font-medium text-white">
+        <h2 className="border-b border-borde pb-1 font-medium text-tinta">
           Cargadas
-          <span className="ml-2 text-sm font-normal text-slate-500">
+          <span className="ml-2 text-sm font-normal text-tinta-tenue">
             {(cotizaciones ?? []).length}
           </span>
         </h2>
         {(cotizaciones ?? []).length === 0 ? (
-          <p className="py-6 text-center text-sm text-slate-500">
+          <p className="py-6 text-center text-sm text-tinta-tenue">
             Todavía no hay ninguna cargada.
           </p>
         ) : (
@@ -82,12 +82,12 @@ export default async function Cotizaciones() {
             {(cotizaciones ?? []).map((c) => (
               <li
                 key={c.fecha}
-                className="flex items-baseline justify-between rounded-lg border border-slate-800 bg-slate-800/40 px-3 py-2"
+                className="flex items-baseline justify-between rounded-md border border-borde bg-superficie px-3 py-2"
               >
-                <span className="text-sm tabular-nums text-slate-400">
+                <span className="text-sm tabular-nums text-tinta-suave">
                   {formatearFechaAR(c.fecha)}
                 </span>
-                <span className="font-medium tabular-nums text-slate-100">
+                <span className="font-medium tabular-nums text-tinta">
                   {c.tc.toLocaleString("es-AR")}
                 </span>
               </li>

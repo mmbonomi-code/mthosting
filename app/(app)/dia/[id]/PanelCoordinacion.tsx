@@ -108,16 +108,16 @@ export default function PanelCoordinacion({
     });
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+    <section className="flex flex-col gap-4 rounded-md border border-borde-control bg-superficie p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-medium text-white">Coordinación</h2>
-        <span className="text-xs text-slate-500">
+        <h2 className="font-medium text-tinta">Coordinación</h2>
+        <span className="text-xs text-tinta-tenue">
           {guardando ? "Guardando…" : guardado ? "✓ Guardado" : "Se guarda solo"}
         </span>
       </div>
 
       {sinTiempo && (
-        <p className="rounded-lg bg-red-950 px-3 py-2.5 text-sm text-red-200">
+        <p className="rounded-md bg-error-soft px-3 py-2.5 text-sm text-error-text">
           <strong>No dan los tiempos:</strong> ese día sale otro huésped a las{" "}
           {horaSalidaMismoDia?.slice(0, 5)} y no queda margen para limpiar antes
           de esta llegada. Hay que negociar el horario con alguno de los dos.
@@ -126,11 +126,11 @@ export default function PanelCoordinacion({
 
       {/* Qué falta, arriba de todo: es lo primero que hay que ver */}
       {faltantes.length === 0 ? (
-        <p className="rounded-lg bg-emerald-950/60 px-3 py-2.5 text-sm font-medium text-emerald-200">
+        <p className="rounded-md bg-exito-soft/60 px-3 py-2.5 text-sm font-medium text-exito-text">
           ✓ Coordinado: no falta nada.
         </p>
       ) : (
-        <p className="rounded-lg bg-amber-950/40 px-3 py-2.5 text-sm text-amber-200">
+        <p className="rounded-md bg-aviso-soft/40 px-3 py-2.5 text-sm text-aviso-text">
           <span className="font-medium">Falta:</span> {faltantes.join(" · ")}
         </p>
       )}
@@ -168,7 +168,7 @@ export default function PanelCoordinacion({
         </label>
 
         {elegida?.instrucciones && (
-          <p className="whitespace-pre-wrap rounded-lg bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
+          <p className="whitespace-pre-wrap rounded-md bg-fondo px-3 py-2 text-sm text-tinta-suave">
             {elegida.instrucciones}
           </p>
         )}
@@ -178,10 +178,10 @@ export default function PanelCoordinacion({
             riesgoso: una sola persona donde hacen falta dos. */}
         {esSelf && avisoSelf && (
           <div
-            className={`rounded-lg px-3 py-2 text-sm ${
+            className={`rounded-md px-3 py-2 text-sm ${
               requiereConfirmacionSelf
-                ? "bg-amber-950/50 text-amber-200"
-                : "bg-slate-900/60 text-slate-300"
+                ? "bg-aviso-soft/50 text-aviso-text"
+                : "bg-fondo text-tinta-suave"
             }`}
           >
             {avisoSelf}
@@ -191,7 +191,7 @@ export default function PanelCoordinacion({
                   type="checkbox"
                   name="confirmar_self"
                   onChange={guardarAhora}
-                  className="size-4 accent-amber-400"
+                  className="size-4 accent-primary"
                 />
                 <span className="text-xs">Confirmo igual</span>
               </label>
@@ -213,7 +213,7 @@ export default function PanelCoordinacion({
               className={clsEntrada}
             />
             {fechaDistinta && (
-              <span className="text-xs text-sky-300">
+              <span className="text-xs text-dato-text">
                 Distinta a la de la reserva. La limpieza no se mueve.
               </span>
             )}
@@ -229,13 +229,13 @@ export default function PanelCoordinacion({
               }}
             />
             {salidaTarde && (
-              <span className="text-xs text-amber-300">
+              <span className="text-xs text-aviso-text">
                 Sale después de las {horaLimiteCheckout.slice(0, 5)}: queda poco
                 tiempo para limpiar.
               </span>
             )}
             {horaSalidaMismoDia && !esCheckout && (
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-tinta-tenue">
                 Ese día sale otro huésped a las {horaSalidaMismoDia.slice(0, 5)}.
               </span>
             )}
@@ -262,7 +262,7 @@ export default function PanelCoordinacion({
         </label>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+          <p role="alert" className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text">
             {error}
           </p>
         )}
@@ -279,10 +279,10 @@ function Casilla({ tilde }: { tilde: Tilde }) {
   return (
     <div className="flex flex-col gap-1">
       <label
-        className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
+        className={`flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 transition-colors ${
           activo
-            ? "border-emerald-800 bg-emerald-950/30"
-            : "border-slate-700 hover:bg-slate-800/60"
+            ? "border-exito bg-exito-soft/30"
+            : "border-borde-control hover:bg-superficie"
         } ${pendiente ? "opacity-60" : ""}`}
       >
         <input
@@ -296,17 +296,17 @@ function Casilla({ tilde }: { tilde: Tilde }) {
               await tilde.accion(valor);
             });
           }}
-          className="size-5 shrink-0 accent-white"
+          className="size-5 shrink-0 accent-primary"
         />
         <span className="min-w-0">
-          <span className="block text-base text-slate-100">{tilde.etiqueta}</span>
+          <span className="block text-base text-tinta">{tilde.etiqueta}</span>
           {tilde.detalle && (
-            <span className="block text-xs text-slate-400">{tilde.detalle}</span>
+            <span className="block text-xs text-tinta-suave">{tilde.detalle}</span>
           )}
         </span>
       </label>
       {activo && tilde.avisoAlActivar && (
-        <p className="rounded-lg bg-amber-950/60 px-3 py-2 text-sm text-amber-200">
+        <p className="rounded-md bg-aviso-soft/60 px-3 py-2 text-sm text-aviso-text">
           {tilde.avisoAlActivar}
         </p>
       )}

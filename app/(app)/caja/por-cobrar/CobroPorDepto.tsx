@@ -46,49 +46,49 @@ export default function CobroPorDepto({
     );
 
   return (
-    <li className="overflow-hidden rounded-xl border border-slate-800 bg-slate-800/40">
+    <li className="overflow-hidden rounded-md border border-borde bg-superficie">
       <button
         type="button"
         onClick={() => setAbierto(!abierto)}
         aria-expanded={abierto}
-        className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-800/60"
+        className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-superficie"
       >
         <span className="min-w-0 flex-1">
-          <span className="block font-medium text-slate-100">{deuda.depto_codigo}</span>
-          <span className="block text-xs text-slate-500">
+          <span className="block font-medium text-tinta">{deuda.depto_codigo}</span>
+          <span className="block text-xs text-tinta-tenue">
             {deuda.cantidad} movimiento{deuda.cantidad === 1 ? "" : "s"} · el más viejo
             del {desdeTexto}
           </span>
         </span>
-        <span className="text-lg font-semibold tabular-nums text-amber-200">
+        <span className="text-lg font-semibold tabular-nums text-aviso-text">
           {totalTexto}
         </span>
-        <span className="text-slate-400">{abierto ? "▾" : "▸"}</span>
+        <span className="text-tinta-suave">{abierto ? "▾" : "▸"}</span>
       </button>
 
       {abierto && (
-        <div className="border-t border-slate-800 px-4 py-3">
+        <div className="border-t border-borde px-4 py-3">
           <ul className="flex flex-col gap-1">
             {movimientos.map((m) => (
               <li key={m.id}>
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-800/60">
+                <label className="flex cursor-pointer items-start gap-3 rounded-md px-2 py-1.5 hover:bg-superficie">
                   <input
                     type="checkbox"
                     checked={elegidos.includes(m.id)}
                     onChange={() => alternar(m.id)}
-                    className="mt-1 size-4 shrink-0 accent-amber-400"
+                    className="mt-1 size-4 shrink-0 accent-primary"
                   />
                   <span className="min-w-0 flex-1 text-sm">
-                    <span className="text-slate-200">
+                    <span className="text-tinta">
                       {m.fecha} · {m.categoria}
                     </span>
                     {m.descripcion && (
-                      <span className="block truncate text-xs text-slate-500">
+                      <span className="block truncate text-xs text-tinta-tenue">
                         {m.descripcion}
                       </span>
                     )}
                   </span>
-                  <span className="shrink-0 text-sm tabular-nums text-slate-300">
+                  <span className="shrink-0 text-sm tabular-nums text-tinta-suave">
                     {m.monto}
                   </span>
                 </label>
@@ -97,7 +97,7 @@ export default function CobroPorDepto({
           </ul>
 
           {cobrando ? (
-            <form action={enviar} className="mt-3 flex flex-col gap-3 border-t border-slate-800 pt-3">
+            <form action={enviar} className="mt-3 flex flex-col gap-3 border-t border-borde pt-3">
               {elegidos.map((id) => (
                 <input key={id} type="hidden" name="ids" value={id} />
               ))}
@@ -135,12 +135,12 @@ export default function CobroPorDepto({
               </label>
 
               {estado && "error" in estado && (
-                <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+                <p role="alert" className="rounded-md bg-error-soft px-3 py-2 text-sm text-error-text">
                   {estado.error}
                 </p>
               )}
               {estado && "ok" in estado && (
-                <p className="rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+                <p className="rounded-md bg-exito-soft px-3 py-2 text-sm text-exito-text">
                   ✓ {estado.ok}
                 </p>
               )}
@@ -149,7 +149,7 @@ export default function CobroPorDepto({
                 <button
                   type="submit"
                   disabled={pendiente || elegidos.length === 0}
-                  className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-tinta-inversa hover:bg-primary-hover disabled:opacity-60"
                 >
                   {pendiente
                     ? "Guardando…"
@@ -158,7 +158,7 @@ export default function CobroPorDepto({
                 <button
                   type="button"
                   onClick={() => setCobrando(false)}
-                  className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+                  className="rounded-md border border-borde-control px-4 py-2 text-sm text-tinta-suave hover:bg-superficie-alt"
                 >
                   Cancelar
                 </button>
@@ -169,7 +169,7 @@ export default function CobroPorDepto({
               type="button"
               onClick={() => setCobrando(true)}
               disabled={elegidos.length === 0}
-              className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+              className="mt-3 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-tinta-inversa hover:bg-primary-hover disabled:opacity-60"
             >
               Registrar cobro de {elegidos.length}
             </button>

@@ -41,10 +41,10 @@ export default function Comprobantes({
         {archivos.map((a) => (
           <div
             key={a.id}
-            className="relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-800"
+            className="relative aspect-square overflow-hidden rounded-md border border-borde-control bg-superficie-alt"
           >
             {a.esPdf || !a.url ? (
-              <span className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-slate-400">
+              <span className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-tinta-suave">
                 <span className="text-2xl">📄</span>
                 <span className="line-clamp-2 break-all">{a.nombre}</span>
               </span>
@@ -70,7 +70,9 @@ export default function Comprobantes({
               <button
                 type="submit"
                 title="Sacar el comprobante"
-                className="flex size-6 items-center justify-center rounded-full bg-slate-950/70 text-sm text-slate-200 transition-colors hover:bg-red-900"
+                /* Va encima de la miniatura, así que necesita fondo propio y
+                   borde: sobre una foto clara, sin eso desaparece. */
+                className="flex size-6 items-center justify-center rounded-full border border-borde bg-superficie text-sm text-tinta-suave shadow-sm transition-colors hover:bg-error-soft hover:text-error-text"
               >
                 ×
               </button>
@@ -92,10 +94,10 @@ export default function Comprobantes({
             enviar(e.dataTransfer.files);
           }}
           disabled={subiendo}
-          className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-xs transition-colors ${
+          className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-md border border-dashed text-xs transition-colors ${
             arrastrando
-              ? "border-slate-300 bg-slate-800 text-white"
-              : "border-slate-600 text-slate-400 hover:bg-slate-800/60"
+              ? "border-borde bg-superficie-alt text-tinta"
+              : "border-borde-fuerte text-tinta-suave hover:bg-superficie"
           } disabled:opacity-60`}
         >
           <span className="text-xl">+</span>
@@ -113,7 +115,7 @@ export default function Comprobantes({
       />
 
       {mensaje && "error" in mensaje && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-3 py-2 text-sm text-error-text">
           {mensaje.error}
         </p>
       )}

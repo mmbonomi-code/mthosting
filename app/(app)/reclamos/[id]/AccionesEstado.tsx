@@ -49,10 +49,10 @@ export default function AccionesEstado({
   const destinos = transicionesDe(estado);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-800/40 p-4">
+    <div className="flex flex-col gap-3 rounded-md border border-borde bg-superficie p-4">
       {ESTADOS_FINALES.has(estado) ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-tinta-suave">
             Este reclamo está cerrado. No se puede editar.
           </p>
           {esAdmin && (
@@ -65,7 +65,7 @@ export default function AccionesEstado({
                   setError(r && "error" in r ? r.error : null);
                 })
               }
-              className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-60"
+              className="rounded-md border border-borde-control px-3 py-1.5 text-sm text-tinta-suave hover:bg-superficie-alt disabled:opacity-60"
             >
               Reabrir como borrador
             </button>
@@ -86,8 +86,8 @@ export default function AccionesEstado({
                   onClick={() => setDialogo(destino)}
                   className={
                     esPrincipal
-                      ? "rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
-                      : "rounded-lg border border-slate-700 px-4 py-2.5 text-sm text-slate-200 transition-colors hover:bg-slate-800 disabled:opacity-60"
+                      ? "rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover disabled:opacity-60"
+                      : "rounded-md border border-borde-control px-4 py-2.5 text-sm text-tinta transition-colors hover:bg-superficie-alt disabled:opacity-60"
                   }
                 >
                   {ETIQUETA_ACCION[destino]}
@@ -103,10 +103,10 @@ export default function AccionesEstado({
                 onClick={() => ejecutar(destino, new FormData())}
                 className={
                   esPrincipal
-                    ? "rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
+                    ? "rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover disabled:opacity-60"
                     : esDescarte
-                      ? "rounded-lg px-4 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-200 disabled:opacity-60"
-                      : "rounded-lg border border-slate-700 px-4 py-2.5 text-sm text-slate-200 transition-colors hover:bg-slate-800 disabled:opacity-60"
+                      ? "rounded-md px-4 py-2.5 text-sm text-tinta-suave transition-colors hover:bg-superficie-alt hover:text-tinta disabled:opacity-60"
+                      : "rounded-md border border-borde-control px-4 py-2.5 text-sm text-tinta transition-colors hover:bg-superficie-alt disabled:opacity-60"
                 }
               >
                 {ETIQUETA_ACCION[destino]}
@@ -117,22 +117,22 @@ export default function AccionesEstado({
       )}
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-3 py-2 text-sm text-error-text">
           {error}
         </p>
       )}
 
       {dialogo && (
         <div
-          className="fixed inset-0 z-20 flex items-start justify-center bg-slate-950/70 p-4 pt-24"
+          className="fixed inset-0 z-20 flex items-start justify-center bg-fondo p-4 pt-24"
           onClick={() => setDialogo(null)}
         >
           <form
             onClick={(e) => e.stopPropagation()}
             action={(fd) => ejecutar(dialogo, fd)}
-            className="flex w-full max-w-md flex-col gap-4 rounded-xl border border-slate-700 bg-slate-900 p-4"
+            className="flex w-full max-w-md flex-col gap-4 rounded-md border border-borde-control bg-fondo p-4"
           >
-            <h2 className="font-medium text-white">{ETIQUETA_ACCION[dialogo]}</h2>
+            <h2 className="font-medium text-tinta">{ETIQUETA_ACCION[dialogo]}</h2>
 
             {dialogo === "presentado" ? (
               <label className="flex flex-col gap-1.5">
@@ -145,7 +145,7 @@ export default function AccionesEstado({
                   placeholder="https://www.airbnb.com/resolutions/…"
                   className={clsEntrada}
                 />
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-tinta-tenue">
                   Es opcional: podés presentarlo ahora y pegar el link después.
                 </span>
               </label>
@@ -160,7 +160,7 @@ export default function AccionesEstado({
                   defaultValue={montoReclamado ?? ""}
                   className={clsEntrada}
                 />
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-tinta-tenue">
                   Puede ser menos de lo reclamado. Si no se cobró nada, cerralo como
                   rechazado.
                 </span>
@@ -171,14 +171,14 @@ export default function AccionesEstado({
               <button
                 type="button"
                 onClick={() => setDialogo(null)}
-                className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+                className="rounded-md border border-borde-control px-3 py-2 text-sm text-tinta-suave hover:bg-superficie-alt"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={pendiente}
-                className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-tinta-inversa hover:bg-primary-hover disabled:opacity-60"
               >
                 {pendiente ? "Guardando…" : "Confirmar"}
               </button>

@@ -51,7 +51,7 @@ export default function DetalleReclamo({
   return (
     <form ref={formRef} className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-tinta-tenue">
           {soloLectura
             ? "Cerrado: solo lectura"
             : guardando
@@ -72,7 +72,7 @@ export default function DetalleReclamo({
           placeholder="Qué se dañó, dónde y cómo se detectó."
           className={`${clsAreaTexto} min-h-24`}
         />
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-tinta-tenue">
           Este texto se copia y pega en el Centro de resoluciones.
         </span>
       </label>
@@ -90,7 +90,7 @@ export default function DetalleReclamo({
             placeholder="180"
             className={clsEntrada}
           />
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-tinta-tenue">
             Airbnb resuelve en dólares. Si el presupuesto está en pesos, convertilo
             antes de cargarlo.
           </span>
@@ -127,7 +127,7 @@ export default function DetalleReclamo({
           className={clsEntrada}
         />
         {!pareceUrlDeAirbnb(url) && (
-          <span className="text-xs text-amber-300">
+          <span className="text-xs text-aviso-text">
             No parece un link de Airbnb. Se guarda igual, revisalo.
           </span>
         )}
@@ -146,7 +146,7 @@ export default function DetalleReclamo({
       </label>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text">
           {error}
         </p>
       )}

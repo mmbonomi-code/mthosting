@@ -61,7 +61,7 @@ export default function FilaNota({
             enviar(fd);
             setEditando(false);
           }}
-          className="flex flex-col gap-3 rounded-xl border border-slate-600 bg-slate-800/60 p-4"
+          className="flex flex-col gap-3 rounded-md border border-borde-fuerte bg-superficie p-4"
         >
           <CamposNota
             seccion={nota.seccion}
@@ -77,7 +77,7 @@ export default function FilaNota({
             personas={personas}
           />
           {estado && "error" in estado && (
-            <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+            <p role="alert" className="rounded-md bg-error-soft px-3 py-2 text-sm text-error-text">
               {estado.error}
             </p>
           )}
@@ -85,21 +85,21 @@ export default function FilaNota({
             <button
               type="submit"
               disabled={guardando}
-              className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-tinta-inversa hover:bg-primary-hover disabled:opacity-60"
             >
               Guardar
             </button>
             <button
               type="button"
               onClick={() => setEditando(false)}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              className="rounded-md border border-borde-control px-4 py-2 text-sm text-tinta-suave hover:bg-superficie-alt"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={() => archivar()}
-              className="ml-auto rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-800 hover:text-slate-300"
+              className="ml-auto rounded-md px-3 py-2 text-sm text-tinta-tenue hover:bg-superficie-alt hover:text-tinta-suave"
             >
               Archivar
             </button>
@@ -111,7 +111,7 @@ export default function FilaNota({
 
   return (
     <li
-      className={`flex items-start gap-3 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-4 py-3 ${
+      className={`flex items-start gap-3 rounded-md border-y border-r border-y-borde border-r-borde border-l-4 bg-superficie px-4 py-3 ${
         BORDE_PLAZO[plazo]
       } ${marcando ? "opacity-60" : ""}`}
     >
@@ -126,29 +126,29 @@ export default function FilaNota({
             setHecho(valor);
             iniciar(async () => alternar(valor));
           }}
-          className="mt-1 size-5 shrink-0 accent-emerald-500"
+          className="mt-1 size-5 shrink-0 accent-primary"
         />
       )}
 
       <div className="min-w-0 flex-1">
         <p
-          className={`font-medium ${hecho ? "text-slate-500 line-through" : "text-slate-100"}`}
+          className={`font-medium ${hecho ? "text-tinta-tenue line-through" : "text-tinta"}`}
         >
           {nota.titulo}
         </p>
         {nota.detalle && (
-          <p className="whitespace-pre-wrap text-sm text-slate-400">{nota.detalle}</p>
+          <p className="whitespace-pre-wrap text-sm text-tinta-suave">{nota.detalle}</p>
         )}
         <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs">
           <span className={TEXTO_PLAZO[plazo]}>
             {textoDePlazo({ ...nota, estado: hecho ? "hecho" : "pendiente" }, hoy)}
           </span>
-          {fechas && <span className="text-slate-500">· {fechas}</span>}
+          {fechas && <span className="text-tinta-tenue">· {fechas}</span>}
           {nota.depto_codigo && (
-            <span className="text-emerald-300">· {nota.depto_codigo}</span>
+            <span className="text-exito-text">· {nota.depto_codigo}</span>
           )}
           {nota.responsable_nombre && (
-            <span className="text-slate-400">· {nota.responsable_nombre}</span>
+            <span className="text-tinta-suave">· {nota.responsable_nombre}</span>
           )}
         </p>
       </div>
@@ -157,7 +157,7 @@ export default function FilaNota({
         <button
           type="button"
           onClick={() => setEditando(true)}
-          className="shrink-0 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800"
+          className="shrink-0 rounded-md border border-borde-control px-2.5 py-1 text-xs text-tinta-suave hover:bg-superficie-alt"
         >
           Editar
         </button>

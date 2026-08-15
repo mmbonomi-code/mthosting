@@ -27,20 +27,20 @@ function GrupoEquipamiento({
   return (
     <details
       open
-      className="group rounded-xl border border-slate-800"
+      className="group rounded-md border border-borde"
     >
-      <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-white [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-tinta [&::-webkit-details-marker]:hidden">
         <span className="font-medium">{categoria}</span>
         <span className="flex items-center gap-3">
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-tinta-tenue">
             {marcados.size} / {items.length}
           </span>
-          <span className="text-slate-500 transition-transform group-open:rotate-180">
+          <span className="text-tinta-tenue transition-transform group-open:rotate-180">
             ▾
           </span>
         </span>
       </summary>
-      <ul className="flex flex-col gap-2 border-t border-slate-800 px-4 py-4">
+      <ul className="flex flex-col gap-2 border-t border-borde px-4 py-4">
         {items.map((item) => (
           <li
             key={item.id}
@@ -59,9 +59,9 @@ function GrupoEquipamiento({
                     return siguientes;
                   })
                 }
-                className="size-5 shrink-0 accent-white"
+                className="size-5 shrink-0 accent-primary"
               />
-              <span className="text-base text-slate-200">{item.nombre}</span>
+              <span className="text-base text-tinta">{item.nombre}</span>
             </label>
             <input
               name={`detalle_${item.id}`}
@@ -115,7 +115,7 @@ export default function FormularioEquipamiento({
       {estado?.error && (
         <p
           role="alert"
-          className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300"
+          className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text"
         >
           {estado.error}
         </p>

@@ -17,10 +17,10 @@ export default async function Parametros() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Parámetros operativos
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-suave">
           Los horarios estándar de la operación. Si cambian, se ajustan acá sin
           tocar el sistema.
         </p>

@@ -35,7 +35,7 @@ export default function FormularioParametros({
           name="hora_limite_checkout"
           defaultValue={valores.hora_limite_checkout}
         />
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-tinta-tenue">
           Pasada esta hora, una salida deja poco tiempo para limpiar: el sistema
           avisa al coordinarla.
         </span>
@@ -47,7 +47,7 @@ export default function FormularioParametros({
           name="hora_minima_checkin"
           defaultValue={valores.hora_minima_checkin}
         />
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-tinta-tenue">
           Si alguien entra antes de esta hora el mismo día que otro sale tarde,
           la ventana es materialmente imposible y se alerta.
         </span>
@@ -66,19 +66,19 @@ export default function FormularioParametros({
             </option>
           ))}
         </select>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-tinta-tenue">
           Las limpiezas se pagan una vez por semana: se paga lo realizado entre
           el corte anterior y el día previo al siguiente.
         </span>
       </label>
 
       {estado && "error" in estado && (
-        <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="rounded-md bg-error-soft px-4 py-3 text-sm text-error-text">
           {estado.error}
         </p>
       )}
       {estado && "ok" in estado && (
-        <p className="rounded-lg bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
+        <p className="rounded-md bg-exito-soft px-4 py-3 text-sm text-exito-text">
           ✓ Guardado.
         </p>
       )}

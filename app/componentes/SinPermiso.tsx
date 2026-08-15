@@ -13,8 +13,8 @@ export default function SinPermiso({
 }) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-white">{titulo}</h1>
-      <p className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-8 text-slate-300">
+      <h1 className="text-2xl font-semibold tracking-tight text-tinta">{titulo}</h1>
+      <p className="rounded-md border border-borde bg-superficie px-6 py-8 text-tinta-suave">
         {motivo}
       </p>
     </main>

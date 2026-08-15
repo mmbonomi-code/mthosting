@@ -54,7 +54,7 @@ export default function FiltrosReclamos({
   }, [texto]);
 
   return (
-    <div className="flex flex-wrap gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-3">
+    <div className="flex flex-wrap gap-2 rounded-md border border-borde bg-superficie p-3">
       <input
         type="search"
         value={texto}

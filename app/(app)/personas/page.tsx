@@ -23,9 +23,9 @@ export default async function ListaPersonas() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Personas
-          <span className="ml-2 text-base font-normal text-slate-500">
+          <span className="ml-2 text-base font-normal text-tinta-tenue">
             {(personas ?? []).length}
           </span>
         </h1>
@@ -35,7 +35,7 @@ export default async function ListaPersonas() {
       </div>
 
       {(personas ?? []).length === 0 ? (
-        <p className="py-12 text-center text-slate-500">
+        <p className="py-12 text-center text-tinta-tenue">
           Todavía no hay personas cargadas.
         </p>
       ) : (
@@ -44,11 +44,11 @@ export default async function ListaPersonas() {
             <li key={p.id}>
               <Link
                 href={`/personas/${p.id}/editar`}
-                className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 transition-colors hover:border-slate-600"
+                className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md border border-borde bg-superficie px-4 py-3 transition-colors hover:border-borde-fuerte"
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-slate-200">{p.nombre}</span>
-                  <span className="block truncate text-sm text-slate-500">
+                  <span className="block truncate text-tinta">{p.nombre}</span>
+                  <span className="block truncate text-sm text-tinta-tenue">
                     {[
                       p.telefono,
                       p.rol ? ROLES[p.rol] : null,
@@ -64,7 +64,7 @@ export default async function ListaPersonas() {
                   </span>
                 </span>
                 {!p.activo && (
-                  <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+                  <span className="rounded-full bg-warm-100 px-2.5 py-0.5 text-xs font-medium text-tinta-suave">
                     Inactiva
                   </span>
                 )}

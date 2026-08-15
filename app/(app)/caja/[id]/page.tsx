@@ -123,7 +123,7 @@ export default async function FichaMovimiento({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href="/caja" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/caja" className="text-sm text-tinta-suave hover:text-tinta">
         ← Volver a la caja
       </Link>
 
@@ -132,30 +132,30 @@ export default async function FichaMovimiento({
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
               movimiento.tipo === "ingreso"
-                ? "bg-emerald-950 text-emerald-300"
-                : "bg-slate-800 text-slate-300"
+                ? "bg-exito-soft text-exito-text"
+                : "bg-superficie-alt text-tinta-suave"
             }`}
           >
             {movimiento.tipo === "ingreso" ? "Ingreso" : "Egreso"}
           </span>
           {!movimiento.activo && (
-            <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs text-red-300">
+            <span className="rounded-full bg-error-soft px-2.5 py-0.5 text-xs text-error-text">
               Anulado
             </span>
           )}
           {movimiento.ref_externa && (
-            <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-slate-400">
+            <span className="rounded-full bg-superficie-alt px-2.5 py-0.5 text-xs text-tinta-suave">
               Importado de Ninox
             </span>
           )}
         </div>
-        <h1 className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-white">
+        <h1 className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-tinta">
           {pesos(movimiento.monto)}
-          <span className="ml-3 text-lg font-normal text-slate-400">
+          <span className="ml-3 text-lg font-normal text-tinta-suave">
             {usd === null ? "sin cotización" : dolares(usd)}
           </span>
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-suave">
           {formatearFechaAR(movimiento.fecha)} ·{" "}
           {movimiento.categoria?.nombre ?? "Sin categoría"}
           {movimiento.depto?.codigo && ` · ${movimiento.depto.codigo}`}
@@ -164,7 +164,7 @@ export default async function FichaMovimiento({
 
       {/* Un cambio: cuántos dólares se dieron y a cuánto */}
       {movimiento.usd_cambiado !== null && movimiento.tc_cambio !== null && (
-        <section className="rounded-xl border border-emerald-900/60 bg-emerald-950/20 px-4 py-3 text-sm text-emerald-200">
+        <section className="rounded-md border border-exito/60 bg-exito-soft/20 px-4 py-3 text-sm text-exito-text">
           Se cambiaron{" "}
           <strong>US$ {movimiento.usd_cambiado.toLocaleString("es-AR")}</strong> a{" "}
           <strong>{movimiento.tc_cambio.toLocaleString("es-AR")}</strong>. Los gastos
@@ -174,8 +174,8 @@ export default async function FichaMovimiento({
 
       {/* De qué bolsa salió cada peso de este gasto */}
       {movimiento.tipo === "egreso" && tramos.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-xl border border-slate-800 p-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+        <section className="flex flex-col gap-2 rounded-md border border-borde p-4">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-tinta-suave">
             De dónde salió la plata
           </h2>
           <ul className="flex flex-col gap-1.5">
@@ -184,20 +184,20 @@ export default async function FichaMovimiento({
                 key={i}
                 className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
               >
-                <span className="text-slate-300">
+                <span className="text-tinta-suave">
                   {pesos(t.monto)}
                   {t.origen ? (
-                    <span className="text-slate-500">
+                    <span className="text-tinta-tenue">
                       {" "}
                       del cambio del {formatearFechaAR(t.origen.fecha)}
                     </span>
                   ) : (
-                    <span className="text-amber-300"> sin cubrir todavía</span>
+                    <span className="text-aviso-text"> sin cubrir todavía</span>
                   )}
                 </span>
-                <span className="tabular-nums text-slate-400">
+                <span className="tabular-nums text-tinta-suave">
                   {t.tc === null ? (
-                    <span className="text-slate-500">
+                    <span className="text-tinta-tenue">
                       al dólar del día
                       {movimiento.tc !== null && ` (${movimiento.tc.toLocaleString("es-AR")})`}
                     </span>
@@ -209,9 +209,9 @@ export default async function FichaMovimiento({
             ))}
           </ul>
           {promedio !== null && tramos.length > 1 && (
-            <p className="border-t border-slate-800 pt-2 text-xs text-slate-500">
+            <p className="border-t border-borde pt-2 text-xs text-tinta-tenue">
               Tipo de cambio promedio de este gasto:{" "}
-              <span className="text-slate-300">{promedio.toLocaleString("es-AR")}</span>
+              <span className="text-tinta-suave">{promedio.toLocaleString("es-AR")}</span>
             </p>
           )}
         </section>
@@ -220,10 +220,10 @@ export default async function FichaMovimiento({
       {/* Estado del reembolso */}
       {movimiento.reembolsable && (
         <section
-          className={`flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 ${
+          className={`flex flex-wrap items-center justify-between gap-3 rounded-md px-4 py-3 ${
             movimiento.fecha_cobro
-              ? "bg-emerald-950/50 text-emerald-200"
-              : "bg-amber-950/40 text-amber-200"
+              ? "bg-exito-soft/50 text-exito-text"
+              : "bg-aviso-soft/40 text-aviso-text"
           }`}
         >
           <div className="text-sm">
@@ -246,7 +246,7 @@ export default async function FichaMovimiento({
             <form action={desmarcarCobro.bind(null, id)}>
               <button
                 type="submit"
-                className="rounded-lg border border-emerald-800 px-3 py-1.5 text-xs hover:bg-emerald-900/40"
+                className="rounded-md border border-exito px-3 py-1.5 text-xs hover:bg-exito-soft/40"
               >
                 Volver a pendiente
               </button>
@@ -254,7 +254,7 @@ export default async function FichaMovimiento({
           ) : (
             <Link
               href="/caja/por-cobrar"
-              className="rounded-lg border border-amber-800 px-3 py-1.5 text-xs hover:bg-amber-900/40"
+              className="rounded-md border border-aviso px-3 py-1.5 text-xs hover:bg-aviso-soft/40"
             >
               Registrar cobro
             </Link>
@@ -262,8 +262,8 @@ export default async function FichaMovimiento({
         </section>
       )}
 
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+      <section className="flex flex-col gap-3 rounded-md border border-borde p-4">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-tinta-suave">
           Comprobantes
         </h2>
         <Comprobantes
@@ -273,8 +273,8 @@ export default async function FichaMovimiento({
         />
       </section>
 
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+      <section className="flex flex-col gap-3 rounded-md border border-borde p-4">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-tinta-suave">
           Editar
         </h2>
         <FormularioMovimiento
@@ -306,7 +306,7 @@ export default async function FichaMovimiento({
         <form action={anularMovimiento.bind(null, id)}>
           <button
             type="submit"
-            className="rounded-lg px-3 py-2 text-sm text-slate-500 transition-colors hover:bg-slate-800 hover:text-red-300"
+            className="rounded-md px-3 py-2 text-sm text-tinta-tenue transition-colors hover:bg-superficie-alt hover:text-error-text"
           >
             Anular movimiento
           </button>

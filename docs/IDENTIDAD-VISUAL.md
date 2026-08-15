@@ -63,12 +63,13 @@ que nadie vuelva a vestir una alarma con el estilo callado.
        [x] Paso 3 — badge, botón, tarjeta y tabla, con el mapa de estados en
            `lib/estados.ts`.
        [x] Paso 4 — primera pantalla migrada (Limpiezas / semana).
-       [ ] Paso 5 — el resto de las pantallas. Empezar por el armazón
-           (`app/(app)/layout.tsx`), que sigue oscuro.
-       [ ] Paso 6 — sacar la paleta de fábrica de Tailwind para que no se
-           pueda escribir un color a mano.
+       [x] Paso 5 — el resto: armazón, Día y las 86 pantallas. No queda
+           ningún color de la paleta de fábrica de Tailwind en `app/`.
+       [ ] Paso 6 — sacar esa paleta del tema para que ni siquiera se pueda
+           escribir un color a mano sin que el compilador se queje. Hoy
+           sigue disponible aunque nadie la use.
 
-     Al terminar cada pantalla del paso 5:
+     Al tocar cualquier pantalla:
 
          npx next build
          node scripts/verificar-identidad.mjs <los archivos tocados>
@@ -77,9 +78,10 @@ que nadie vuelva a vestir una alarma con el estilo callado.
      queda sin pintar—, así que conviene que lo diga una comprobación y no
      el ojo.
 
-     Mientras el paso 5 no esté, las pantallas sin migrar siguen en el tema
-     oscuro viejo. Eso es transitorio y esperable, no es que la identidad
-     esté mal aplicada.
+     LO QUE ESA COMPROBACIÓN NO VE, y hay que mirar con los ojos: texto
+     oscuro sobre relleno oscuro y texto claro sobre fondo claro. Las dos
+     clases existen, las dos pasan el build, y las dos son ilegibles.
+     Aparecieron 34 casos así en el barrido del paso 5.
 
      Dos cosas que el handoff da por hechas y que este proyecto todavía no
      tiene, para no leerlas como si existieran:

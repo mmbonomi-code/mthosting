@@ -15,7 +15,7 @@ import {
 } from "./planificar";
 
 const CAMPOS_LIMPIEZA =
-  "id, depto_id, reserva_id, rol_reserva, fecha, estado, urgente, prox_checkin";
+  "id, depto_id, reserva_id, rol_reserva, fecha, estado, urgente, prox_checkin, fecha_manual";
 
 type Cliente = SupabaseClient<Database>;
 

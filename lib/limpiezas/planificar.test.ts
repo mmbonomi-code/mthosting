@@ -32,6 +32,7 @@ function limpieza(parcial: Partial<LimpiezaExistente> = {}): LimpiezaExistente {
     estado: "pendiente",
     urgente: false,
     prox_checkin: null,
+    fecha_manual: false,
     ...parcial,
   };
 }
@@ -291,6 +292,34 @@ describe("cambio de fecha de la reserva", () => {
     const plan = planificar({
       reservas: [r],
       limpiezas: [limpieza({ fecha: "2026-08-15", estado: "asignada" })],
+    });
+    expect(plan.movidas).toBe(1);
+  });
+
+  it("una fecha puesta a mano NO la pisa la importación: avisa", () => {
+    // Es el caso reportado el 14/08/2026: movieron la limpieza de HONDURAS 1
+    // al día siguiente cinco veces y la importación la devolvió las cinco.
+    const r = reserva({ fecha_checkout: "2026-08-15" });
+    const plan = planificar({
+      reservas: [r],
+      limpiezas: [
+        limpieza({ fecha: "2026-08-16", estado: "asignada", fecha_manual: true }),
+      ],
+    });
+    expect(plan.movidas).toBe(0);
+    expect(plan.limpiezasAActualizar.some((c) => c.fecha !== undefined)).toBe(false);
+    expect(plan.anomalias.join(" ")).toMatch(/puesta a mano/i);
+    // Y el aviso dice los dos días, para poder decidir sin ir a buscarlos.
+    expect(plan.anomalias.join(" ")).toContain("2026-08-16");
+    expect(plan.anomalias.join(" ")).toContain("2026-08-15");
+  });
+
+  it("sin la marca, la limpieza sigue moviéndose con la reserva", () => {
+    // Que es lo correcto cuando el que se movió es el huésped.
+    const r = reserva({ fecha_checkout: "2026-08-18" });
+    const plan = planificar({
+      reservas: [r],
+      limpiezas: [limpieza({ fecha: "2026-08-15", fecha_manual: false })],
     });
     expect(plan.movidas).toBe(1);
   });

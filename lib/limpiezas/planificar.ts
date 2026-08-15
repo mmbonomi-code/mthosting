@@ -70,6 +70,8 @@ export type LimpiezaExistente = {
   estado: EstadoLimpieza;
   urgente: boolean;
   prox_checkin: string | null;
+  /** La fecha la eligió una persona: no se mueve sola. */
+  fecha_manual: boolean;
 };
 
 export type LimpiezaNueva = {
@@ -333,6 +335,17 @@ export function planificarLimpiezas({
       let hayCambios = false;
 
       if (existente.fecha !== fecha) {
+        // Una fecha puesta por una persona no la pisa un recálculo. Es la
+        // misma regla que ya rige para asignar: el sistema propone, la
+        // persona decide (CLAUDE.md). Si la reserva se movió de verdad, se
+        // avisa; corregirla por las buenas es lo que hacía que la limpieza
+        // volviera sola a su día en cada importación.
+        if (existente.fecha_manual) {
+          plan.anomalias.push(
+            `${reserva.codigo_reserva}: la limpieza está puesta a mano el ${existente.fecha} y por la reserva le tocaría el ${fecha}. No se movió: si corresponde, cambiala vos.`,
+          );
+          return;
+        }
         if (INTOCABLES.has(existente.estado)) {
           // La reserva se movió pero la limpieza ya está en marcha: alerta.
           plan.anomalias.push(

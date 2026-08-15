@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      archivos_economico: {
+        Row: {
+          created_at: string
+          error: string | null
+          filas_duplicadas: number
+          filas_leidas: number
+          filas_nuevas: number
+          filas_sin_mapear: number
+          hash: string
+          id: string
+          import_id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          filas_duplicadas?: number
+          filas_leidas?: number
+          filas_nuevas?: number
+          filas_sin_mapear?: number
+          hash: string
+          id?: string
+          import_id: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          filas_duplicadas?: number
+          filas_leidas?: number
+          filas_nuevas?: number
+          filas_sin_mapear?: number
+          hash?: string
+          id?: string
+          import_id?: string
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archivos_economico_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "importaciones_economico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arreglo_fotos: {
         Row: {
           arreglo_id: string
@@ -258,6 +305,117 @@ export type Database = {
         }
         Relationships: []
       }
+      cobros_programados: {
+        Row: {
+          anuncio: string | null
+          archivo: string
+          categoria: Database["public"]["Enums"]["economico_categoria"]
+          codigo_confirmacion: string | null
+          created_at: string
+          depto_id: string | null
+          detalles: string | null
+          fecha: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          fecha_reserva: string | null
+          huella: string
+          huesped: string | null
+          id: string
+          import_id: string
+          importe: number | null
+          ingresos_brutos: number | null
+          linea: number
+          materializado: boolean
+          moneda: string
+          monto: number | null
+          noches: number | null
+          ocurrencia: number
+          orden_en_archivo: number
+          raw: Json
+          tarifa_limpieza: number | null
+          tipo_raw: string
+          updated_at: string
+          vigente: boolean
+        }
+        Insert: {
+          anuncio?: string | null
+          archivo: string
+          categoria: Database["public"]["Enums"]["economico_categoria"]
+          codigo_confirmacion?: string | null
+          created_at?: string
+          depto_id?: string | null
+          detalles?: string | null
+          fecha: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          fecha_reserva?: string | null
+          huella: string
+          huesped?: string | null
+          id?: string
+          import_id: string
+          importe?: number | null
+          ingresos_brutos?: number | null
+          linea: number
+          materializado?: boolean
+          moneda: string
+          monto?: number | null
+          noches?: number | null
+          ocurrencia?: number
+          orden_en_archivo: number
+          raw: Json
+          tarifa_limpieza?: number | null
+          tipo_raw: string
+          updated_at?: string
+          vigente?: boolean
+        }
+        Update: {
+          anuncio?: string | null
+          archivo?: string
+          categoria?: Database["public"]["Enums"]["economico_categoria"]
+          codigo_confirmacion?: string | null
+          created_at?: string
+          depto_id?: string | null
+          detalles?: string | null
+          fecha?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          fecha_reserva?: string | null
+          huella?: string
+          huesped?: string | null
+          id?: string
+          import_id?: string
+          importe?: number | null
+          ingresos_brutos?: number | null
+          linea?: number
+          materializado?: boolean
+          moneda?: string
+          monto?: number | null
+          noches?: number | null
+          ocurrencia?: number
+          orden_en_archivo?: number
+          raw?: Json
+          tarifa_limpieza?: number | null
+          tipo_raw?: string
+          updated_at?: string
+          vigente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobros_programados_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobros_programados_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "importaciones_economico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cotizaciones: {
         Row: {
           created_at: string
@@ -281,6 +439,77 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      cuentas_payout: {
+        Row: {
+          activo: boolean
+          clasificacion: Database["public"]["Enums"]["cuenta_clasificacion"]
+          clave: string
+          created_at: string
+          id: string
+          moneda: string | null
+          notas: string | null
+          numero: string | null
+          tipo: string | null
+          titular: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          clasificacion?: Database["public"]["Enums"]["cuenta_clasificacion"]
+          clave: string
+          created_at?: string
+          id?: string
+          moneda?: string | null
+          notas?: string | null
+          numero?: string | null
+          tipo?: string | null
+          titular?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          clasificacion?: Database["public"]["Enums"]["cuenta_clasificacion"]
+          clave?: string
+          created_at?: string
+          id?: string
+          moneda?: string | null
+          notas?: string | null
+          numero?: string | null
+          tipo?: string | null
+          titular?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cuentas_payout_alias: {
+        Row: {
+          created_at: string
+          cuenta_id: string
+          detalle_raw: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          cuenta_id: string
+          detalle_raw: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          cuenta_id?: string
+          detalle_raw?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuentas_payout_alias_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas_payout"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       departamentos: {
         Row: {
@@ -683,6 +912,57 @@ export type Database = {
         }
         Relationships: []
       }
+      importaciones_economico: {
+        Row: {
+          archivos: number
+          avisos: Json
+          cerrado_en: string | null
+          created_at: string
+          cuentas_nuevas: number
+          estado: Database["public"]["Enums"]["economico_estado_lote"]
+          filas_duplicadas: number
+          filas_leidas: number
+          filas_nuevas: number
+          filas_sin_mapear: number
+          id: string
+          tipo: Database["public"]["Enums"]["economico_tipo_carga"]
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          archivos?: number
+          avisos?: Json
+          cerrado_en?: string | null
+          created_at?: string
+          cuentas_nuevas?: number
+          estado?: Database["public"]["Enums"]["economico_estado_lote"]
+          filas_duplicadas?: number
+          filas_leidas?: number
+          filas_nuevas?: number
+          filas_sin_mapear?: number
+          id?: string
+          tipo: Database["public"]["Enums"]["economico_tipo_carga"]
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          archivos?: number
+          avisos?: Json
+          cerrado_en?: string | null
+          created_at?: string
+          cuentas_nuevas?: number
+          estado?: Database["public"]["Enums"]["economico_estado_lote"]
+          filas_duplicadas?: number
+          filas_leidas?: number
+          filas_nuevas?: number
+          filas_sin_mapear?: number
+          id?: string
+          tipo?: Database["public"]["Enums"]["economico_tipo_carga"]
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       inventario_depto: {
         Row: {
           created_at: string
@@ -886,6 +1166,7 @@ export type Database = {
           depto_id: string
           estado: Database["public"]["Enums"]["limpieza_estado"]
           fecha: string
+          fecha_manual: boolean
           hora_checkout: string | null
           hora_fin: string | null
           hora_inicio: string | null
@@ -911,6 +1192,7 @@ export type Database = {
           depto_id: string
           estado?: Database["public"]["Enums"]["limpieza_estado"]
           fecha: string
+          fecha_manual?: boolean
           hora_checkout?: string | null
           hora_fin?: string | null
           hora_inicio?: string | null
@@ -936,6 +1218,7 @@ export type Database = {
           depto_id?: string
           estado?: Database["public"]["Enums"]["limpieza_estado"]
           fecha?: string
+          fecha_manual?: boolean
           hora_checkout?: string | null
           hora_fin?: string | null
           hora_inicio?: string | null
@@ -1348,6 +1631,173 @@ export type Database = {
             columns: ["depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movimientos_economicos: {
+        Row: {
+          activo: boolean
+          aircover_destino: Database["public"]["Enums"]["aircover_destino"]
+          anuncio: string | null
+          archivo: string
+          calculado_en: string | null
+          categoria: Database["public"]["Enums"]["economico_categoria"]
+          cobrado: number | null
+          codigo_confirmacion: string | null
+          comision_pct_aplicada: number | null
+          created_at: string
+          cuenta_id: string | null
+          depto_id: string | null
+          detalles: string | null
+          es_custodia: boolean | null
+          es_payout: boolean
+          fecha: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          fecha_reserva: string | null
+          ganancia_usd: number | null
+          grupo_con_coanfitrion: boolean
+          grupo_payout: number | null
+          huella: string
+          huesped: string | null
+          id: string
+          import_id: string
+          importe: number | null
+          ingresos_brutos: number | null
+          linea: number
+          moneda: string
+          monto: number | null
+          noches: number | null
+          ocurrencia: number
+          orden_en_archivo: number
+          percibido_usd: number | null
+          propietario_id: string | null
+          prorrateada: boolean
+          raw: Json
+          tarifa_limpieza: number | null
+          tc_deducido: boolean
+          tc_usd: number | null
+          tipo_raw: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          aircover_destino?: Database["public"]["Enums"]["aircover_destino"]
+          anuncio?: string | null
+          archivo: string
+          calculado_en?: string | null
+          categoria: Database["public"]["Enums"]["economico_categoria"]
+          cobrado?: number | null
+          codigo_confirmacion?: string | null
+          comision_pct_aplicada?: number | null
+          created_at?: string
+          cuenta_id?: string | null
+          depto_id?: string | null
+          detalles?: string | null
+          es_custodia?: boolean | null
+          es_payout?: boolean
+          fecha: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          fecha_reserva?: string | null
+          ganancia_usd?: number | null
+          grupo_con_coanfitrion?: boolean
+          grupo_payout?: number | null
+          huella: string
+          huesped?: string | null
+          id?: string
+          import_id: string
+          importe?: number | null
+          ingresos_brutos?: number | null
+          linea: number
+          moneda: string
+          monto?: number | null
+          noches?: number | null
+          ocurrencia?: number
+          orden_en_archivo: number
+          percibido_usd?: number | null
+          propietario_id?: string | null
+          prorrateada?: boolean
+          raw: Json
+          tarifa_limpieza?: number | null
+          tc_deducido?: boolean
+          tc_usd?: number | null
+          tipo_raw: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          aircover_destino?: Database["public"]["Enums"]["aircover_destino"]
+          anuncio?: string | null
+          archivo?: string
+          calculado_en?: string | null
+          categoria?: Database["public"]["Enums"]["economico_categoria"]
+          cobrado?: number | null
+          codigo_confirmacion?: string | null
+          comision_pct_aplicada?: number | null
+          created_at?: string
+          cuenta_id?: string | null
+          depto_id?: string | null
+          detalles?: string | null
+          es_custodia?: boolean | null
+          es_payout?: boolean
+          fecha?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          fecha_reserva?: string | null
+          ganancia_usd?: number | null
+          grupo_con_coanfitrion?: boolean
+          grupo_payout?: number | null
+          huella?: string
+          huesped?: string | null
+          id?: string
+          import_id?: string
+          importe?: number | null
+          ingresos_brutos?: number | null
+          linea?: number
+          moneda?: string
+          monto?: number | null
+          noches?: number | null
+          ocurrencia?: number
+          orden_en_archivo?: number
+          percibido_usd?: number | null
+          propietario_id?: string | null
+          prorrateada?: boolean
+          raw?: Json
+          tarifa_limpieza?: number | null
+          tc_deducido?: boolean
+          tc_usd?: number | null
+          tipo_raw?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimientos_economicos_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas_payout"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_economicos_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_economicos_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "importaciones_economico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_economicos_propietario_id_fkey"
+            columns: ["propietario_id"]
+            isOneToOne: false
+            referencedRelation: "propietarios"
             referencedColumns: ["id"]
           },
         ]
@@ -1980,16 +2430,32 @@ export type Database = {
       puede_escribir_reporte: { Args: never; Returns: boolean }
       puede_gestionar_reclamos: { Args: never; Returns: boolean }
       puede_ver_caja: { Args: never; Returns: boolean }
+      puede_ver_economico: { Args: never; Returns: boolean }
       saldo_caja: { Args: { p_hasta?: string }; Returns: number }
       saldo_caja_antes: { Args: { p_fecha: string }; Returns: number }
     }
     Enums: {
       acuerdo_pago: "cobra_todo_mth" | "cobra_cada_uno" | "solo_comision"
+      aircover_destino: "sin_asignar" | "mthosting" | "propietario"
       ambientes_tipo: "monoambiente" | "dos" | "tres" | "cuatro"
       bloqueo_motivo: "mantenimiento" | "uso_propietario" | "vacio" | "otro"
       caja_tipo: "ingreso" | "egreso"
       canal_tipo: "airbnb" | "booking" | "directa"
+      cuenta_clasificacion: "mth" | "propietario" | "sin_clasificar"
       depto_estado: "activo" | "suspendido"
+      economico_categoria:
+        | "reserva"
+        | "coanfitrion"
+        | "payout"
+        | "resolucion"
+        | "ajuste"
+        | "ajuste_resolucion"
+        | "tarifa_cancelacion"
+        | "reembolso_tarifa_cancelacion"
+        | "aircover"
+        | "otro"
+      economico_estado_lote: "vigente" | "deshecho"
+      economico_tipo_carga: "efectivo" | "programado"
       equipamiento_estado: "pedido" | "entregado" | "retirado"
       equipamiento_tipo: "cuna" | "silla" | "banadera"
       evento_estado: "pendiente" | "coordinado" | "hecho" | "cancelado"
@@ -2178,11 +2644,27 @@ export const Constants = {
   public: {
     Enums: {
       acuerdo_pago: ["cobra_todo_mth", "cobra_cada_uno", "solo_comision"],
+      aircover_destino: ["sin_asignar", "mthosting", "propietario"],
       ambientes_tipo: ["monoambiente", "dos", "tres", "cuatro"],
       bloqueo_motivo: ["mantenimiento", "uso_propietario", "vacio", "otro"],
       caja_tipo: ["ingreso", "egreso"],
       canal_tipo: ["airbnb", "booking", "directa"],
+      cuenta_clasificacion: ["mth", "propietario", "sin_clasificar"],
       depto_estado: ["activo", "suspendido"],
+      economico_categoria: [
+        "reserva",
+        "coanfitrion",
+        "payout",
+        "resolucion",
+        "ajuste",
+        "ajuste_resolucion",
+        "tarifa_cancelacion",
+        "reembolso_tarifa_cancelacion",
+        "aircover",
+        "otro",
+      ],
+      economico_estado_lote: ["vigente", "deshecho"],
+      economico_tipo_carga: ["efectivo", "programado"],
       equipamiento_estado: ["pedido", "entregado", "retirado"],
       equipamiento_tipo: ["cuna", "silla", "banadera"],
       evento_estado: ["pendiente", "coordinado", "hecho", "cancelado"],

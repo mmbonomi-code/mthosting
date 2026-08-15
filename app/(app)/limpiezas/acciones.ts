@@ -263,19 +263,35 @@ export async function editarLimpieza(
   return null;
 }
 
-/** Las limpiezas no se borran nunca: pasan a cancelada. */
+/**
+ * Las limpiezas no se borran nunca: pasan a cancelada.
+ *
+ * Queda marcada como cancelada A MANO para que la importación no la reviva.
+ * El planificador tiene una regla que devuelve a pendiente las limpiezas
+ * canceladas —sirve para cuando una reserva descartada reaparece— y sin esta
+ * marca no distinguía quién la había cancelado.
+ */
 export async function cancelarLimpieza(limpiezaId: string) {
   const supabase = await crearClienteServidor();
-  await supabase.from("limpiezas").update({ estado: "cancelada" }).eq("id", limpiezaId);
+  await supabase
+    .from("limpiezas")
+    .update({ estado: "cancelada", cancelada_manual: true })
+    .eq("id", limpiezaId);
   revalidatePath("/limpiezas");
+  revalidatePath("/semana");
   redirect("/limpiezas");
 }
 
+/** Volver atrás la cancelación: deja de estar decidida a mano. */
 export async function reactivarLimpieza(limpiezaId: string) {
   const supabase = await crearClienteServidor();
-  await supabase.from("limpiezas").update({ estado: "pendiente" }).eq("id", limpiezaId);
+  await supabase
+    .from("limpiezas")
+    .update({ estado: "pendiente", cancelada_manual: false })
+    .eq("id", limpiezaId);
   revalidatePath(`/limpiezas/${limpiezaId}`);
   revalidatePath("/limpiezas");
+  revalidatePath("/semana");
 }
 
 /**

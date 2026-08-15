@@ -33,6 +33,7 @@ function limpieza(parcial: Partial<LimpiezaExistente> = {}): LimpiezaExistente {
     urgente: false,
     prox_checkin: null,
     fecha_manual: false,
+    cancelada_manual: false,
     ...parcial,
   };
 }
@@ -388,6 +389,41 @@ describe("cancelaciones", () => {
     });
     expect(plan.anomalias).toHaveLength(0);
     expect(plan.canceladas).toBe(1);
+  });
+
+  it("una limpieza cancelada A MANO no la revive la importación", () => {
+    // Es el caso de ARENALES 9 (14/08/2026): la cancelaron a las 02:24 y la
+    // importación de las 02:37 la devolvió a pendiente.
+    const plan = planificar({
+      reservas: [reserva()],
+      limpiezas: [
+        limpieza({
+          rol_reserva: "entrada",
+          fecha: "2026-08-10",
+          estado: "cancelada",
+          cancelada_manual: true,
+        }),
+      ],
+    });
+    expect(plan.limpiezasAActualizar.some((c) => c.estado === "pendiente")).toBe(false);
+  });
+
+  it("una cancelada por el SISTEMA sí revive: para eso está la regla", () => {
+    // Una reserva descartada que reaparece en el archivo recupera su limpieza.
+    const plan = planificar({
+      reservas: [reserva()],
+      limpiezas: [
+        limpieza({
+          rol_reserva: "entrada",
+          fecha: "2026-08-10",
+          estado: "cancelada",
+          cancelada_manual: false,
+        }),
+      ],
+    });
+    expect(plan.limpiezasAActualizar).toContainEqual(
+      expect.objectContaining({ estado: "pendiente" }),
+    );
   });
 
   it("cancelar no toca una limpieza que ya está hecha: alerta", () => {

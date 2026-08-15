@@ -72,6 +72,8 @@ export type LimpiezaExistente = {
   prox_checkin: string | null;
   /** La fecha la eligió una persona: no se mueve sola. */
   fecha_manual: boolean;
+  /** La canceló una persona: no revive sola. */
+  cancelada_manual: boolean;
 };
 
 export type LimpiezaNueva = {
@@ -370,7 +372,12 @@ export function planificarLimpiezas({
 
       // Una reserva descartada que reapareció recupera su limpieza, salvo que
       // en el medio ese día se haya ocupado con otra.
-      if (existente.estado === "cancelada") {
+      //
+      // Pero si la canceló una PERSONA, no se revive: esta regla existe para
+      // deshacer una cancelación del sistema, no para discutirle a nadie.
+      // Antes no distinguía, y una limpieza cancelada a mano volvía a
+      // pendiente en la importación siguiente (ARENALES 9, 14/08/2026).
+      if (existente.estado === "cancelada" && !existente.cancelada_manual) {
         const ocupadaPor = ocupadas.get(dia(depto_id, fecha));
         if (ocupadaPor !== undefined && ocupadaPor !== existente.id) {
           plan.anomalias.push(

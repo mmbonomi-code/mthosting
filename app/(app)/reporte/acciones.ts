@@ -184,6 +184,70 @@ export async function crearEquipamiento(fd: FormData): Promise<EstadoFormulario>
   return { ok: "Anotado." };
 }
 
+/**
+ * Corregir lo que se anotó: el tipo, las fechas y las notas.
+ *
+ * Hacía falta porque una vez cargado no se podía tocar nada, y lo que más
+ * cambia son justamente las fechas: el huésped se queda un día más y la cuna
+ * con él. La única salida era archivar y volver a cargar, que pierde el
+ * estado de entrega.
+ *
+ * El departamento se puede cambiar solo cuando el pedido NO cuelga de una
+ * reserva. Si cuelga, el departamento es el de la reserva y cambiarlo por
+ * separado los dejaría diciendo cosas distintas.
+ */
+export async function editarEquipamiento(
+  id: string,
+  fd: FormData,
+): Promise<EstadoFormulario> {
+  const supabase = await conPermiso();
+  if (!supabase) return { error: "No tenés permiso para escribir en el reporte." };
+
+  const tipo = texto(fd, "tipo") as TipoEquipamiento | null;
+  const desde = texto(fd, "fecha_desde");
+  const hasta = texto(fd, "fecha_hasta");
+
+  if (!tipo) return { error: "Elegí si es cuna, silla o bañadera." };
+  if (!desde || !hasta) return { error: "Faltan las fechas de desde y hasta." };
+  if (hasta < desde) return { error: "El hasta no puede ser anterior al desde." };
+
+  const { data: actual } = await supabase
+    .from("equipamiento_bebe")
+    .select("reserva_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!actual) return { error: "No se encontró el pedido." };
+
+  const cambios: {
+    tipo: TipoEquipamiento;
+    fecha_desde: string;
+    fecha_hasta: string;
+    notas: string | null;
+    depto_id?: string;
+  } = {
+    tipo,
+    fecha_desde: desde,
+    fecha_hasta: hasta,
+    notas: texto(fd, "notas"),
+  };
+
+  if (!actual.reserva_id) {
+    const deptoId = texto(fd, "depto_id");
+    if (!deptoId) return { error: "Elegí el departamento." };
+    cambios.depto_id = deptoId;
+  }
+
+  const { error } = await supabase
+    .from("equipamiento_bebe")
+    .update(cambios)
+    .eq("id", id);
+  if (error) return { error: `No se pudo guardar: ${error.message}` };
+
+  revalidatePath("/reporte");
+  revalidatePath("/dia");
+  return { ok: "Guardado." };
+}
+
 /** Pedido → entregado → retirado. */
 export async function cambiarEstadoEquipamiento(
   id: string,

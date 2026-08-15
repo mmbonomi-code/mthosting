@@ -490,8 +490,28 @@ Requisito concreto para esta entrega: que agregar esas categorías en el futuro 
 
 ## 10. Antes de empezar — confirmar con Marcos
 
-1. Si el `% comisión` necesita versionado por fecha desde el día uno o alcanza con el valor actual. *(La evidencia del punto 11 dice que sí hace falta: KENNEDY 1 cambia de esquema en junio 2026.)*
-2. Moneda de reporte: ¿USD con el TC implícito de Airbnb, o vistas separadas por moneda?
+1. ~~Si el `% comisión` necesita versionado por fecha desde el día uno o alcanza
+   con el valor actual.~~ **RESUELTO (Marcos, 15/08/2026): no se versiona.**
+
+   La suposición del punto 11 —que KENNEDY 1 cambiaba de esquema de comisión en
+   junio 2026— **es falsa**. Lo que pasó es que MTHosting empezó a cobrar de más
+   porque el propietario le debía plata por gastos que MTHosting había pagado.
+   Es recupero de gastos, no una comisión distinta: entra más plata pero no se
+   gana más.
+
+   Esto CONFIRMA la regla central de 5.1 en vez de contradecirla, y es la misma
+   evidencia que sostiene por qué la GANANCIA se calcula siempre con la comisión
+   ordinaria. El diseño que quedó es: `comision_pct` como valor actual en
+   `departamentos`, y cada movimiento congela su `comision_pct_aplicada`.
+
+   Eso ya cubre un cambio de comisión futuro: los movimientos nuevos toman el %
+   nuevo y los viejos conservan el suyo. Lo único que no hace es aplicar un
+   cambio por fecha si algún día se recalcula todo hacia atrás. Si eso llega a
+   hacer falta, se agrega una tabla con `vigente_desde` sin romper nada,
+   justamente porque cada movimiento ya guarda su propio %.
+
+2. ~~Moneda de reporte.~~ **RESUELTO: USD, con el TC despejado de los propios
+   payouts y marcado como deducido en pantalla.**
 
 *(Ya resueltos: Payoneer = cuentas de propietarios; 4343 y sus variantes = MTHosting; existen otras cuentas MTH, así que la clasificación vive en la tabla `cuentas_payout`, nunca hardcodeada.)*
 
@@ -529,9 +549,15 @@ Comisión 20%. Payouts en ARS a cuenta del propietario (no suman a percibido).
 
 Sobre el histórico completo (5.712 filas, 41 archivos): resultado idéntico en cualquier orden, y reimportar todo agrega 0.
 
-### Prueba 3 — Cambio de esquema (mismo departamento, `(ULT)`)
+### Prueba 3 — Recupero de deuda, NO cambio de comisión (mismo departamento, `(ULT)`)
 
-De enero a mayo la línea de coanfitrión es el **20,0% exacto** en las 49 reservas; desde junio pasa a **80% + limpieza** en las 18 reservas de junio y julio, mientras el payout cae del 80% al 20%. **Es intencional** (acuerdo de recupero de deuda). El sistema debe detectarlo y pedir etiqueta, no reinterpretarlo.
+De enero a mayo la línea de coanfitrión es el **20,0% exacto** en las 49 reservas; desde junio pasa a **80% + limpieza** en las 18 reservas de junio y julio, mientras el payout cae del 80% al 20%.
+
+**Es intencional y no es un cambio de comisión** (confirmado por Marcos, 15/08/2026): el propietario le debía plata a MTHosting por gastos que MTHosting había pagado, y se acordó cobrarlo reteniendo más del payout. La comisión de KENNEDY 1 siguió siendo el 20% todo el tiempo.
+
+Por eso este caso es el **mejor banco de pruebas de la regla central de 5.1**: durante junio y julio entra mucha más plata (PERCIBIDO alto) y la GANANCIA tiene que seguir siendo el 20% de siempre. Si el motor calcula la ganancia sobre lo cobrado en vez de sobre la comisión ordinaria, acá se nota de inmediato.
+
+El sistema debe **detectarlo y pedir etiqueta, no reinterpretarlo**: que la línea de coanfitrión salte del 20% al 80% es exactamente la clase de cosa que una persona tiene que mirar.
 
 ### Prueba 4 — ED TALC (`airbnb_01_2026-05_2026 (28).csv`, 870 filas, **8 departamentos en un solo archivo**)
 

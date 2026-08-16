@@ -9,6 +9,7 @@ import {
   type ClaseCuenta,
   type FilaAgregable,
 } from "@/lib/economico/calcular";
+import Tablas, { type Celda as CeldaTabla } from "./Tablas";
 
 /**
  * La pantalla del módulo: cómo evoluciona la ganancia mes a mes, de qué está
@@ -126,27 +127,26 @@ export default async function Economico({
     );
   }
 
-  // ---- Filtro por departamento ----
+  // Lo que viaja al cliente: ya calculado, y solo lo que las tablas usan.
+  const paraTablas: CeldaTabla[] = celdas.map((c) => ({
+    depto_id: c.depto_id,
+    codigo: codigoDepto.get(c.depto_id) ?? "—",
+    mes: c.mes,
+    comision: c.comision,
+    limpieza: c.limpieza,
+    percibido: c.percibido,
+    aircover: c.aircover,
+    reservas: c.reservas,
+  }));
+
+  // ---- Filtro por departamento (el de la dirección, que sobrevive al link) ----
   const elegido = params.depto ?? null;
   const visibles = elegido ? celdas.filter((c) => c.depto_id === elegido) : celdas;
 
-  // ---- Evolución mensual ----
-  const porMes = new Map<string, Celda[]>();
-  for (const c of visibles) porMes.set(c.mes, [...(porMes.get(c.mes) ?? []), c]);
-  const meses = [...porMes.keys()].sort();
-  const filasMes = meses.map((m) => {
-    const cs = porMes.get(m)!;
-    return {
-      mes: m,
-      total: totalizar(cs),
-      reservas: cs.reduce((s, c) => s + c.reservas, 0),
-      noches: cs.reduce((s, c) => s + c.noches, 0),
-    };
-  });
-  const maxGanancia = Math.max(...filasMes.map((f) => ganancia(f.total)), 1);
+  const meses = [...new Set(celdas.map((c) => c.mes))].sort();
   const totalPeriodo = totalizar(visibles);
 
-  // ---- Por departamento ----
+  // ---- Saldos por departamento ----
   const porDepto = new Map<string, Celda[]>();
   for (const c of celdas) porDepto.set(c.depto_id, [...(porDepto.get(c.depto_id) ?? []), c]);
   const filasDepto = [...porDepto.entries()]
@@ -172,140 +172,27 @@ export default async function Economico({
         )}
       </div>
 
-      {/* ---- 1. La evolución ---- */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="font-semibold text-tinta">Ganancia mes a mes</h2>
-          <p className="text-sm text-tinta-suave">
-            La barra separa de qué está hecha:{" "}
-            <span className="font-medium text-primary">comisión</span> sobre el alquiler y{" "}
-            <span className="font-medium text-accent">limpieza</span>, que va entera a
-            MTHosting y no comisiona.
-          </p>
-        </div>
+      {/* ---- 1 y 2. La evolución y el detalle por departamento ----
+           Van en un componente cliente: ordenar y filtrar 7 meses y 54
+           departamentos ya calculados es instantáneo en el navegador,
+           mientras que hacerlo por dirección obligaría a recalcular los
+           5.700 movimientos en cada clic sobre un encabezado. */}
+      <Tablas celdas={paraTablas} />
 
-        <div className="overflow-x-auto rounded-md border border-borde bg-superficie shadow-sm">
-          <table className="w-full text-sm tabular-nums">
-            <thead className="bg-superficie-alt text-left text-[13px] font-semibold text-warm-700">
-              <tr>
-                <th className="px-3 py-2">Mes</th>
-                <th className="px-3 py-2 w-2/5">Composición</th>
-                <th className="px-3 py-2 text-right">Comisión</th>
-                <th className="px-3 py-2 text-right">Limpieza</th>
-                <th className="px-3 py-2 text-right">Ganancia</th>
-                <th className="px-3 py-2 text-right">Reservas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filasMes.map((f) => {
-                const g = ganancia(f.total);
-                const ancho = (g / maxGanancia) * 100;
-                const pctComision = g === 0 ? 0 : (f.total.comision / g) * 100;
-                return (
-                  <tr key={f.mes} className="h-fila border-t border-borde">
-                    <td className="whitespace-nowrap px-3 py-2 font-medium">
-                      {nombreMes(f.mes)}
-                    </td>
-                    <td className="px-3 py-2">
-                      {/* La barra no es decoración: el ancho es la ganancia
-                          contra el mejor mes, y el corte es la composición. */}
-                      <span
-                        className="flex h-3 overflow-hidden rounded-full bg-superficie-alt"
-                        style={{ width: `${Math.max(ancho, 2)}%` }}
-                        title={`comisión ${usd(f.total.comision)} · limpieza ${usd(f.total.limpieza)}`}
-                      >
-                        <span className="bg-primary" style={{ width: `${pctComision}%` }} />
-                        <span className="flex-1 bg-accent" />
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right">{usd(f.total.comision)}</td>
-                    <td className="px-3 py-2 text-right">{usd(f.total.limpieza)}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{usd(g)}</td>
-                    <td className="px-3 py-2 text-right text-tinta-suave">{f.reservas}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="h-fila border-t-2 border-borde-fuerte bg-superficie-alt font-semibold">
-                <td className="px-3 py-2" colSpan={2}>
-                  Total
-                </td>
-                <td className="px-3 py-2 text-right">{usd(totalPeriodo.comision)}</td>
-                <td className="px-3 py-2 text-right">{usd(totalPeriodo.limpieza)}</td>
-                <td className="px-3 py-2 text-right">{usd(ganancia(totalPeriodo))}</td>
-                <td className="px-3 py-2 text-right">
-                  {filasMes.reduce((s, f) => s + f.reservas, 0)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        {totalPeriodo.aircover !== 0 && (
-          <p className="text-sm text-tinta-suave">
-            Además entraron <strong>{usd(totalPeriodo.aircover)}</strong> de AirCover por
-            daños. No están en la ganancia: son indemnizaciones, y según el caso
-            corresponden al propietario o a MTHosting.
-          </p>
-        )}
-      </section>
-
-      {/* ---- 2. Por departamento ---- */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h2 className="font-semibold text-tinta">Por departamento</h2>
-          <p className="text-sm text-tinta-suave">
-            Ordenados por ganancia, que es lo que mide la rentabilidad. Lo percibido no
-            sirve para comparar: un departamento donde se cobró de más para recuperar una
-            deuda aparecería primero sin ser el mejor.
-          </p>
-        </div>
-        <div className="overflow-x-auto rounded-md border border-borde bg-superficie shadow-sm">
-          <table className="w-full text-sm tabular-nums">
-            <thead className="bg-superficie-alt text-left text-[13px] font-semibold text-warm-700">
-              <tr>
-                <th className="px-3 py-2">Departamento</th>
-                <th className="px-3 py-2 text-right">Comisión</th>
-                <th className="px-3 py-2 text-right">Limpieza</th>
-                <th className="px-3 py-2 text-right">Ganancia</th>
-                <th className="px-3 py-2 text-right">Percibido</th>
-                <th className="px-3 py-2 text-right">Saldo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filasDepto.map((d) => (
-                <tr
-                  key={d.id}
-                  className={`h-fila border-t border-borde ${
-                    d.id === elegido ? "bg-superficie-elegida" : ""
-                  }`}
-                >
-                  <td className="px-3 py-2">
-                    <Link
-                      href={d.id === elegido ? "/economico" : `/economico?depto=${d.id}`}
-                      className="font-mono font-semibold text-primary underline"
-                    >
-                      {d.codigo}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 text-right">{usd(d.total.comision)}</td>
-                  <td className="px-3 py-2 text-right">{usd(d.total.limpieza)}</td>
-                  <td className="px-3 py-2 text-right font-semibold">
-                    {usd(ganancia(d.total))}
-                  </td>
-                  <td className="px-3 py-2 text-right text-tinta-suave">
-                    {usd(d.total.percibido)}
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <Saldo valor={saldoPropietario(d.total)} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {totalPeriodo.aircover !== 0 && (
+        <p className="rounded-md border border-borde bg-superficie px-4 py-3 text-sm text-tinta-suave shadow-sm">
+          Además entraron{" "}
+          <strong className="tabular-nums text-tinta">
+            USD {usd(totalPeriodo.aircover)}
+          </strong>{" "}
+          de AirCover por daños. No están en la ganancia: según el caso corresponden al
+          propietario o a MTHosting, y eso se define{" "}
+          <Link href="/economico/aircover" className="font-medium text-primary underline">
+            en su pantalla
+          </Link>
+          .
+        </p>
+      )}
 
       {/* ---- 3. Saldos ---- */}
       <section className="flex flex-col gap-3">
@@ -367,11 +254,3 @@ export default async function Economico({
   );
 }
 
-function Saldo({ valor }: { valor: number }) {
-  if (Math.abs(valor) < 0.005) return <span className="text-tinta-tenue">—</span>;
-  return (
-    <span className={`font-semibold ${valor > 0 ? "text-accent" : "text-dato"}`}>
-      {usd(valor)}
-    </span>
-  );
-}

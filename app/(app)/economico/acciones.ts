@@ -138,3 +138,30 @@ export async function clasificarCuenta(
   revalidatePath("/economico/cuentas");
   revalidatePath("/economico");
 }
+
+/**
+ * A quién le corresponde un reembolso de AirCover por daños.
+ *
+ * No se puede deducir del CSV y no se decide solo: si el daño fue a algo del
+ * propietario, la indemnización es suya entera; si el gasto lo absorbió
+ * MTHosting, es de MTHosting. Por eso hay una pantalla donde se marca uno por
+ * uno (spec §5.1).
+ *
+ * Marcar NO mueve la ganancia ni lo percibido: el AirCover queda afuera de las
+ * dos cifras y se informa aparte (decisión de Marcos, 15/08/2026). Lo que hace
+ * es dejar registrado de quién es, que es el insumo para liquidarlo.
+ */
+export async function asignarAirCover(
+  movimientoId: string,
+  destino: "mthosting" | "propietario" | "sin_asignar",
+): Promise<void> {
+  const supabase = await exigirPermiso();
+  const { error } = await supabase
+    .from("movimientos_economicos")
+    .update({ aircover_destino: destino })
+    .eq("id", movimientoId)
+    .eq("categoria", "aircover");
+  if (error) throw new Error(`No se pudo asignar el AirCover: ${error.message}`);
+  revalidatePath("/economico/aircover");
+  revalidatePath("/economico");
+}

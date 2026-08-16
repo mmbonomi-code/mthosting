@@ -30,6 +30,7 @@ export default async function LayoutEconomico({
         {[
           { href: "/economico", texto: "Resumen" },
           { href: "/economico/validacion", texto: "Validación" },
+          { href: "/economico/aircover", texto: "AirCover" },
           { href: "/economico/importar", texto: "Importar" },
           { href: "/economico/anuncios", texto: "Anuncios sin mapear" },
           { href: "/economico/cuentas", texto: "Cuentas de payout" },

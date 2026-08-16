@@ -4,6 +4,7 @@ import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { contarReclamosUrgentes } from "@/lib/reclamos/alertas";
 import { contarPendientesUrgentes } from "@/lib/reporte/alertas";
 import { puedeVerCaja } from "@/lib/caja/permisos";
+import { puedeVerEconomico } from "@/lib/economico/permisos";
 import { esManagerOAdmin, rolDelUsuario } from "@/lib/permisos";
 import { inicioDelRol, puedeEntrar } from "@/lib/secciones";
 import { cerrarSesion } from "@/app/ingresar/acciones";
@@ -21,6 +22,7 @@ export default async function LayoutApp({
     { count: sinAsignar },
     verReclamos,
     verCaja,
+    verEconomico,
     esConfiguracion,
     rol,
   ] = await Promise.all([
@@ -36,6 +38,7 @@ export default async function LayoutApp({
       .eq("descartada", false),
     puedeGestionarReclamos(supabase),
     puedeVerCaja(supabase),
+    puedeVerEconomico(supabase),
     esManagerOAdmin(supabase),
     rolDelUsuario(supabase),
   ]);
@@ -81,10 +84,11 @@ export default async function LayoutApp({
             { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
             { href: "/reporte", texto: "Reporte", pendientes: reporteUrgente },
             ...(verCaja ? [{ href: "/caja", texto: "Caja", pendientes: 0 }] : []),
-            // Económico va con el mismo permiso que la caja: manager y
-            // administración. Cuando la barra se agrupe por dominio, esta y
-            // Dashboard quedan juntas bajo Informes.
-            ...(esConfiguracion
+            // Económico es SOLO de administración (decisión del dueño,
+            // 16/08/2026). Se usa su propio permiso y no el de configuración:
+            // ofrecerle el enlace a un manager lo mandaría a un cartel de "no
+            // tenés acceso", que es peor que no verlo.
+            ...(verEconomico
               ? [{ href: "/economico", texto: "Económico", pendientes: 0 }]
               : []),
             ...(verReclamos

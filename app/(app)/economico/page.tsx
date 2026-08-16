@@ -9,6 +9,7 @@ import {
   type ClaseCuenta,
   type FilaAgregable,
 } from "@/lib/economico/calcular";
+import { traerTodo } from "@/lib/economico/consultar";
 import Tablas, { type Celda as CeldaTabla } from "./Tablas";
 
 /**
@@ -45,11 +46,9 @@ type Cruda = {
   noches: number | null;
 };
 
-const TOPE = 1000;
-
 /** Los programados no traen payout ni cuenta: nadie cobró nada todavía. */
 const CAMPOS_PROGRAMADO = `
-  categoria, monto, cobrado, tarifa_limpieza, moneda, fecha, depto_id, noches
+  categoria, monto, tarifa_limpieza, moneda, fecha, depto_id, noches
 `;
 
 const usd = (n: number) =>
@@ -74,30 +73,21 @@ export default async function Economico({
   const params = await searchParams;
   const supabase = await crearClienteServidor();
 
-  const crudas: Cruda[] = [];
-  for (let desde = 0; ; desde += TOPE) {
-    const { data } = await supabase
-      .from("movimientos_economicos")
-      .select(CAMPOS)
-      .range(desde, desde + TOPE - 1);
-    const tanda = (data ?? []) as unknown as Cruda[];
-    crudas.push(...tanda);
-    if (tanda.length < TOPE) break;
-  }
+  const crudas = await traerTodo<Cruda>(
+    () => supabase.from("movimientos_economicos").select(CAMPOS) as never,
+    "los movimientos",
+  );
 
   // Lo que está por cobrarse. Es una foto: cada carga reemplaza la anterior,
   // así que solo se leen los vigentes.
-  const programadosCrudos: Cruda[] = [];
-  for (let desde = 0; ; desde += TOPE) {
-    const { data } = await supabase
-      .from("cobros_programados")
-      .select(CAMPOS_PROGRAMADO)
-      .eq("vigente", true)
-      .range(desde, desde + TOPE - 1);
-    const tanda = (data ?? []) as unknown as Cruda[];
-    programadosCrudos.push(...tanda);
-    if (tanda.length < TOPE) break;
-  }
+  const programadosCrudos = await traerTodo<Cruda>(
+    () =>
+      supabase
+        .from("cobros_programados")
+        .select(CAMPOS_PROGRAMADO)
+        .eq("vigente", true) as never,
+    "los próximos cobros",
+  );
 
   const [{ data: deptos }, { data: cuentas }] = await Promise.all([
     supabase.from("departamentos").select("id, codigo, comision_pct").order("codigo"),

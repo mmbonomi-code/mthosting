@@ -1,4 +1,5 @@
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { traerTodo } from "@/lib/economico/consultar";
 import ClasificarCuenta from "./ClasificarCuenta";
 
 /**
@@ -20,20 +21,19 @@ export default async function CuentasPayout() {
   // de las primeras mil y nada más. Y el volumen es justamente el dato con el
   // que se decide de quién es la cuenta, así que un número corto acá lleva a
   // clasificar mal, que es lo que define qué plata cuenta como ingreso.
-  const TOPE = 1000;
-  const movimientos: { cuenta_id: string | null; importe: number | null; moneda: string }[] =
-    [];
-  for (let desde = 0; ; desde += TOPE) {
-    const { data } = await supabase
-      .from("movimientos_economicos")
-      .select("cuenta_id, importe, moneda")
-      .eq("activo", true)
-      .not("cuenta_id", "is", null)
-      .range(desde, desde + TOPE - 1);
-    const tanda = data ?? [];
-    movimientos.push(...tanda);
-    if (tanda.length < TOPE) break;
-  }
+  const movimientos = await traerTodo<{
+    cuenta_id: string | null;
+    importe: number | null;
+    moneda: string;
+  }>(
+    () =>
+      supabase
+        .from("movimientos_economicos")
+        .select("cuenta_id, importe, moneda")
+        .eq("activo", true)
+        .not("cuenta_id", "is", null) as never,
+    "los pagos de cada cuenta",
+  );
 
   const [{ data: cuentas }, { data: grafias }] = await Promise.all([
     supabase

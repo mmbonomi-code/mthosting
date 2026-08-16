@@ -17,6 +17,7 @@ import {
   tcFueraDeLinea,
   type FilaDeGrupo,
 } from "@/lib/economico/validar";
+import { traerTodo } from "@/lib/economico/consultar";
 import Badge from "@/app/componentes/Badge";
 import { TONO_LIMPIEZA, TONO_RESERVA } from "@/lib/estados";
 
@@ -55,9 +56,6 @@ type Cruda = {
   huesped: string | null;
 };
 
-/** PostgREST corta en 1000 y no avisa. Paginar es corrección, no ajuste fino. */
-const TOPE = 1000;
-
 const usd = (n: number) =>
   n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -69,18 +67,15 @@ export default async function Validacion({
   const params = await searchParams;
   const supabase = await crearClienteServidor();
 
-  const crudas: Cruda[] = [];
-  for (let desde = 0; ; desde += TOPE) {
-    const { data } = await supabase
-      .from("movimientos_economicos")
-      .select(CAMPOS)
-      .order("archivo")
-      .order("orden_en_archivo")
-      .range(desde, desde + TOPE - 1);
-    const tanda = (data ?? []) as unknown as Cruda[];
-    crudas.push(...tanda);
-    if (tanda.length < TOPE) break;
-  }
+  const crudas = await traerTodo<Cruda>(
+    () =>
+      supabase
+        .from("movimientos_economicos")
+        .select(CAMPOS)
+        .order("archivo")
+        .order("orden_en_archivo") as never,
+    "los movimientos",
+  );
 
   const [{ data: deptos }, { data: cuentas }] = await Promise.all([
     supabase.from("departamentos").select("id, codigo, comision_pct").order("codigo"),

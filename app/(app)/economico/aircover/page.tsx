@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR } from "@/lib/fechas";
+import { traerTodo } from "@/lib/economico/consultar";
 import AsignarAirCover from "./AsignarAirCover";
 
 /**
@@ -17,8 +18,6 @@ import AsignarAirCover from "./AsignarAirCover";
  */
 
 type Destino = "mthosting" | "propietario" | "sin_asignar";
-
-const TOPE = 1000;
 
 const usd = (n: number) =>
   n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -40,20 +39,17 @@ type Fila = {
 export default async function AirCover() {
   const supabase = await crearClienteServidor();
 
-  const filas: Fila[] = [];
-  for (let desde = 0; ; desde += TOPE) {
-    const { data } = await supabase
-      .from("movimientos_economicos")
-      .select(
-        "id, fecha, monto, moneda, codigo_confirmacion, huesped, detalles, archivo, linea, aircover_destino, depto_id",
-      )
-      .eq("categoria", "aircover")
-      .order("fecha", { ascending: false })
-      .range(desde, desde + TOPE - 1);
-    const tanda = (data ?? []) as unknown as Fila[];
-    filas.push(...tanda);
-    if (tanda.length < TOPE) break;
-  }
+  const filas = await traerTodo<Fila>(
+    () =>
+      supabase
+        .from("movimientos_economicos")
+        .select(
+          "id, fecha, monto, moneda, codigo_confirmacion, huesped, detalles, archivo, linea, aircover_destino, depto_id",
+        )
+        .eq("categoria", "aircover")
+        .order("fecha", { ascending: false }) as never,
+    "los AirCover",
+  );
 
   const { data: deptos } = await supabase.from("departamentos").select("id, codigo");
   const codigoDepto = new Map((deptos ?? []).map((d) => [d.id, d.codigo]));

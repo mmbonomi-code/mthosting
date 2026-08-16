@@ -321,6 +321,28 @@ describe("parsearTransacciones", () => {
     expect(avisos.some((a) => a.includes("antes del primer Payout"))).toBe(true);
   });
 
+  it("un archivo de próximos cobros no tiene payouts, y eso NO es un aviso", () => {
+    // Los "próximos cobros" son reservas todavía no pagadas: no hay ni un
+    // Payout en el archivo, así que TODAS las filas quedan sin grupo. Avisar
+    // ahí sería avisar siempre, y una advertencia que salta en el 100% de los
+    // casos enseña a ignorar las advertencias.
+    const csv = [
+      ENCABEZADO_21,
+      fila({ Fecha: "08/17/2026", Tipo: "Reserva", Anuncio: "A", Moneda: "USD", Monto: "53.93" }),
+      fila({
+        Fecha: "08/17/2026",
+        Tipo: "Cobro como coanfitrión",
+        Anuncio: "A",
+        Moneda: "USD",
+        Monto: "-30.79",
+      }),
+    ].join("\n");
+    const { filas, avisos } = parsearTransacciones(csv);
+    expect(filas).toHaveLength(2);
+    expect(filas.every((f) => f.grupo_payout === null)).toBe(true);
+    expect(avisos.some((a) => a.includes("antes del primer Payout"))).toBe(false);
+  });
+
   it("numera las filas idénticas del mismo archivo para no perder ninguna", () => {
     // Dos payouts de 0,00 el mismo día a la misma cuenta existen de verdad.
     // Sin el contador, el segundo se tomaría como copia del primero.

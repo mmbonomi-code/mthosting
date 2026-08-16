@@ -470,8 +470,14 @@ function marcarGrupos(filas: FilaTransaccion[], avisos: string[]): void {
 
   // Filas de detalle antes del primer Payout: el corte del export las dejó
   // separadas de su payout. No se descartan; se avisan.
+  //
+  // OJO: un archivo de PRÓXIMOS COBROS no trae ningún Payout, porque todavía
+  // no se pagó nada. Ahí todas las filas quedan "huérfanas" y el aviso sería
+  // falso en el 100% de los casos, que es peor que no avisar: 37 archivos con
+  // una advertencia cada uno enseñan a ignorar las advertencias.
+  const hayAlgunPayout = filas.some((f) => f.es_payout);
   const huerfanas = filas.filter((f) => f.grupo_payout === null).length;
-  if (huerfanas > 0) {
+  if (huerfanas > 0 && hayAlgunPayout) {
     avisos.push(
       `${huerfanas} fila${huerfanas === 1 ? "" : "s"} aparece${huerfanas === 1 ? "" : "n"} antes del primer Payout del archivo: se guardan, pero su payout quedó en otro export.`,
     );

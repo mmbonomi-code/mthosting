@@ -47,6 +47,11 @@ type Cruda = {
 
 const TOPE = 1000;
 
+/** Los programados no traen payout ni cuenta: nadie cobró nada todavía. */
+const CAMPOS_PROGRAMADO = `
+  categoria, monto, cobrado, tarifa_limpieza, moneda, fecha, depto_id, noches
+`;
+
 const usd = (n: number) =>
   n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -80,6 +85,20 @@ export default async function Economico({
     if (tanda.length < TOPE) break;
   }
 
+  // Lo que está por cobrarse. Es una foto: cada carga reemplaza la anterior,
+  // así que solo se leen los vigentes.
+  const programadosCrudos: Cruda[] = [];
+  for (let desde = 0; ; desde += TOPE) {
+    const { data } = await supabase
+      .from("cobros_programados")
+      .select(CAMPOS_PROGRAMADO)
+      .eq("vigente", true)
+      .range(desde, desde + TOPE - 1);
+    const tanda = (data ?? []) as unknown as Cruda[];
+    programadosCrudos.push(...tanda);
+    if (tanda.length < TOPE) break;
+  }
+
   const [{ data: deptos }, { data: cuentas }] = await Promise.all([
     supabase.from("departamentos").select("id, codigo, comision_pct").order("codigo"),
     supabase.from("cuentas_payout").select("id, clasificacion"),
@@ -109,6 +128,21 @@ export default async function Economico({
 
   const { celdas } = agregarPorDeptoMes(filas, comisionPct);
 
+  // La ganancia de lo que viene. No se calcula percibido: no entró nada.
+  const { celdas: celdasProgramadas } = agregarPorDeptoMes(
+    programadosCrudos.map((m) => ({
+      categoria: m.categoria,
+      monto: m.monto,
+      cobrado: null,
+      tarifa_limpieza: m.tarifa_limpieza,
+      moneda: m.moneda,
+      fecha: m.fecha,
+      depto_id: m.depto_id,
+      noches: m.noches,
+    })),
+    comisionPct,
+  );
+
   if (celdas.length === 0) {
     return (
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -136,6 +170,17 @@ export default async function Economico({
     limpieza: c.limpieza,
     percibido: c.percibido,
     aircover: c.aircover,
+    reservas: c.reservas,
+  }));
+
+  const paraTablasProgramado: CeldaTabla[] = celdasProgramadas.map((c) => ({
+    depto_id: c.depto_id,
+    codigo: codigoDepto.get(c.depto_id) ?? "—",
+    mes: c.mes,
+    comision: c.comision,
+    limpieza: c.limpieza,
+    percibido: 0,
+    aircover: 0,
     reservas: c.reservas,
   }));
 
@@ -177,7 +222,7 @@ export default async function Economico({
            departamentos ya calculados es instantáneo en el navegador,
            mientras que hacerlo por dirección obligaría a recalcular los
            5.700 movimientos en cada clic sobre un encabezado. */}
-      <Tablas celdas={paraTablas} />
+      <Tablas celdas={paraTablas} programados={paraTablasProgramado} />
 
       {totalPeriodo.aircover !== 0 && (
         <p className="rounded-md border border-borde bg-superficie px-4 py-3 text-sm text-tinta-suave shadow-sm">

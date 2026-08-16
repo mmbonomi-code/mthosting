@@ -86,13 +86,21 @@ function Th({
   );
 }
 
-export default function Tablas({ celdas }: { celdas: Celda[] }) {
+export default function Tablas({
+  celdas,
+  programados,
+}: {
+  celdas: Celda[];
+  /** Lo que está por cobrarse. Solo aporta ganancia: no entró nada todavía. */
+  programados: Celda[];
+}) {
   const meses = useMemo(
-    () => [...new Set(celdas.map((c) => c.mes))].sort(),
-    [celdas],
+    () => [...new Set([...celdas, ...programados].map((c) => c.mes))].sort(),
+    [celdas, programados],
   );
   const [mesElegido, setMesElegido] = useState<string>("");
   const [deptoElegido, setDeptoElegido] = useState<string>("");
+  const [conProximos, setConProximos] = useState(false);
   const [ordenMes, setOrdenMes] = useState<Orden>({ campo: "mes", asc: true });
   const [ordenDepto, setOrdenDepto] = useState<Orden>({ campo: "ganancia", asc: false });
 
@@ -108,38 +116,75 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
     [celdas, mesElegido, deptoElegido],
   );
 
+  const proximosVisibles = useMemo(
+    () =>
+      programados.filter(
+        (c) =>
+          (mesElegido === "" || c.mes === mesElegido) &&
+          (deptoElegido === "" || c.depto_id === deptoElegido),
+      ),
+    [programados, mesElegido, deptoElegido],
+  );
+
+  /**
+   * Lo cobrado y lo por cobrar se suman por separado y recién se juntan al
+   * mostrarlos. Mezclarlos antes haría imposible decir cuánto del mes ya
+   * entró, que es justamente lo que uno quiere saber al mirar un mes en curso.
+   */
   const porMes = useMemo(() => {
-    const m = new Map<string, Celda[]>();
-    for (const c of visibles) m.set(c.mes, [...(m.get(c.mes) ?? []), c]);
-    return [...m.entries()].map(([mes, cs]) => ({
+    const m = new Map<string, { real: Celda[]; prox: Celda[] }>();
+    const meter = (c: Celda, cual: "real" | "prox") => {
+      const v = m.get(c.mes) ?? { real: [], prox: [] };
+      v[cual].push(c);
+      m.set(c.mes, v);
+    };
+    for (const c of visibles) meter(c, "real");
+    if (conProximos) for (const c of proximosVisibles) meter(c, "prox");
+
+    return [...m.entries()].map(([mes, { real, prox }]) => ({
       clave: mes,
       etiqueta: nombreMes(mes),
       mes,
-      comision: cs.reduce((s, c) => s + c.comision, 0),
-      limpieza: cs.reduce((s, c) => s + c.limpieza, 0),
-      reservas: cs.reduce((s, c) => s + c.reservas, 0),
+      comision: real.reduce((s, c) => s + c.comision, 0),
+      limpieza: real.reduce((s, c) => s + c.limpieza, 0),
+      reservas: real.reduce((s, c) => s + c.reservas, 0),
+      porCobrar: prox.reduce((s, c) => s + c.comision + c.limpieza, 0),
+      reservasPorCobrar: prox.reduce((s, c) => s + c.reservas, 0),
     }));
-  }, [visibles]);
+  }, [visibles, proximosVisibles, conProximos]);
 
   const porDepto = useMemo(() => {
-    const m = new Map<string, Celda[]>();
-    for (const c of celdas.filter((c) => mesElegido === "" || c.mes === mesElegido)) {
-      m.set(c.depto_id, [...(m.get(c.depto_id) ?? []), c]);
-    }
-    return [...m.entries()].map(([id, cs]) => ({
+    const delMes = (c: Celda) => mesElegido === "" || c.mes === mesElegido;
+    const m = new Map<string, { codigo: string; real: Celda[]; prox: Celda[] }>();
+    const meter = (c: Celda, cual: "real" | "prox") => {
+      const v = m.get(c.depto_id) ?? { codigo: c.codigo, real: [], prox: [] };
+      v[cual].push(c);
+      m.set(c.depto_id, v);
+    };
+    for (const c of celdas.filter(delMes)) meter(c, "real");
+    if (conProximos) for (const c of programados.filter(delMes)) meter(c, "prox");
+
+    return [...m.entries()].map(([id, { codigo, real, prox }]) => ({
       clave: id,
-      codigo: cs[0].codigo,
-      comision: cs.reduce((s, c) => s + c.comision, 0),
-      limpieza: cs.reduce((s, c) => s + c.limpieza, 0),
-      percibido: cs.reduce((s, c) => s + c.percibido, 0),
-      reservas: cs.reduce((s, c) => s + c.reservas, 0),
+      codigo,
+      comision: real.reduce((s, c) => s + c.comision, 0),
+      limpieza: real.reduce((s, c) => s + c.limpieza, 0),
+      percibido: real.reduce((s, c) => s + c.percibido, 0),
+      reservas: real.reduce((s, c) => s + c.reservas, 0),
+      porCobrar: prox.reduce((s, c) => s + c.comision + c.limpieza, 0),
     }));
-  }, [celdas, mesElegido]);
+  }, [celdas, programados, mesElegido, conProximos]);
 
   function ordenar<T extends Record<string, unknown>>(filas: T[], o: Orden): T[] {
     return [...filas].sort((a, b) => {
-      const va = o.campo === "ganancia" ? ganancia(a as never) : a[o.campo];
-      const vb = o.campo === "ganancia" ? ganancia(b as never) : b[o.campo];
+      // "Ganancia" ordena por lo que se ve en esa columna: con la tilde
+      // puesta, eso incluye lo que falta cobrar.
+      const valor = (f: T) =>
+        o.campo === "ganancia"
+          ? ganancia(f as never) + Number(f.porCobrar ?? 0)
+          : f[o.campo];
+      const va = valor(a);
+      const vb = valor(b);
       const cmp =
         typeof va === "string" && typeof vb === "string"
           ? va.localeCompare(vb)
@@ -150,12 +195,13 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
 
   const filasMes = ordenar(porMes, ordenMes);
   const filasDepto = ordenar(porDepto, ordenDepto);
-  const maxGanancia = Math.max(...filasMes.map(ganancia), 1);
+  const maxGanancia = Math.max(...filasMes.map((f) => ganancia(f) + f.porCobrar), 1);
 
   const totalMes = {
     comision: filasMes.reduce((s, f) => s + f.comision, 0),
     limpieza: filasMes.reduce((s, f) => s + f.limpieza, 0),
     reservas: filasMes.reduce((s, f) => s + f.reservas, 0),
+    porCobrar: filasMes.reduce((s, f) => s + f.porCobrar, 0),
   };
 
   const CONTROL =
@@ -202,6 +248,18 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
           </select>
         </label>
 
+        {programados.length > 0 && (
+          <label className="flex h-11 cursor-pointer items-center gap-2 self-end rounded-md border border-borde-control bg-superficie px-3">
+            <input
+              type="checkbox"
+              checked={conProximos}
+              onChange={(e) => setConProximos(e.target.checked)}
+              className="size-4 accent-primary"
+            />
+            <span className="text-sm text-tinta">Sumar próximos cobros</span>
+          </label>
+        )}
+
         {(mesElegido || deptoElegido) && (
           <button
             type="button"
@@ -225,6 +283,14 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
             <span className="font-medium text-primary">comisión</span> sobre el alquiler y{" "}
             <span className="font-medium text-accent">limpieza</span>, que va entera a
             MTHosting y no comisiona. Tocá cualquier encabezado para ordenar.
+            {conProximos && (
+              <>
+                {" "}
+                Lo que está{" "}
+                <span className="font-medium text-dato-text">por cobrarse</span> se suma
+                aparte: es una previsión de Airbnb, no plata que ya entró.
+              </>
+            )}
           </p>
         </div>
 
@@ -244,8 +310,13 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
                 <Th campo="limpieza" orden={ordenMes} setOrden={setOrdenMes} alDerecha>
                   Limpieza
                 </Th>
+                {conProximos && (
+                  <Th campo="porCobrar" orden={ordenMes} setOrden={setOrdenMes} alDerecha>
+                    Por cobrar
+                  </Th>
+                )}
                 <Th campo="ganancia" orden={ordenMes} setOrden={setOrdenMes} alDerecha>
-                  Ganancia
+                  {conProximos ? "Total" : "Ganancia"}
                 </Th>
                 <Th campo="reservas" orden={ordenMes} setOrden={setOrdenMes} alDerecha>
                   Reservas
@@ -255,7 +326,9 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
             <tbody>
               {filasMes.map((f) => {
                 const g = ganancia(f);
-                const pctComision = g === 0 ? 0 : (f.comision / g) * 100;
+                const conTodo = g + f.porCobrar;
+                const pctComision = conTodo === 0 ? 0 : (f.comision / conTodo) * 100;
+                const pctLimpieza = conTodo === 0 ? 0 : (f.limpieza / conTodo) * 100;
                 return (
                   <tr key={f.clave} className="h-fila border-t border-borde">
                     <td className="whitespace-nowrap px-3 py-2 font-medium">{f.etiqueta}</td>
@@ -264,17 +337,36 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
                           la composición. No es decoración. */}
                       <span
                         className="flex h-3 overflow-hidden rounded-full bg-superficie-alt"
-                        style={{ width: `${Math.max((g / maxGanancia) * 100, 2)}%` }}
-                        title={`comisión ${usd(f.comision)} · limpieza ${usd(f.limpieza)}`}
+                        style={{
+                          width: `${Math.max(((g + f.porCobrar) / maxGanancia) * 100, 2)}%`,
+                        }}
+                        title={`comisión ${usd(f.comision)} · limpieza ${usd(f.limpieza)}${
+                          f.porCobrar ? ` · por cobrar ${usd(f.porCobrar)}` : ""
+                        }`}
                       >
                         <span className="bg-primary" style={{ width: `${pctComision}%` }} />
-                        <span className="flex-1 bg-accent" />
+                        <span className="bg-accent" style={{ width: `${pctLimpieza}%` }} />
+                        {/* Lo que falta cobrar va en azul: es una previsión,
+                            no plata hecha, y tiene que distinguirse. */}
+                        <span className="flex-1 bg-dato-soft" />
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right">{usd(f.comision)}</td>
                     <td className="px-3 py-2 text-right">{usd(f.limpieza)}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{usd(g)}</td>
-                    <td className="px-3 py-2 text-right text-tinta-suave">{f.reservas}</td>
+                    {conProximos && (
+                      <td className="px-3 py-2 text-right text-dato-text">
+                        {f.porCobrar === 0 ? "—" : usd(f.porCobrar)}
+                      </td>
+                    )}
+                    <td className="px-3 py-2 text-right font-semibold">
+                      {usd(g + f.porCobrar)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-tinta-suave">
+                      {f.reservas}
+                      {conProximos && f.reservasPorCobrar > 0 && (
+                        <span className="text-dato-text"> +{f.reservasPorCobrar}</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -286,7 +378,14 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
                 </td>
                 <td className="px-3 py-2 text-right">{usd(totalMes.comision)}</td>
                 <td className="px-3 py-2 text-right">{usd(totalMes.limpieza)}</td>
-                <td className="px-3 py-2 text-right">{usd(ganancia(totalMes))}</td>
+                {conProximos && (
+                  <td className="px-3 py-2 text-right text-dato-text">
+                    {usd(totalMes.porCobrar)}
+                  </td>
+                )}
+                <td className="px-3 py-2 text-right">
+                  {usd(ganancia(totalMes) + totalMes.porCobrar)}
+                </td>
                 <td className="px-3 py-2 text-right">{totalMes.reservas}</td>
               </tr>
             </tfoot>
@@ -324,8 +423,13 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
                 <Th campo="limpieza" orden={ordenDepto} setOrden={setOrdenDepto} alDerecha>
                   Limpieza
                 </Th>
+                {conProximos && (
+                  <Th campo="porCobrar" orden={ordenDepto} setOrden={setOrdenDepto} alDerecha>
+                    Por cobrar
+                  </Th>
+                )}
                 <Th campo="ganancia" orden={ordenDepto} setOrden={setOrdenDepto} alDerecha>
-                  Ganancia
+                  {conProximos ? "Total" : "Ganancia"}
                 </Th>
                 <Th campo="reservas" orden={ordenDepto} setOrden={setOrdenDepto} alDerecha>
                   Reservas
@@ -356,7 +460,14 @@ export default function Tablas({ celdas }: { celdas: Celda[] }) {
                   </td>
                   <td className="px-3 py-2 text-right">{usd(d.comision)}</td>
                   <td className="px-3 py-2 text-right">{usd(d.limpieza)}</td>
-                  <td className="px-3 py-2 text-right font-semibold">{usd(ganancia(d))}</td>
+                  {conProximos && (
+                    <td className="px-3 py-2 text-right text-dato-text">
+                      {d.porCobrar === 0 ? "—" : usd(d.porCobrar)}
+                    </td>
+                  )}
+                  <td className="px-3 py-2 text-right font-semibold">
+                    {usd(ganancia(d) + d.porCobrar)}
+                  </td>
                   <td className="px-3 py-2 text-right text-tinta-suave">{d.reservas}</td>
                   <td className="px-3 py-2 text-right text-tinta-suave">
                     {usd(d.percibido)}

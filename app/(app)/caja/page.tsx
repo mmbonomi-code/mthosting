@@ -192,6 +192,11 @@ export default async function Caja({
     saldo: number | null;
   })[];
 
+  // El saldo corrido necesita calcularse del más viejo al más nuevo (arriba),
+  // pero en pantalla se quiere ver al revés: lo más reciente primero. Dar
+  // vuelta acá, después de `acumular`, deja el saldo de cada fila intacto.
+  const paraMostrar = [...visibles].reverse();
+
   const porCobrar = (porCobrarCrudos ?? []).reduce((s, m) => s + m.monto, 0);
 
   // Sin código configurado no hay nada que cerrar: el botón no tendría sentido.
@@ -285,7 +290,7 @@ export default async function Caja({
         </div>
       ) : (
         <ul className="flex flex-col gap-1.5">
-          {visibles.map((m) => (
+          {paraMostrar.map((m) => (
             <li key={m.id}>
               <Link
                 href={`/caja/${m.id}`}

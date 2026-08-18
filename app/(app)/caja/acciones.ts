@@ -157,31 +157,31 @@ export async function crearMovimiento(fd: FormData): Promise<EstadoFormulario> {
   // se cargue: no se inventa un número.
   const tc = await cotizacionDe(supabase, fecha!);
 
-  const { data, error: errorAlta } = await supabase
-    .from("movimientos_caja")
-    .insert({
-      fecha: fecha!,
-      tipo,
-      monto: importe!,
-      moneda: "ARS",
-      tc,
-      fecha_tc: tc === null ? null : fecha,
-      categoria_id: categoriaId,
-      depto_id: deptoId,
-      descripcion: texto(fd, "descripcion"),
-      reembolsable: reembolsable && deptoId !== null,
-      usd_cambiado: cambio.usd,
-      tc_cambio: cambio.tc,
-    })
-    .select("id")
-    .single();
+  const { error: errorAlta } = await supabase.from("movimientos_caja").insert({
+    fecha: fecha!,
+    tipo,
+    monto: importe!,
+    moneda: "ARS",
+    tc,
+    fecha_tc: tc === null ? null : fecha,
+    categoria_id: categoriaId,
+    depto_id: deptoId,
+    descripcion: texto(fd, "descripcion"),
+    reembolsable: reembolsable && deptoId !== null,
+    usd_cambiado: cambio.usd,
+    tc_cambio: cambio.tc,
+  });
 
   if (errorAlta) return { error: `No se pudo guardar: ${errorAlta.message}` };
 
   await recalcularCobertura(supabase);
 
   revalidatePath("/caja");
-  redirect(`/caja/${data.id}`);
+  // Sin redirect a propósito: se carga un movimiento detrás de otro, y volver
+  // a la ficha recién creada obligaba a ir hasta "Caja" y tocar "+ Movimiento"
+  // de nuevo por cada uno. El formulario se limpia solo (FormularioMovimiento)
+  // apenas ve este "ok".
+  return { ok: "Movimiento guardado. Ya podés cargar el siguiente." };
 }
 
 export async function editarMovimiento(

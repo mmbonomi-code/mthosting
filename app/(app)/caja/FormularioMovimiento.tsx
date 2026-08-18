@@ -31,6 +31,35 @@ function aNumero(texto: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/** Todos los campos del formulario en un solo objeto, para poder vaciarlos
+ * de un saque con un único `setState` (nueve por separado dispara renders
+ * en cascada dentro del efecto que limpia tras un alta). */
+type Campos = {
+  tipo: "ingreso" | "egreso";
+  fecha: string;
+  monto: string;
+  descripcion: string;
+  depto: string;
+  reembolsable: boolean;
+  categoria: string;
+  usd: string;
+  tcCambio: string;
+};
+
+function camposIniciales(v: ValoresMovimiento): Campos {
+  return {
+    tipo: v.tipo,
+    fecha: v.fecha,
+    monto: v.monto,
+    descripcion: v.descripcion,
+    depto: v.depto_id,
+    reembolsable: v.reembolsable,
+    categoria: v.categoria_id,
+    usd: v.usd_cambiado,
+    tcCambio: v.tc_cambio,
+  };
+}
+
 /**
  * Alta y edición de un movimiento. El monto va siempre positivo: el signo lo
  * da si es ingreso o egreso, no un menos escrito a mano.
@@ -54,12 +83,26 @@ export default function FormularioMovimiento({
     accion,
     null,
   );
-  const [tipo, setTipo] = useState(valores.tipo);
-  const [depto, setDepto] = useState(valores.depto_id);
-  const [reembolsable, setReembolsable] = useState(valores.reembolsable);
-  const [categoria, setCategoria] = useState(valores.categoria_id);
-  const [usd, setUsd] = useState(valores.usd_cambiado);
-  const [tcCambio, setTcCambio] = useState(valores.tc_cambio);
+  const [campos, setCampos] = useState<Campos>(() => camposIniciales(valores));
+  const set = <K extends keyof Campos>(campo: K, valor: Campos[K]) =>
+    setCampos((c) => ({ ...c, [campo]: valor }));
+
+  // En un alta, cada "ok" nuevo es un movimiento distinto ya guardado: se
+  // vacía el formulario para cargar el siguiente sin volver a "Caja" y tocar
+  // "+ Movimiento" de nuevo. En edición no: ahí "ok" dice que quedaron
+  // guardados los cambios de ESTE movimiento, no que hay que vaciar nada.
+  //
+  // Se compara durante el render, no en un efecto: es el patrón que React
+  // recomienda para "derivar estado de un cambio" y evita el parpadeo de un
+  // render de más que tendría un `useEffect` disparando el reset después.
+  const [estadoVisto, setEstadoVisto] = useState(estado);
+  if (estado !== estadoVisto) {
+    setEstadoVisto(estado);
+    if (esAlta && estado && "ok" in estado) setCampos(camposIniciales(valores));
+  }
+
+  const { tipo, fecha, monto, descripcion, depto, reembolsable, categoria, usd, tcCambio } =
+    campos;
 
   // Un ingreso de una categoría de cambio se carga en dólares y tipo de
   // cambio: los pesos son el producto y no se escriben a mano.
@@ -91,7 +134,7 @@ export default function FormularioMovimiento({
               name="tipo"
               value={t}
               checked={tipo === t}
-              onChange={() => setTipo(t)}
+              onChange={() => set("tipo", t)}
               className="sr-only"
             />
             {t === "ingreso" ? "Ingreso (entra plata)" : "Egreso (sale plata)"}
@@ -105,7 +148,8 @@ export default function FormularioMovimiento({
           <input
             type="date"
             name="fecha"
-            defaultValue={valores.fecha}
+            value={fecha}
+            onChange={(e) => set("fecha", e.target.value)}
             required
             className={clsEntrada}
           />
@@ -116,7 +160,7 @@ export default function FormularioMovimiento({
           <select
             name="categoria_id"
             value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
+            onChange={(e) => set("categoria", e.target.value)}
             required
             className={clsEntrada}
           >
@@ -143,7 +187,7 @@ export default function FormularioMovimiento({
                 inputMode="decimal"
                 name="usd_cambiado"
                 value={usd}
-                onChange={(e) => setUsd(e.target.value)}
+                onChange={(e) => set("usd", e.target.value)}
                 required
                 placeholder="1200"
                 className={clsEntrada}
@@ -156,7 +200,7 @@ export default function FormularioMovimiento({
                 inputMode="decimal"
                 name="tc_cambio"
                 value={tcCambio}
-                onChange={(e) => setTcCambio(e.target.value)}
+                onChange={(e) => set("tcCambio", e.target.value)}
                 required
                 placeholder="1430"
                 className={clsEntrada}
@@ -181,7 +225,8 @@ export default function FormularioMovimiento({
             type="text"
             inputMode="decimal"
             name="monto"
-            defaultValue={valores.monto}
+            value={monto}
+            onChange={(e) => set("monto", e.target.value)}
             required
             placeholder="367600"
             className={clsEntrada}
@@ -196,7 +241,8 @@ export default function FormularioMovimiento({
         <span className={clsEtiqueta}>Detalle</span>
         <textarea
           name="descripcion"
-          defaultValue={valores.descripcion}
+          value={descripcion}
+          onChange={(e) => set("descripcion", e.target.value)}
           className={clsAreaTexto}
         />
       </label>
@@ -207,8 +253,8 @@ export default function FormularioMovimiento({
           name="depto_id"
           value={depto}
           onChange={(e) => {
-            setDepto(e.target.value);
-            if (e.target.value === "") setReembolsable(false);
+            set("depto", e.target.value);
+            if (e.target.value === "") set("reembolsable", false);
           }}
           className={clsEntrada}
         >
@@ -228,7 +274,7 @@ export default function FormularioMovimiento({
             type="checkbox"
             name="reembolsable"
             checked={reembolsable}
-            onChange={(e) => setReembolsable(e.target.checked)}
+            onChange={(e) => set("reembolsable", e.target.checked)}
             className="mt-0.5 size-5 accent-amber-400"
           />
           <span>

@@ -113,6 +113,7 @@ export default async function Caja({
     { data: crudos },
     { data: categorias },
     { data: departamentos },
+    { count: sinCotizar },
     { data: porCobrarCrudos },
   ] = await Promise.all([
     // El saldo de hoy: una sola agregación en la base, no un recorrido.
@@ -147,6 +148,14 @@ export default async function Caja({
       .select("id, codigo")
       .eq("estado", "activo")
       .order("codigo"),
+    // Movimientos sin tipo de cambio, de toda la historia y no solo del mes:
+    // uno de julio pendiente no debería desaparecer solo porque se está
+    // mirando agosto.
+    supabase
+      .from("movimientos_caja")
+      .select("id", { count: "exact", head: true })
+      .eq("activo", true)
+      .is("tc", null),
     // Lo que deben los propietarios, de toda la historia, no solo del mes.
     supabase
       .from("movimientos_caja")
@@ -226,6 +235,20 @@ export default async function Caja({
           </Link>
         </div>
       </div>
+
+      {/* Sin esto, muy abajo de la página, nadie se enteraba que existía. */}
+      {Boolean(sinCotizar) && sinCotizar! > 0 && (
+        <Link
+          href="/caja/cotizaciones"
+          className="flex items-center justify-between gap-3 rounded-xl border border-amber-900/60 bg-amber-950/30 px-4 py-3 text-sm text-amber-200 transition-colors hover:bg-amber-950/50"
+        >
+          <span>
+            <strong>{sinCotizar}</strong> movimiento{sinCotizar === 1 ? "" : "s"} sin tipo
+            de cambio: no tienen valor en dólares hasta que lo cargues.
+          </span>
+          <span className="shrink-0 font-medium">Cargar cotizaciones →</span>
+        </Link>
+      )}
 
       {/* Lo que Maguie necesita para hacer caja */}
       <section className="grid grid-cols-2 gap-4 rounded-xl border border-slate-800 bg-slate-800/40 p-4 sm:grid-cols-4">

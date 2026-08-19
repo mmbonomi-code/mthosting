@@ -25,7 +25,17 @@ export default async function Cotizaciones() {
       .order("fecha", { ascending: false }),
   ]);
 
-  const diasPendientes = [...new Set((sinCotizar ?? []).map((m) => m.fecha))];
+  // Agrupado por fecha, con cuántos movimientos esperan cada una: no es lo
+  // mismo cargar el tipo de cambio de un día con un gasto suelto que el de un
+  // día con diez.
+  const cantidadPorFecha = new Map<string, number>();
+  for (const m of sinCotizar ?? []) {
+    cantidadPorFecha.set(m.fecha, (cantidadPorFecha.get(m.fecha) ?? 0) + 1);
+  }
+  const pendientes = [...cantidadPorFecha.entries()].map(([fecha, cantidad]) => ({
+    fecha,
+    cantidad,
+  }));
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -43,28 +53,12 @@ export default async function Cotizaciones() {
 
       <FormularioCotizacion
         hoy={hoyAR()}
+        pendientes={pendientes}
         accion={async (_previo, fd) => {
           "use server";
           return guardarCotizacion(fd);
         }}
       />
-
-      {diasPendientes.length > 0 && (
-        <section className="rounded-xl border border-amber-900/60 bg-amber-950/30 p-4">
-          <h2 className="text-sm font-medium text-amber-200">
-            {diasPendientes.length} día{diasPendientes.length === 1 ? "" : "s"} con
-            movimientos sin cotización
-          </h2>
-          <p className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-amber-400/90">
-            {diasPendientes.slice(0, 40).map((f) => (
-              <span key={f} className="tabular-nums">
-                {formatearFechaAR(f)}
-              </span>
-            ))}
-            {diasPendientes.length > 40 && <span>y {diasPendientes.length - 40} más</span>}
-          </p>
-        </section>
-      )}
 
       <section className="flex flex-col gap-2">
         <h2 className="border-b border-slate-800 pb-1 font-medium text-white">

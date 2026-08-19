@@ -19,7 +19,7 @@ export default async function LayoutEconomico({
     return (
       <SinPermiso
         titulo="Económico"
-        motivo="La información económica la ven manager y administración. Acá están los ingresos por departamento y los datos de los huéspedes."
+        motivo="La información económica la ve administración. Acá están los ingresos por departamento y los datos de los huéspedes."
       />
     );
   }
@@ -29,6 +29,7 @@ export default async function LayoutEconomico({
       <nav className="flex gap-1 overflow-x-auto border-b border-borde px-4 py-2 sm:px-6">
         {[
           { href: "/economico", texto: "Resumen" },
+          { href: "/economico/rentabilidad", texto: "Rentabilidad" },
           { href: "/economico/validacion", texto: "Validación" },
           { href: "/economico/aircover", texto: "AirCover" },
           { href: "/economico/importar", texto: "Importar" },

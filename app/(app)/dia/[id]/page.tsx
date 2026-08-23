@@ -244,17 +244,25 @@ export default async function FichaEvento({
           ? "Bajan, abren la puerta, uno sube a dejar las llaves y baja."
           : "Dejan las llaves adentro y salen.";
 
+  // La fecha de este evento (llegada o salida), para poder decirle a
+  // `ventanaInsuficiente` si la otra punta es del mismo día. Sin esto, un
+  // check-out de hace días se leía como si fuera de hoy (ver el comentario
+  // en la función).
+  const fechaEvento = evento.fecha_coordinada ?? fechaReserva;
+
   const horaSalida = esLlegada
     ? (salidaAnterior?.hora ?? null)
     : (evento.hora_coordinada ?? null);
-  const horaEntrada = esLlegada
-    ? (evento.hora_coordinada ?? null)
-    : proximaLlegada?.fecha === (evento.fecha_coordinada ?? fechaReserva)
-      ? (proximaLlegada?.hora ?? null)
-      : null;
+  const fechaSalida = esLlegada ? (salidaAnterior?.fecha ?? null) : fechaEvento;
+
+  const horaEntrada = esLlegada ? (evento.hora_coordinada ?? null) : (proximaLlegada?.hora ?? null);
+  const fechaEntrada = esLlegada ? fechaEvento : (proximaLlegada?.fecha ?? null);
+
   const ventana = ventanaDisponible(horaSalida, horaEntrada);
   const imposible = ventanaInsuficiente({
+    fechaSalida,
     horaSalida,
+    fechaEntrada,
     horaEntrada,
     horaLimiteCheckout: config.hora_limite_checkout ?? "11:00",
     horaMinimaCheckin: config.hora_minima_checkin ?? "12:00",

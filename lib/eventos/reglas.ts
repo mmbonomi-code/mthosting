@@ -141,21 +141,36 @@ export function ventanaDisponible(
 
 /**
  * Alerta de ventana insuficiente (spec §2.8.quater): salida tarde y entrada
- * temprano el mismo día hacen imposible limpiar. Los umbrales son
+ * temprano el MISMO DÍA hacen imposible limpiar. Los umbrales son
  * configuración, no valores fijos.
+ *
+ * Las fechas son obligatorias a propósito, no un adorno: sin ellas, comparar
+ * solo las horas del reloj confunde "salió tarde hoy" con "salió hace cuatro
+ * días". Un check-out del 17/8 a las 18:00 y un check-in del 21/8 a las 15:00
+ * disparaba "imposible limpiar" porque 15:00 ≤ 18:00, aunque hay cuatro días
+ * de por medio (caso real, MARCELO VIANNA en AUSTRIA 1, 20/08/2026). La regla
+ * de la ventana insuficiente es solo para el recambio el mismo día; en
+ * cualquier otro caso no aplica, así que ni se evalúa.
  */
 export function ventanaInsuficiente({
+  fechaSalida,
   horaSalida,
+  fechaEntrada,
   horaEntrada,
   horaLimiteCheckout,
   horaMinimaCheckin,
 }: {
+  fechaSalida: string | null;
   horaSalida: string | null;
+  fechaEntrada: string | null;
   horaEntrada: string | null;
   horaLimiteCheckout: string;
   horaMinimaCheckin: string;
 }): boolean {
   if (!horaSalida || !horaEntrada) return false;
+  // Sin las dos fechas no se puede saber si es el mismo día: mejor no
+  // alertar que alertar con un falso positivo.
+  if (!fechaSalida || !fechaEntrada || fechaSalida !== fechaEntrada) return false;
 
   const salida = horaSalida.slice(0, 5);
   const entrada = horaEntrada.slice(0, 5);

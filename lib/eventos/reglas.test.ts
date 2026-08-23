@@ -189,36 +189,78 @@ describe("ventanaDisponible", () => {
 
 describe("ventanaInsuficiente", () => {
   const umbrales = { horaLimiteCheckout: "11:00", horaMinimaCheckin: "12:00" };
+  const F = "2026-08-17"; // el mismo día para salida y entrada, salvo que un test diga otra cosa
+  const mismoDia = { fechaSalida: F, fechaEntrada: F };
 
   it("salida tarde y entrada antes del mínimo: imposible limpiar", () => {
     expect(
-      ventanaInsuficiente({ horaSalida: "11:30", horaEntrada: "11:45", ...umbrales }),
+      ventanaInsuficiente({ ...mismoDia, horaSalida: "11:30", horaEntrada: "11:45", ...umbrales }),
     ).toBe(true);
     // 12:00 no es MENOR a 12:00: entra justo en el mínimo, no alerta.
     expect(
-      ventanaInsuficiente({ horaSalida: "11:30", horaEntrada: "12:00", ...umbrales }),
+      ventanaInsuficiente({ ...mismoDia, horaSalida: "11:30", horaEntrada: "12:00", ...umbrales }),
     ).toBe(false);
   });
 
-  it("entrar antes o al mismo tiempo que sale el anterior siempre alerta", () => {
+  it("entrar antes o al mismo tiempo que sale el anterior el mismo día siempre alerta", () => {
     // El huésped nuevo llegaría con el viejo todavía adentro.
     expect(
-      ventanaInsuficiente({ horaSalida: "10:00", horaEntrada: "09:00", ...umbrales }),
+      ventanaInsuficiente({ ...mismoDia, horaSalida: "10:00", horaEntrada: "09:00", ...umbrales }),
     ).toBe(true);
     expect(
-      ventanaInsuficiente({ horaSalida: "10:00", horaEntrada: "10:00", ...umbrales }),
+      ventanaInsuficiente({ ...mismoDia, horaSalida: "10:00", horaEntrada: "10:00", ...umbrales }),
     ).toBe(true);
   });
 
   it("salida temprano no alerta aunque entren temprano", () => {
     expect(
-      ventanaInsuficiente({ horaSalida: "10:00", horaEntrada: "11:00", ...umbrales }),
+      ventanaInsuficiente({ ...mismoDia, horaSalida: "10:00", horaEntrada: "11:00", ...umbrales }),
     ).toBe(false);
   });
 
   it("sin horarios cargados no alerta", () => {
     expect(
-      ventanaInsuficiente({ horaSalida: null, horaEntrada: "11:00", ...umbrales }),
+      ventanaInsuficiente({ ...mismoDia, horaSalida: null, horaEntrada: "11:00", ...umbrales }),
+    ).toBe(false);
+  });
+
+  it("días distintos NUNCA alertan, aunque la hora de salida sea 'mayor' que la de entrada", () => {
+    // Caso real: MARCELO VIANNA, AUSTRIA 1 (20/08/2026). Salió el 17/8 a las
+    // 18:00 y el siguiente entra el 21/8 a las 15:00. Comparando solo las
+    // horas, "15:00" ≤ "18:00" daba "imposible limpiar" con cuatro días de
+    // por medio. Con las fechas, no hay ninguna duda de que sobra tiempo.
+    expect(
+      ventanaInsuficiente({
+        fechaSalida: "2026-08-17",
+        horaSalida: "18:00",
+        fechaEntrada: "2026-08-21",
+        horaEntrada: "15:00",
+        ...umbrales,
+      }),
+    ).toBe(false);
+  });
+
+  it("días consecutivos tampoco alertan: la regla es solo para el mismo día", () => {
+    expect(
+      ventanaInsuficiente({
+        fechaSalida: "2026-08-17",
+        horaSalida: "23:00",
+        fechaEntrada: "2026-08-18",
+        horaEntrada: "08:00",
+        ...umbrales,
+      }),
+    ).toBe(false);
+  });
+
+  it("sin alguna de las dos fechas no alerta: no se puede saber si es el mismo día", () => {
+    expect(
+      ventanaInsuficiente({
+        fechaSalida: null,
+        horaSalida: "18:00",
+        fechaEntrada: "2026-08-21",
+        horaEntrada: "15:00",
+        ...umbrales,
+      }),
     ).toBe(false);
   });
 });

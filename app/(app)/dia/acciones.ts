@@ -178,7 +178,14 @@ export async function alternarLateCheckout(eventoId: string, valor: boolean) {
   if (decision.accion === "mover" && limpieza) {
     await supabase
       .from("limpiezas")
-      .update({ fecha: decision.nuevaFecha })
+      // fecha_manual: true, si no la próxima vez que se actualicen reservas
+      // el planificador ve que esta fecha "no coincide" con el checkout de
+      // la reserva y la devuelve a su día original, deshaciendo el late
+      // checkout sin que nadie lo haya tocado. Pasó de verdad con HMA58TESFD
+      // de JUNCAL 2 (20/08/2026): se movió al 22 por late checkout a las
+      // 14:07 y una actualización de reservas la devolvió al 21 a las 17:12,
+      // el mismo día.
+      .update({ fecha: decision.nuevaFecha, fecha_manual: true })
       .eq("id", limpieza.id);
   }
 

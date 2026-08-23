@@ -101,7 +101,13 @@ export default function PanelCoordinacion({
     hora !== "" &&
     horaSalidaMismoDia !== null &&
     ventanaInsuficiente({
+      // Las dos son del mismo día por construcción: el nombre de la prop lo
+      // dice (`horaSalidaMismoDia`). `ventanaInsuficiente` exige la fecha
+      // para no confundir un check-out de otro día con el de hoy; acá alcanza
+      // con repetir "hoy" en las dos puntas.
+      fechaSalida: fecha,
       horaSalida: horaSalidaMismoDia,
+      fechaEntrada: fecha,
       horaEntrada: hora,
       horaLimiteCheckout,
       horaMinimaCheckin,

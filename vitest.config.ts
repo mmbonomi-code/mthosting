@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 /**
@@ -6,6 +7,9 @@ import { defineConfig } from "vitest/config";
  * (`npm run test:e2e`), porque escriben en la base de desarrollo.
  */
 export default defineConfig({
+  resolve: {
+    alias: { "@": path.resolve(__dirname, ".") },
+  },
   test: {
     include: ["lib/**/*.test.ts"],
   },

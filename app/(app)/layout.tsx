@@ -5,6 +5,8 @@ import { contarReclamosUrgentes } from "@/lib/reclamos/alertas";
 import { contarPendientesUrgentes } from "@/lib/reporte/alertas";
 import { puedeVerCaja } from "@/lib/caja/permisos";
 import { puedeVerEconomico } from "@/lib/economico/permisos";
+import { rolPuedeVerAlertas } from "@/lib/alertas/permisos";
+import { calcularPanelAlertas, contarCriticas, contarResto } from "@/lib/alertas/consultar";
 import { esManagerOAdmin, rolDelUsuario } from "@/lib/permisos";
 import { inicioDelRol, puedeEntrar } from "@/lib/secciones";
 import { cerrarSesion } from "@/app/ingresar/acciones";
@@ -43,14 +45,21 @@ export default async function LayoutApp({
     rolDelUsuario(supabase),
   ]);
 
+  // Pura: no hace falta otra consulta a personas para decidir si se muestra
+  // el link.
+  const verAlertas = rolPuedeVerAlertas(rol);
+
   // El menú avisa cuántas cosas hay que mirar hoy, sin entrar a la pantalla.
   // No se cuenta lo que este rol no va a ver.
-  const [reclamosUrgentes, reporteUrgente] = await Promise.all([
+  const [reclamosUrgentes, reporteUrgente, panelAlertas] = await Promise.all([
     verReclamos ? contarReclamosUrgentes(supabase) : Promise.resolve(0),
     puedeEntrar(rol, "/reporte")
       ? contarPendientesUrgentes(supabase)
       : Promise.resolve(0),
+    verAlertas ? calcularPanelAlertas(supabase) : Promise.resolve(null),
   ]);
+  const alertasCriticas = panelAlertas ? contarCriticas(panelAlertas) : 0;
+  const alertasResto = panelAlertas ? contarResto(panelAlertas) : 0;
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-slate-900">
@@ -83,6 +92,16 @@ export default async function LayoutApp({
             { href: "/dia", texto: "Día", pendientes: 0 },
             { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
             { href: "/reporte", texto: "Reporte", pendientes: reporteUrgente },
+            ...(verAlertas
+              ? [
+                  {
+                    href: "/alertas",
+                    texto: "Alertas",
+                    pendientes: alertasResto,
+                    criticas: alertasCriticas,
+                  },
+                ]
+              : []),
             ...(verCaja ? [{ href: "/caja", texto: "Caja", pendientes: 0 }] : []),
             // Económico es SOLO de administración (decisión del dueño,
             // 16/08/2026). Se usa su propio permiso y no el de configuración:
@@ -122,6 +141,11 @@ export default async function LayoutApp({
                 className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
               >
                 {item.texto}
+                {"criticas" in item && (item.criticas ?? 0) > 0 && (
+                  <span className="rounded-full bg-red-500 px-1.5 text-xs font-semibold text-red-950">
+                    {item.criticas}
+                  </span>
+                )}
                 {item.pendientes > 0 && (
                   <span className="rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-slate-900">
                     {item.pendientes}

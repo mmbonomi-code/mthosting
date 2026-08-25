@@ -6,6 +6,7 @@ import { contarPendientesUrgentes } from "@/lib/reporte/alertas";
 import { puedeVerCaja } from "@/lib/caja/permisos";
 import { puedeVerEconomico } from "@/lib/economico/permisos";
 import { rolPuedeVerAlertas } from "@/lib/alertas/permisos";
+import { rolPuedeVerMisLimpiezas } from "@/lib/limpiezas/permisos";
 import { calcularPanelAlertas, contarCriticas, contarResto } from "@/lib/alertas/consultar";
 import { esManagerOAdmin, rolDelUsuario } from "@/lib/permisos";
 import { inicioDelRol, puedeEntrar } from "@/lib/secciones";
@@ -48,6 +49,7 @@ export default async function LayoutApp({
   // Pura: no hace falta otra consulta a personas para decidir si se muestra
   // el link.
   const verAlertas = rolPuedeVerAlertas(rol);
+  const verMisLimpiezas = rolPuedeVerMisLimpiezas(rol);
 
   // El menú avisa cuántas cosas hay que mirar hoy, sin entrar a la pantalla.
   // No se cuenta lo que este rol no va a ver.
@@ -112,6 +114,9 @@ export default async function LayoutApp({
               : []),
             ...(verReclamos
               ? [{ href: "/reclamos", texto: "Reclamos", pendientes: reclamosUrgentes }]
+              : []),
+            ...(verMisLimpiezas
+              ? [{ href: "/mis-limpiezas", texto: "Mis limpiezas", pendientes: 0 }]
               : []),
             { href: "/semana", texto: "Limpiezas", pendientes: 0 },
             { href: "/departamentos", texto: "Departamentos", pendientes: 0 },

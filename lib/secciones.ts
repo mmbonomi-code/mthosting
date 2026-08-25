@@ -51,6 +51,9 @@ const ACCESO: Partial<Record<Rol, Acceso>> = {
       "/semana",
       "/limpiezas",
       "/departamentos",
+      // La gobernanta también tiene sus propias limpiezas: reparte Y ejecuta
+      // (spec §2.10.bis, "el rol gobernanta es un híbrido").
+      "/mis-limpiezas",
       // Emitir el PDF del día es parte de repartir el trabajo.
       "/api/exportar/limpiezas-pdf",
       "/api/exportar/limpiezas-rango",

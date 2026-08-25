@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -11,6 +11,31 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.15"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -301,6 +326,36 @@ export type Database = {
           es_cambio?: boolean
           id?: string
           nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      checklist_catalogo: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          item: string
+          orden: number
+          seccion: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          item: string
+          orden?: number
+          seccion: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          item?: string
+          orden?: number
+          seccion?: string
           updated_at?: string
         }
         Relationships: []
@@ -1046,6 +1101,7 @@ export type Database = {
           item: string
           limpieza_id: string
           seccion: string
+          tarea_periodica_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1055,6 +1111,7 @@ export type Database = {
           item: string
           limpieza_id: string
           seccion: string
+          tarea_periodica_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1064,6 +1121,7 @@ export type Database = {
           item?: string
           limpieza_id?: string
           seccion?: string
+          tarea_periodica_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1072,6 +1130,13 @@ export type Database = {
             columns: ["limpieza_id"]
             isOneToOne: false
             referencedRelation: "limpiezas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "limpieza_checklist_tarea_periodica_id_fkey"
+            columns: ["tarea_periodica_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_periodicas_catalogo"
             referencedColumns: ["id"]
           },
         ]
@@ -1175,6 +1240,7 @@ export type Database = {
           moneda: string | null
           monto_pactado: number | null
           notas: string | null
+          observacion_proxima: string | null
           pago_doble: boolean
           prox_checkin: string | null
           reserva_id: string | null
@@ -1202,6 +1268,7 @@ export type Database = {
           moneda?: string | null
           monto_pactado?: number | null
           notas?: string | null
+          observacion_proxima?: string | null
           pago_doble?: boolean
           prox_checkin?: string | null
           reserva_id?: string | null
@@ -1229,6 +1296,7 @@ export type Database = {
           moneda?: string | null
           monto_pactado?: number | null
           notas?: string | null
+          observacion_proxima?: string | null
           pago_doble?: boolean
           prox_checkin?: string | null
           reserva_id?: string | null
@@ -2381,6 +2449,36 @@ export type Database = {
           },
         ]
       }
+      tareas_periodicas_catalogo: {
+        Row: {
+          activo: boolean
+          created_at: string
+          frecuencia_dias: number
+          id: string
+          item: string
+          orden: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          frecuencia_dias: number
+          id?: string
+          item: string
+          orden?: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          frecuencia_dias?: number
+          id?: string
+          item?: string
+          orden?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tarifas: {
         Row: {
           ambientes: Database["public"]["Enums"]["ambientes_tipo"] | null
@@ -2644,6 +2742,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       acuerdo_pago: ["cobra_todo_mth", "cobra_cada_uno", "solo_comision"],

@@ -18,10 +18,7 @@ algo que WhatsApp no da.**
 | Sin instrucciones de acceso: hay que preguntar | Acceso, encargado y teléfono en pantalla |
 | No sabe qué llevar hasta llegar | Sábanas, toallas y pie de baño calculados |
 | No sabe qué faltaba la vez anterior | Lo ve antes de salir de casa |
-| Adelanta el viático y depende de acordarse de reclamarlo | Lo carga con foto y ve su acumulado |
-
-El acumulado del período es el incentivo real de uso: entra porque ahí está su
-plata, no porque se lo pidieron.
+| Adelanta el viático y depende de acordarse de reclamarlo | Lo carga con foto en el momento |
 
 ---
 
@@ -94,8 +91,12 @@ para no perder trabajo si se corta la conexión.
 - **Abre mostrando MAÑANA, no hoy.** El ritmo operativo es anticipado: la
   lista se envía el día anterior. Si abre a la noche en "hoy" y no ve nada,
   no vuelve a abrir la app.
+- **Navegación hacia días anteriores, hasta 15 días atrás.** Además de
+  mañana, la persona tiene que poder mirar sus limpiezas ya hechas de las
+  últimas dos semanas, para repasar el detalle, el checklist o lo que dejó
+  anotado. No hace falta navegar más adelante que mañana: la lista recién
+  existe desde el día anterior a cada limpieza.
 - Mobile-first real: teléfono de gama baja, datos móviles limitados.
-- Acumulado del período siempre visible.
 - El rol `coordinador` (back office) puede ver y cargar fotos de cualquier
   limpieza, no solo de las propias.
 

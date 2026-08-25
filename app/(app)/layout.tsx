@@ -64,28 +64,35 @@ export default async function LayoutApp({
 
   // El menú ofrece exactamente lo que el guardián deja abrir. Es la misma
   // función en los dos lados: si se separan, aparecen enlaces que rebotan.
+  //
+  // Orden pedido por el dueño (25/08/2026): Alertas, Día, Reporte, Reclamos,
+  // Departamentos, Calendarios, Limpiezas, Accesos, y el resto sin un orden
+  // particular.
   const items: ItemNav[] = [
-    { href: "/", texto: "Inicio", pendientes: 0 },
-    { href: "/dia", texto: "Día", pendientes: 0 },
-    { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
-    { href: "/reporte", texto: "Reporte", pendientes: reporteUrgente },
     ...(verAlertas
       ? [{ href: "/alertas", texto: "Alertas", pendientes: alertasResto, criticas: alertasCriticas }]
       : []),
+    { href: "/dia", texto: "Día", pendientes: 0 },
+    { href: "/reporte", texto: "Reporte", pendientes: reporteUrgente },
+    ...(verReclamos
+      ? [{ href: "/reclamos", texto: "Reclamos", pendientes: reclamosUrgentes }]
+      : []),
+    { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
+    { href: "/ical", texto: "Calendarios", pendientes: 0 },
+    { href: "/semana", texto: "Limpiezas", pendientes: 0 },
+    { href: "/puntos-acceso", texto: "Accesos", pendientes: 0 },
+    // Resto, sin orden pedido en particular.
+    { href: "/", texto: "Inicio", pendientes: 0 },
+    { href: "/dashboard", texto: "Dashboard", pendientes: 0 },
     ...(verCaja ? [{ href: "/caja", texto: "Caja", pendientes: 0 }] : []),
     // Económico es SOLO de administración (decisión del dueño, 16/08/2026).
     // Se usa su propio permiso y no el de configuración: ofrecerle el
     // enlace a un manager lo mandaría a un cartel de "no tenés acceso", que
     // es peor que no verlo.
     ...(verEconomico ? [{ href: "/economico", texto: "Económico", pendientes: 0 }] : []),
-    ...(verReclamos
-      ? [{ href: "/reclamos", texto: "Reclamos", pendientes: reclamosUrgentes }]
-      : []),
     ...(verMisLimpiezas
       ? [{ href: "/mis-limpiezas", texto: "Mis limpiezas", pendientes: 0 }]
       : []),
-    { href: "/semana", texto: "Limpiezas", pendientes: 0 },
-    { href: "/departamentos", texto: "Departamentos", pendientes: 0 },
     { href: "/propietarios", texto: "Propietarios", pendientes: 0 },
     // Configuración del sistema: manager y administración (spec §3.8).
     ...(esConfiguracion
@@ -95,11 +102,9 @@ export default async function LayoutApp({
           { href: "/checklist-limpieza", texto: "Checklist limpieza", pendientes: 0 },
         ]
       : []),
-    { href: "/puntos-acceso", texto: "Accesos", pendientes: 0 },
     { href: "/parametros", texto: "Parámetros", pendientes: 0 },
     { href: "/importar", texto: "Importar", pendientes: 0 },
     { href: "/exportar", texto: "Exportar", pendientes: 0 },
-    { href: "/ical", texto: "Calendarios", pendientes: 0 },
     { href: "/bandeja", texto: "Sin asignar", pendientes: sinAsignar ?? 0 },
   ].filter((item) => puedeEntrar(rol, item.href));
 

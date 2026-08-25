@@ -121,6 +121,7 @@ export default async function LayoutApp({
               ? [
                   { href: "/personas", texto: "Personas", pendientes: 0 },
                   { href: "/tarifas", texto: "Valores", pendientes: 0 },
+                  { href: "/checklist-limpieza", texto: "Checklist limpieza", pendientes: 0 },
                 ]
               : []),
             { href: "/puntos-acceso", texto: "Accesos", pendientes: 0 },

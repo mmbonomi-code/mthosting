@@ -7,6 +7,8 @@ import { puedeVerCaja } from "@/lib/caja/permisos";
 import { BUCKET_COMPROBANTES, type EstadoFormulario } from "@/lib/caja/tipos";
 import { recalcularCobertura } from "@/lib/caja/recalcular";
 import { abrirCaja, cerrarCaja, codigoEsCorrecto } from "@/lib/caja/codigo";
+import { revisarCotizacion, textoDelDesvio } from "@/lib/caja/cotizacion";
+import { sumarDias } from "@/lib/fechas";
 import type { Database } from "@/lib/database.types";
 
 type TipoCaja = Database["public"]["Enums"]["caja_tipo"];
@@ -302,9 +304,26 @@ export async function anularMovimiento(id: string) {
 }
 
 /**
+ * Días para atrás y para adelante que se traen para saber si la cotización
+ * que se está cargando es razonable. Alcanza y sobra: se cargan varias por
+ * semana, y la función se queda con las más cercanas.
+ */
+const VENTANA_VECINAS = 60;
+
+/**
  * Carga la cotización de un día y completa sola los movimientos de esa fecha
  * que la estaban esperando. Así se pueden cargar movimientos sin acordarse
  * del dólar y ponerlo después.
+ *
+ * Dos cuidados, después del 144 que se coló por 1440 (Marcos, 25/08/2026):
+ *
+ *   - Antes de guardar se compara contra las cotizaciones de alrededor. Si se
+ *     aparta más de un 10% no se guarda: se avisa y se pide confirmar. La
+ *     confirmación vale solo para el valor que se revisó.
+ *   - Corregir una cotización ya cargada CORRIGE también los movimientos de
+ *     ese día que habían quedado estampados con el valor viejo. El tipo de
+ *     cambio del movimiento es una foto de la cotización del día, no un dato
+ *     propio: si la cotización estaba mal, la foto también.
  */
 export async function guardarCotizacion(fd: FormData): Promise<EstadoFormulario> {
   const supabase = await conPermiso();
@@ -315,25 +334,58 @@ export async function guardarCotizacion(fd: FormData): Promise<EstadoFormulario>
   if (!fecha) return { error: "Poné la fecha." };
   if (tc === null || tc <= 0) return { error: "La cotización tiene que ser mayor a cero." };
 
+  const { data: vecinas } = await supabase
+    .from("cotizaciones")
+    .select("fecha, tc")
+    .gte("fecha", sumarDias(fecha, -VENTANA_VECINAS))
+    .lte("fecha", sumarDias(fecha, VENTANA_VECINAS));
+
+  const desvio = revisarCotizacion(tc, fecha, vecinas ?? []);
+  if (desvio !== null && texto(fd, "confirmar") !== String(tc)) {
+    return { aviso: textoDelDesvio(tc, desvio), confirmando: String(tc) };
+  }
+
+  const anterior = await cotizacionDe(supabase, fecha);
+
   const { error } = await supabase
     .from("cotizaciones")
     .upsert({ fecha, tc }, { onConflict: "fecha" });
   if (error) return { error: `No se pudo guardar: ${error.message}` };
 
-  const { count } = await supabase
+  const { count: completados } = await supabase
     .from("movimientos_caja")
     .update({ tc, fecha_tc: fecha }, { count: "exact" })
     .eq("fecha", fecha)
     .is("tc", null);
 
+  // Solo los que llevan el valor viejo: si alguno tiene otro tipo de cambio,
+  // no salió de esta cotización y no es asunto de esta corrección.
+  let corregidos = 0;
+  if (anterior !== null && anterior !== tc) {
+    const { count } = await supabase
+      .from("movimientos_caja")
+      .update({ tc, fecha_tc: fecha }, { count: "exact" })
+      .eq("fecha", fecha)
+      .eq("tc", anterior);
+    corregidos = count ?? 0;
+  }
+
   revalidatePath("/caja");
   revalidatePath("/caja/cotizaciones");
-  return {
-    ok:
-      count && count > 0
-        ? `Guardada. Se completaron ${count} movimiento${count === 1 ? "" : "s"} de ese día.`
-        : "Guardada.",
-  };
+  revalidatePath("/economico/rentabilidad");
+
+  const partes: string[] = [];
+  if (completados) {
+    partes.push(
+      `se completaron ${completados} movimiento${completados === 1 ? "" : "s"} que la esperaban`,
+    );
+  }
+  if (corregidos) {
+    partes.push(
+      `se corrigieron ${corregidos} que tenían la anterior (${anterior?.toLocaleString("es-AR")})`,
+    );
+  }
+  return { ok: partes.length === 0 ? "Guardada." : `Guardada: ${partes.join(" y ")}.` };
 }
 
 export async function crearCategoria(fd: FormData): Promise<EstadoFormulario> {

@@ -125,8 +125,13 @@ export default function FormularioCotizacion({
             ✓ {estado.ok}
           </p>
         )}
+        {estado && "aviso" in estado && (
+          <p role="alert" className="rounded-lg bg-amber-950 px-3 py-2 text-sm text-amber-200">
+            {estado.aviso}
+          </p>
+        )}
 
-        <div>
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="submit"
             disabled={pendiente}
@@ -134,6 +139,22 @@ export default function FormularioCotizacion({
           >
             {pendiente ? "Guardando…" : "Guardar"}
           </button>
+          {/*
+            El botón de confirmar viaja con el valor que se revisó: si después
+            del aviso se corrige el número, este envío ya no lo confirma y
+            vuelve a revisarse.
+          */}
+          {estado && "aviso" in estado && (
+            <button
+              type="submit"
+              name="confirmar"
+              value={estado.confirmando}
+              disabled={pendiente}
+              className="rounded-lg border border-amber-700 px-4 py-2 text-sm font-medium text-amber-200 hover:bg-amber-950/60 disabled:opacity-60"
+            >
+              Guardar igual
+            </button>
+          )}
         </div>
       </form>
     </div>

@@ -43,6 +43,15 @@ export function sumarDias(fechaISO: string, dias: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Cuántos días hay entre dos fechas `yyyy-mm-dd`. Siempre positivo. */
+export function distanciaEnDias(unaISO: string, otraISO: string): number {
+  const aDias = (iso: string) => {
+    const [anio, mes, dia] = iso.split("-").map(Number);
+    return Date.UTC(anio, mes - 1, dia) / 86_400_000;
+  };
+  return Math.abs(aDias(unaISO) - aDias(otraISO));
+}
+
 /** `yyyy-mm-dd` → `dd/mm/aaaa`, el formato de presentación es-AR. */
 export function formatearFechaAR(fechaISO: string): string {
   const [anio, mes, dia] = fechaISO.split("-");

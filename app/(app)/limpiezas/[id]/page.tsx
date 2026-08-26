@@ -8,7 +8,12 @@ import {
   TIPOS_LIMPIEZA,
   formatearHora,
 } from "@/lib/limpiezas/etiquetas";
+import { rolDelUsuario } from "@/lib/permisos";
+import { rolPuedeGestionarFotos } from "@/lib/limpiezas/permisos";
 import Wifi from "@/app/componentes/Wifi";
+import SubidorFotos from "@/app/(app)/mis-limpiezas/SubidorFotos";
+import { subirFotos } from "@/app/(app)/mis-limpiezas/acciones";
+import { BUCKET } from "@/app/(app)/mis-limpiezas/tipos";
 import { FormularioAsignar, FormularioEditar } from "./FormulariosLimpieza";
 import {
   asignarResponsable,
@@ -45,7 +50,8 @@ export default async function FichaLimpieza({
 
   if (!limpieza) notFound();
 
-  const [{ data: personas }, { data: eventos }, { data: anterior }] = await Promise.all([
+  const [{ data: personas }, { data: eventos }, { data: anterior }, rol, { data: fotos }] =
+    await Promise.all([
     supabase
       .from("personas")
       .select("id, nombre")
@@ -68,7 +74,24 @@ export default async function FichaLimpieza({
       .order("fecha", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    rolDelUsuario(supabase),
+    supabase.from("limpieza_fotos").select("id, tipo, storage_path").eq("limpieza_id", id),
   ]);
+
+  // Fotos de la limpieza, para back office (spec Fase 2 §3). Se sirven por
+  // URL firmada, igual que en la pantalla de la limpiadora: el bucket es
+  // privado y nada sale por link público.
+  const verFotos = rolPuedeGestionarFotos(rol);
+  const rutas = (fotos ?? []).map((f) => f.storage_path);
+  const { data: firmadas } =
+    verFotos && rutas.length > 0
+      ? await supabase.storage.from(BUCKET).createSignedUrls(rutas, 3600)
+      : { data: [] as { path: string | null; signedUrl: string }[] };
+  const urlPorRuta = new Map((firmadas ?? []).map((f) => [f.path, f.signedUrl]));
+  const fotosDe = (tipo: string) =>
+    (fotos ?? [])
+      .filter((f) => f.tipo === tipo)
+      .map((f) => ({ id: f.id, url: urlPorRuta.get(f.storage_path) ?? null }));
 
   // La hora de salida sale de lo coordinado en el check-out; la cargada a
   // mano solo se usa cuando la limpieza no tiene reserva.
@@ -248,6 +271,43 @@ export default async function FichaLimpieza({
             <p className="whitespace-pre-wrap text-sm text-slate-300">
               {limpieza.depto.indicaciones_acceso}
             </p>
+          )}
+        </section>
+      )}
+
+      {/* Fotos y lo que dejó anotado quien limpió (spec Fase 2 §2.7 y §3) */}
+      {verFotos && (
+        <section className="flex flex-col gap-4 rounded-xl border border-slate-800 p-4">
+          <div>
+            <h2 className="font-medium text-white">Fotos</h2>
+            <p className="text-xs text-slate-500">
+              Las que sacó quien limpió. Podés sumar las tuyas.
+            </p>
+          </div>
+          <SubidorFotos
+            fotos={fotosDe("terminado")}
+            subir={subirFotos.bind(null, id, "terminado")}
+            etiqueta="Depto terminado"
+          />
+          <SubidorFotos
+            fotos={fotosDe("arreglar")}
+            subir={subirFotos.bind(null, id, "arreglar")}
+            etiqueta="Algo para arreglar"
+          />
+          <SubidorFotos
+            fotos={fotosDe("huesped")}
+            subir={subirFotos.bind(null, id, "huesped")}
+            etiqueta="Lo que dejó el huésped"
+          />
+          {limpieza.observacion_proxima && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Observación para la próxima limpieza
+              </span>
+              <p className="whitespace-pre-wrap rounded-lg bg-slate-900/60 px-3 py-2 text-sm italic text-slate-300">
+                {limpieza.observacion_proxima}
+              </p>
+            </div>
           )}
         </section>
       )}

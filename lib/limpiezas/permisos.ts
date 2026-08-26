@@ -16,6 +16,21 @@ export function rolPuedeVerMisLimpiezas(rol: Rol | null): boolean {
   return rol !== null && ROLES.includes(rol);
 }
 
+/**
+ * Quién ve y carga fotos de CUALQUIER limpieza, no solo de las propias
+ * (spec Fase 2 §3: "el rol coordinador (back office) puede ver y cargar
+ * fotos de cualquier limpieza"). Son los mismos que ya ven todas las
+ * limpiezas en la matriz de §3.8.
+ *
+ * `limpieza` queda afuera a propósito: sus fotos las carga desde su propia
+ * pantalla, y las de otras personas no las ve nunca.
+ */
+const ROLES_FOTOS: readonly Rol[] = ["admin", "manager", "gobernanta", "coordinador"];
+
+export function rolPuedeGestionarFotos(rol: Rol | null): boolean {
+  return rol !== null && ROLES_FOTOS.includes(rol);
+}
+
 export async function puedeVerMisLimpiezas(
   supabase: SupabaseClient<Database>,
 ): Promise<boolean> {

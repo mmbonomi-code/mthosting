@@ -69,6 +69,9 @@ export async function subirFotos(
   }
 
   revalidatePath(`/mis-limpiezas/${limpiezaId}`);
+  // Back office sube fotos desde la ficha de la limpieza, no desde "Mis
+  // limpiezas" (spec Fase 2 §3): esa pantalla también tiene que refrescar.
+  revalidatePath(`/limpiezas/${limpiezaId}`);
   if (rechazados.length > 0) return { error: `No se pudieron subir: ${rechazados.join(", ")}.` };
   return { ok: "Fotos guardadas." };
 }

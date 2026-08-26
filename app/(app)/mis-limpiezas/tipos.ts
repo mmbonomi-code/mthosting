@@ -5,6 +5,6 @@
  */
 
 /** Bucket privado de fotos y comprobantes. Nada se sirve por link público. */
-export const BUCKET = "limpiezas";
+export { BUCKET_LIMPIEZAS as BUCKET } from "@/lib/limpiezas/storage";
 
 export type EstadoFormulario = { error: string } | { ok: string } | null;

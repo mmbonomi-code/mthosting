@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 /**
@@ -6,6 +7,11 @@ import { defineConfig } from "vitest/config";
  * SUPABASE_SERVICE_ROLE_KEY en el entorno.
  */
 export default defineConfig({
+  // Igual que en vitest.config.ts: sin esto, cualquier módulo que use `@/`
+  // no se puede importar desde un test.
+  resolve: {
+    alias: { "@": path.resolve(__dirname, ".") },
+  },
   test: {
     include: ["scripts/**/*.test.ts"],
     testTimeout: 180000,

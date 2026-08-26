@@ -139,8 +139,15 @@ describe.skipIf(!url || !clave)("reclamos (base dev)", () => {
     expect(data!.some((f) => f.accion === "INSERT")).toBe(true);
   });
 
-  it("las fotos de limpieza todavía no existen y devuelven una lista vacía", async () => {
-    expect(await fotosDeLimpieza("cualquier-reserva")).toEqual([]);
+  it("una reserva sin fotos de limpieza no adjunta nada", async () => {
+    // El módulo de limpieza ya existe (Fase 2), pero esta reserva no tiene
+    // limpiezas con fotos de daño: la lista viene vacía sin romper el alta.
+    const { data: reclamo } = await s
+      .from("reclamos")
+      .select("reserva_id")
+      .eq("id", creados[0])
+      .single();
+    expect(await fotosDeLimpieza(s, reclamo!.reserva_id, creados[0])).toEqual([]);
   });
 
   it("sube evidencia al bucket privado y la sirve con URL firmada", async () => {

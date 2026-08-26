@@ -65,9 +65,9 @@ export async function crearReclamo(reservaId: string) {
 
   if (error || !creado) redirect(`/reclamos?error=alta`);
 
-  // Las fotos del check-out vienen solas. Hoy la lista es vacía porque el
-  // módulo de limpieza no existe todavía (lib/reclamos/fotos-limpieza.ts).
-  const fotos = await fotosDeLimpieza(reservaId);
+  // Las fotos de daño que sacó la limpieza en el check-out vienen solas,
+  // copiadas al bucket del reclamo (lib/reclamos/fotos-limpieza.ts).
+  const fotos = await fotosDeLimpieza(supabase, reservaId, creado.id);
   if (fotos.length > 0) {
     await supabase.from("reclamo_fotos").insert(
       fotos.map((f, i) => ({

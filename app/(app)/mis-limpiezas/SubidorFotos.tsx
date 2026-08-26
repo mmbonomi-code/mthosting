@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { comprimirImagen } from "@/lib/limpiezas/comprimir";
 import type { EstadoFormulario } from "./tipos";
 
 export type FotoExistente = { id: string; url: string | null };
@@ -21,9 +22,12 @@ export default function SubidorFotos({
 
   const enviar = (lista: FileList | null) => {
     if (!lista || lista.length === 0) return;
-    const fd = new FormData();
-    for (const archivo of lista) fd.append("archivos", archivo);
+    const elegidos = [...lista];
     iniciar(async () => {
+      // Se achican ACÁ, en el teléfono, antes de gastar datos móviles
+      // (spec §2.7). Si alguna no se puede comprimir, va la original.
+      const fd = new FormData();
+      for (const archivo of elegidos) fd.append("archivos", await comprimirImagen(archivo));
       setMensaje(await subir(null, fd));
       if (inputRef.current) inputRef.current.value = "";
     });

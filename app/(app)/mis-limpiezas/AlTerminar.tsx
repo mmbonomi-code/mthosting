@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useTransition } from "react";
+import { comprimirImagen } from "@/lib/limpiezas/comprimir";
 import type { EstadoFormulario } from "./tipos";
 import { clsAreaTexto, clsEntrada, clsEtiqueta } from "@/lib/ui";
 
@@ -109,19 +110,26 @@ export default function AlTerminar({
             className={`${clsEntrada} w-32`}
             onBlur={(e) => guardarMonto(() => guardarViaticoMonto(e.target.value))}
           />
-          <form action={enviarComprobante} className="flex items-center gap-2">
-            <label className="flex h-11 cursor-pointer items-center rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition-colors hover:bg-slate-700">
-              {pendienteComprobante ? "Subiendo…" : "📷 Comprobante"}
-              <input
-                type="file"
-                name="comprobante"
-                accept="image/jpeg,image/png,image/webp,image/heic"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => e.target.form?.requestSubmit()}
-              />
-            </label>
-          </form>
+          <label className="flex h-11 cursor-pointer items-center rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition-colors hover:bg-slate-700">
+            {pendienteComprobante ? "Subiendo…" : "📷 Comprobante"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const archivo = e.target.files?.[0];
+                if (!archivo) return;
+                e.target.value = "";
+                // Se achica en el teléfono, igual que las fotos (spec §2.7).
+                comprimirImagen(archivo).then((listo) => {
+                  const fd = new FormData();
+                  fd.append("comprobante", listo);
+                  enviarComprobante(fd);
+                });
+              }}
+            />
+          </label>
         </div>
         {estadoComprobante && "ok" in estadoComprobante && (
           <span className="text-sm text-emerald-400">✓ {estadoComprobante.ok}</span>

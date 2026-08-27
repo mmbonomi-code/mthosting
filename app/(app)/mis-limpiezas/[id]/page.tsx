@@ -11,15 +11,13 @@ import SinPermiso from "@/app/componentes/SinPermiso";
 import ItemChecklist from "../ItemChecklist";
 import SubidorFotos from "../SubidorFotos";
 import AlTerminar from "../AlTerminar";
+import PendientesProvider from "../PendientesProvider";
 import {
   crearArreglo,
   finalizarLimpieza,
-  guardarObservacionProxima,
-  guardarViaticoMonto,
   iniciarLimpieza,
   subirComprobanteViatico,
   subirFotos,
-  tildarChecklistItem,
 } from "../acciones";
 import { BUCKET } from "../tipos";
 
@@ -216,6 +214,7 @@ export default async function DetalleMiLimpieza({
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
+      <PendientesProvider>
       <Link href="/mis-limpiezas" className="text-sm text-slate-400 hover:text-white">
         ← Todas mis limpiezas
       </Link>
@@ -349,7 +348,8 @@ export default async function DetalleMiLimpieza({
                   etiqueta={f.item}
                   hechoInicial={f.hecho}
                   chip={chip}
-                  accion={tildarChecklistItem.bind(null, id, f.id)}
+                  limpiezaId={id}
+                  filaId={f.id}
                 />
               );
             })}
@@ -364,7 +364,8 @@ export default async function DetalleMiLimpieza({
                 key={f.id}
                 etiqueta={f.item}
                 hechoInicial={f.hecho}
-                accion={tildarChecklistItem.bind(null, id, f.id)}
+                limpiezaId={id}
+                filaId={f.id}
               />
             ))}
           </div>
@@ -401,12 +402,11 @@ export default async function DetalleMiLimpieza({
           />
 
           <AlTerminar
+            limpiezaId={id}
             observacionInicial={limpieza.observacion_proxima ?? ""}
             viaticoInicial={limpieza.viatico_monto?.toString() ?? ""}
             monedaMonto={monedaMonto}
-            guardarObservacion={guardarObservacionProxima.bind(null, id)}
             crearArreglo={crearArreglo.bind(null, id, depto.id)}
-            guardarViaticoMonto={guardarViaticoMonto.bind(null, id)}
             subirComprobanteViatico={subirComprobanteViatico.bind(null, id)}
             finalizarLimpieza={finalizarLimpieza.bind(null, id)}
             puedeFinalizar={fotosPorTipo("terminado").length > 0}
@@ -439,6 +439,7 @@ export default async function DetalleMiLimpieza({
           </p>
         </>
       )}
+      </PendientesProvider>
     </main>
   );
 }

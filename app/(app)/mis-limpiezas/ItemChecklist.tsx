@@ -1,22 +1,32 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { usePendientes } from "./PendientesProvider";
 
-/** Un ítem del checklist: se guarda solo al tildarlo, sin botón aparte. */
+/**
+ * Un ítem del checklist: se guarda solo al tildarlo, sin botón aparte.
+ *
+ * El tilde se ve al instante y el envío va por la cola: adentro de un
+ * edificio sin señal la persona sigue trabajando igual, y lo que no salió se
+ * manda cuando vuelve la conexión (spec Fase 2 §10).
+ */
 export default function ItemChecklist({
+  limpiezaId,
+  filaId,
   etiqueta,
   hechoInicial,
   chip,
-  accion,
 }: {
+  limpiezaId: string;
+  filaId: string;
   etiqueta: string;
   hechoInicial: boolean;
   /** "hace N días · cada X" en una tarea periódica vencida, o null. */
   chip?: string | null;
-  accion: (hecho: boolean) => Promise<void>;
 }) {
   const [hecho, setHecho] = useState(hechoInicial);
   const [, iniciar] = useTransition();
+  const { registrar } = usePendientes();
 
   return (
     <label
@@ -31,7 +41,7 @@ export default function ItemChecklist({
           const valor = e.target.checked;
           setHecho(valor);
           iniciar(async () => {
-            await accion(valor);
+            await registrar({ clase: "checklist", limpiezaId, filaId, hecho: valor });
           });
         }}
         className="size-5 shrink-0 accent-white"

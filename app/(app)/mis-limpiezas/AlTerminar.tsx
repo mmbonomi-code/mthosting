@@ -2,6 +2,7 @@
 
 import { useActionState, useTransition } from "react";
 import { comprimirImagen } from "@/lib/limpiezas/comprimir";
+import { usePendientes } from "./PendientesProvider";
 import type { EstadoFormulario } from "./tipos";
 import { clsAreaTexto, clsEntrada, clsEtiqueta } from "@/lib/ui";
 
@@ -9,23 +10,26 @@ import { clsAreaTexto, clsEntrada, clsEtiqueta } from "@/lib/ui";
  * El cierre de la limpieza: reportar un arreglo, dejar la observación para
  * la próxima, cargar el viático, y marcar como terminada. Agrupado porque es
  * lo último que se hace, en ese orden.
+ *
+ * Los dos campos de texto van por la cola de envío: si no hay señal se
+ * guardan igual y salen cuando vuelve. El arreglo, el comprobante y el
+ * cierre NO: son acciones puntuales con confirmación en pantalla, y encolar
+ * un "terminé" que en realidad no llegó sería peor que avisar que falló.
  */
 export default function AlTerminar({
+  limpiezaId,
   observacionInicial,
   viaticoInicial,
-  guardarObservacion,
   crearArreglo,
-  guardarViaticoMonto,
   subirComprobanteViatico,
   finalizarLimpieza,
   puedeFinalizar,
   monedaMonto,
 }: {
+  limpiezaId: string;
   observacionInicial: string;
   viaticoInicial: string;
-  guardarObservacion: (texto: string) => Promise<void>;
   crearArreglo: (estadoPrevio: EstadoFormulario, fd: FormData) => Promise<EstadoFormulario>;
-  guardarViaticoMonto: (monto: string) => Promise<void>;
   subirComprobanteViatico: (
     estadoPrevio: EstadoFormulario,
     fd: FormData,
@@ -36,6 +40,7 @@ export default function AlTerminar({
 }) {
   const [, guardarObs] = useTransition();
   const [, guardarMonto] = useTransition();
+  const { registrar } = usePendientes();
   const [estadoArreglo, enviarArreglo, pendienteArreglo] = useActionState<
     EstadoFormulario,
     FormData
@@ -94,7 +99,17 @@ export default function AlTerminar({
           defaultValue={observacionInicial}
           placeholder="Ej: faltaron toallones y jabón líquido, llevar de más…"
           className={clsAreaTexto}
-          onBlur={(e) => guardarObs(() => guardarObservacion(e.target.value))}
+          onBlur={(e) => {
+            const valor = e.target.value;
+            guardarObs(async () => {
+              await registrar({
+                clase: "texto",
+                limpiezaId,
+                campo: "observacion_proxima",
+                valor,
+              });
+            });
+          }}
         />
       </label>
 
@@ -108,7 +123,17 @@ export default function AlTerminar({
             defaultValue={viaticoInicial}
             placeholder="0"
             className={`${clsEntrada} w-32`}
-            onBlur={(e) => guardarMonto(() => guardarViaticoMonto(e.target.value))}
+            onBlur={(e) => {
+              const valor = e.target.value;
+              guardarMonto(async () => {
+                await registrar({
+                  clase: "texto",
+                  limpiezaId,
+                  campo: "viatico_monto",
+                  valor,
+                });
+              });
+            }}
           />
           <label className="flex h-11 cursor-pointer items-center rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition-colors hover:bg-slate-700">
             {pendienteComprobante ? "Subiendo…" : "📷 Comprobante"}

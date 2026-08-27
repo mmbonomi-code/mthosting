@@ -16,10 +16,20 @@ export async function iniciarLimpieza(id: string) {
   revalidatePath("/mis-limpiezas");
 }
 
-/** Tilda o destilda un ítem del checklist de ESTA limpieza. */
+/**
+ * Tilda o destilda un ítem del checklist de ESTA limpieza.
+ *
+ * TIRA el error en vez de tragárselo: quien llama es la cola de envío, que
+ * necesita saber si de verdad llegó para decidir si lo encola. Un error
+ * silencioso acá se veía como un tilde guardado que en realidad se perdió.
+ */
 export async function tildarChecklistItem(limpiezaId: string, filaId: string, hecho: boolean) {
   const supabase = await crearClienteServidor();
-  await supabase.from("limpieza_checklist").update({ hecho }).eq("id", filaId);
+  const { error } = await supabase
+    .from("limpieza_checklist")
+    .update({ hecho })
+    .eq("id", filaId);
+  if (error) throw new Error(error.message);
   revalidatePath(`/mis-limpiezas/${limpiezaId}`);
 }
 
@@ -79,10 +89,12 @@ export async function subirFotos(
 /** La nota que le queda a quien limpie este depto la próxima vez. */
 export async function guardarObservacionProxima(id: string, texto: string) {
   const supabase = await crearClienteServidor();
-  await supabase
+  const { error } = await supabase
     .from("limpiezas")
     .update({ observacion_proxima: texto.trim() === "" ? null : texto.trim() })
     .eq("id", id);
+  // Igual que el checklist: el que llama es la cola y tiene que enterarse.
+  if (error) throw new Error(error.message);
   revalidatePath(`/mis-limpiezas/${id}`);
 }
 
@@ -116,10 +128,11 @@ export async function crearArreglo(
 export async function guardarViaticoMonto(id: string, monto: string) {
   const supabase = await crearClienteServidor();
   const valor = Number.parseFloat(monto.replace(",", "."));
-  await supabase
+  const { error } = await supabase
     .from("limpiezas")
     .update({ viatico_monto: Number.isFinite(valor) && valor > 0 ? valor : null })
     .eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath(`/mis-limpiezas/${id}`);
 }
 

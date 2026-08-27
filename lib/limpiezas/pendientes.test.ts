@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { claveDe, contar, enOrden, fusionar, type Pendiente } from "./pendientes";
+import {
+  claveDe,
+  contar,
+  enOrden,
+  fotosDe,
+  fusionar,
+  type FotoPendiente,
+  type Pendiente,
+} from "./pendientes";
 
 const tilde = (filaId: string, hecho: boolean, creadoEn: number): Pendiente => ({
   clase: "checklist",
@@ -103,5 +111,48 @@ describe("contar", () => {
 
   it("cuenta lo que falta mandar", () => {
     expect(contar([tilde("F1", true, 1), tilde("F2", true, 2)])).toBe(2);
+  });
+});
+
+describe("fotosDe", () => {
+  const foto = (
+    id: string,
+    tipo: FotoPendiente["tipo"],
+    creadoEn: number,
+    limpiezaId = "L1",
+  ): FotoPendiente => ({
+    id,
+    limpiezaId,
+    tipo,
+    archivo: new Blob(["x"], { type: "image/jpeg" }),
+    nombre: `${id}.jpg`,
+    creadoEn,
+  });
+
+  const cola = [
+    foto("c", "terminado", 30),
+    foto("a", "terminado", 10),
+    foto("b", "huesped", 20),
+    foto("d", "terminado", 40, "L2"),
+  ];
+
+  it("trae solo las de esa limpieza y esa categoría", () => {
+    expect(fotosDe(cola, "L1", "terminado").map((f) => f.id)).toEqual(["a", "c"]);
+  });
+
+  it("dos fotos de la misma categoría NO se pisan: son dos fotos", () => {
+    expect(fotosDe(cola, "L1", "terminado")).toHaveLength(2);
+  });
+
+  it("no mezcla limpiezas distintas", () => {
+    expect(fotosDe(cola, "L2", "terminado").map((f) => f.id)).toEqual(["d"]);
+  });
+
+  it("las devuelve en el orden en que se sacaron", () => {
+    expect(fotosDe(cola, "L1", "terminado").map((f) => f.creadoEn)).toEqual([10, 30]);
+  });
+
+  it("una categoría sin fotos devuelve vacío", () => {
+    expect(fotosDe(cola, "L1", "arreglar")).toEqual([]);
   });
 });

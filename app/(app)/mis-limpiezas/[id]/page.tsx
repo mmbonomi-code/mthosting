@@ -17,7 +17,6 @@ import {
   finalizarLimpieza,
   iniciarLimpieza,
   subirComprobanteViatico,
-  subirFotos,
 } from "../acciones";
 import { BUCKET } from "../tipos";
 
@@ -387,17 +386,20 @@ export default async function DetalleMiLimpieza({
         <>
           <SubidorFotos
             fotos={fotosPorTipo("terminado")}
-            subir={subirFotos.bind(null, id, "terminado")}
+            limpiezaId={id}
+            tipo="terminado"
             etiqueta="Fotos del depto terminado"
           />
           <SubidorFotos
             fotos={fotosPorTipo("arreglar")}
-            subir={subirFotos.bind(null, id, "arreglar")}
+            limpiezaId={id}
+            tipo="arreglar"
             etiqueta="Fotos de algo para arreglar"
           />
           <SubidorFotos
             fotos={fotosPorTipo("huesped")}
-            subir={subirFotos.bind(null, id, "huesped")}
+            limpiezaId={id}
+            tipo="huesped"
             etiqueta="Fotos de lo que dejó el huésped"
           />
 
@@ -421,7 +423,8 @@ export default async function DetalleMiLimpieza({
               <SubidorFotos
                 key={tipo}
                 fotos={fotosPorTipo(tipo)}
-                subir={subirFotos.bind(null, id, tipo as "terminado" | "arreglar" | "huesped")}
+                limpiezaId={id}
+                tipo={tipo as "terminado" | "arreglar" | "huesped"}
                 etiqueta={
                   tipo === "terminado"
                     ? "Fotos del depto terminado"

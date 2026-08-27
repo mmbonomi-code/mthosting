@@ -12,7 +12,7 @@ import { rolDelUsuario } from "@/lib/permisos";
 import { rolPuedeGestionarFotos } from "@/lib/limpiezas/permisos";
 import Wifi from "@/app/componentes/Wifi";
 import SubidorFotos from "@/app/(app)/mis-limpiezas/SubidorFotos";
-import { subirFotos } from "@/app/(app)/mis-limpiezas/acciones";
+import PendientesProvider from "@/app/(app)/mis-limpiezas/PendientesProvider";
 import { BUCKET } from "@/app/(app)/mis-limpiezas/tipos";
 import { FormularioAsignar, FormularioEditar } from "./FormulariosLimpieza";
 import {
@@ -284,21 +284,29 @@ export default async function FichaLimpieza({
               Las que sacó quien limpió. Podés sumar las tuyas.
             </p>
           </div>
-          <SubidorFotos
-            fotos={fotosDe("terminado")}
-            subir={subirFotos.bind(null, id, "terminado")}
-            etiqueta="Depto terminado"
-          />
-          <SubidorFotos
-            fotos={fotosDe("arreglar")}
-            subir={subirFotos.bind(null, id, "arreglar")}
-            etiqueta="Algo para arreglar"
-          />
-          <SubidorFotos
-            fotos={fotosDe("huesped")}
-            subir={subirFotos.bind(null, id, "huesped")}
-            etiqueta="Lo que dejó el huésped"
-          />
+          {/* El proveedor también acá: el subidor guarda la foto en el
+              navegador antes de subirla, y necesita su cola. De paso, si a
+              back office se le corta internet tampoco pierde lo que cargó. */}
+          <PendientesProvider>
+            <SubidorFotos
+              fotos={fotosDe("terminado")}
+              limpiezaId={id}
+              tipo="terminado"
+              etiqueta="Depto terminado"
+            />
+            <SubidorFotos
+              fotos={fotosDe("arreglar")}
+              limpiezaId={id}
+              tipo="arreglar"
+              etiqueta="Algo para arreglar"
+            />
+            <SubidorFotos
+              fotos={fotosDe("huesped")}
+              limpiezaId={id}
+              tipo="huesped"
+              etiqueta="Lo que dejó el huésped"
+            />
+          </PendientesProvider>
           {limpieza.observacion_proxima && (
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium uppercase tracking-wide text-slate-500">

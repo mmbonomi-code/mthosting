@@ -14,11 +14,13 @@
  * sin cola, exactamente como andaba antes.
  */
 
-import type { Pendiente } from "./pendientes";
+import type { FotoPendiente, Pendiente } from "./pendientes";
 
 const NOMBRE_DB = "mthosting-pendientes";
 const ALMACEN = "cola";
-const VERSION = 1;
+/** Las fotos van en su propio almacén: no se pisan y pesan distinto. */
+const ALMACEN_FOTOS = "fotos";
+const VERSION = 2;
 
 function abrir(): Promise<IDBDatabase | null> {
   return new Promise((resolver) => {
@@ -33,6 +35,9 @@ function abrir(): Promise<IDBDatabase | null> {
       const db = pedido.result;
       if (!db.objectStoreNames.contains(ALMACEN)) {
         db.createObjectStore(ALMACEN, { keyPath: "clave" });
+      }
+      if (!db.objectStoreNames.contains(ALMACEN_FOTOS)) {
+        db.createObjectStore(ALMACEN_FOTOS, { keyPath: "id" });
       }
     };
     pedido.onsuccess = () => resolver(pedido.result);
@@ -76,6 +81,53 @@ export async function quitar(clave: string): Promise<void> {
   await new Promise<void>((resolver) => {
     const tx = db.transaction(ALMACEN, "readwrite");
     tx.objectStore(ALMACEN).delete(clave);
+    tx.oncomplete = () => resolver();
+    tx.onerror = () => resolver();
+    tx.onabort = () => resolver();
+  });
+  db.close();
+}
+
+// --- Fotos ------------------------------------------------------------------
+
+/**
+ * Guarda una foto para subir. Se llama ANTES de intentar la subida: si el
+ * teléfono se queda sin señal, o la app se cierra, la foto ya está a salvo.
+ */
+export async function encolarFoto(f: FotoPendiente): Promise<void> {
+  const db = await abrir();
+  if (!db) return;
+  await new Promise<void>((resolver) => {
+    const tx = db.transaction(ALMACEN_FOTOS, "readwrite");
+    tx.objectStore(ALMACEN_FOTOS).put(f);
+    tx.oncomplete = () => resolver();
+    tx.onerror = () => resolver();
+    tx.onabort = () => resolver();
+  });
+  db.close();
+}
+
+/** Las fotos que todavía no subieron. */
+export async function leerFotos(): Promise<FotoPendiente[]> {
+  const db = await abrir();
+  if (!db) return [];
+  const fotos = await new Promise<FotoPendiente[]>((resolver) => {
+    const tx = db.transaction(ALMACEN_FOTOS, "readonly");
+    const pedido = tx.objectStore(ALMACEN_FOTOS).getAll();
+    pedido.onsuccess = () => resolver((pedido.result ?? []) as FotoPendiente[]);
+    pedido.onerror = () => resolver([]);
+  });
+  db.close();
+  return fotos;
+}
+
+/** Recién cuando el servidor confirmó que la guardó. */
+export async function quitarFoto(id: string): Promise<void> {
+  const db = await abrir();
+  if (!db) return;
+  await new Promise<void>((resolver) => {
+    const tx = db.transaction(ALMACEN_FOTOS, "readwrite");
+    tx.objectStore(ALMACEN_FOTOS).delete(id);
     tx.oncomplete = () => resolver();
     tx.onerror = () => resolver();
     tx.onabort = () => resolver();

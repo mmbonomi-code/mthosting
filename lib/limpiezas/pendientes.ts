@@ -82,3 +82,39 @@ export function enOrden(cola: Pendiente[]): Pendiente[] {
 export function contar(cola: Pendiente[]): number {
   return cola.length;
 }
+
+// ---------------------------------------------------------------------------
+// Fotos
+// ---------------------------------------------------------------------------
+
+/**
+ * Una foto esperando subir.
+ *
+ * Van aparte de las otras operaciones y con otras reglas: NUNCA se pisan
+ * entre sí. Un tilde fija un estado final y el último vale; dos fotos son
+ * dos fotos, y perder una porque llegó otra sería perder trabajo hecho.
+ *
+ * La foto se guarda ANTES de intentar subirla, no después de que falle: así
+ * queda a salvo desde el momento en que se saca, incluso si la app se cierra
+ * en el medio de la subida.
+ */
+export type FotoPendiente = {
+  id: string;
+  limpiezaId: string;
+  tipo: "terminado" | "arreglar" | "huesped";
+  /** Ya comprimida: lo que se guarda es lo mismo que se va a subir. */
+  archivo: Blob;
+  nombre: string;
+  creadoEn: number;
+};
+
+/** Las de una categoría de una limpieza, en el orden en que se sacaron. */
+export function fotosDe(
+  cola: FotoPendiente[],
+  limpiezaId: string,
+  tipo: FotoPendiente["tipo"],
+): FotoPendiente[] {
+  return cola
+    .filter((f) => f.limpiezaId === limpiezaId && f.tipo === tipo)
+    .sort((a, b) => a.creadoEn - b.creadoEn);
+}

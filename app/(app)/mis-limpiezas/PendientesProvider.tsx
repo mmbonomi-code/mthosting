@@ -8,11 +8,25 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { claveDe, enOrden, type Pendiente, type PendienteNuevo } from "@/lib/limpiezas/pendientes";
-import { encolar, leerCola, quitar } from "@/lib/limpiezas/pendientes-db";
+import {
+  claveDe,
+  enOrden,
+  type FotoPendiente,
+  type Pendiente,
+  type PendienteNuevo,
+} from "@/lib/limpiezas/pendientes";
+import {
+  encolar,
+  encolarFoto,
+  leerCola,
+  leerFotos,
+  quitar,
+  quitarFoto,
+} from "@/lib/limpiezas/pendientes-db";
 import {
   guardarObservacionProxima,
   guardarViaticoMonto,
+  subirFotos,
   tildarChecklistItem,
 } from "./acciones";
 
@@ -22,6 +36,10 @@ type Contexto = {
   enLinea: boolean;
   /** Intenta mandar; si no se puede, lo encola y lo reintenta después. */
   registrar: (p: PendienteNuevo) => Promise<void>;
+  /** Guarda la foto y la sube. Si no hay señal, queda guardada y sube después. */
+  registrarFoto: (f: Omit<FotoPendiente, "id" | "creadoEn">) => Promise<void>;
+  /** Las que todavía no subieron, para poder mostrarlas igual. */
+  fotosPendientes: FotoPendiente[];
 };
 
 const Ctx = createContext<Contexto | null>(null);
@@ -52,8 +70,24 @@ const suscribirseAConexion = (avisar: () => void) => {
   };
 };
 
+/**
+ * Sube UNA foto de la cola.
+ *
+ * TIRA solo si no hubo forma de hablar con el servidor (sin señal): ahí la
+ * foto se queda esperando. Si el servidor contestó —aunque haya rechazado la
+ * foto por formato o tamaño— vuelve normal y la foto sale de la cola:
+ * reintentarla para siempre no la va a arreglar y taparía a las que sí
+ * pueden subir.
+ */
+async function subirUna(f: FotoPendiente): Promise<void> {
+  const fd = new FormData();
+  fd.append("archivos", new File([f.archivo], f.nombre, { type: f.archivo.type }));
+  await subirFotos(f.limpiezaId, f.tipo, null, fd);
+}
+
 export default function PendientesProvider({ children }: { children: React.ReactNode }) {
   const [cantidad, setCantidad] = useState(0);
+  const [fotosPendientes, setFotosPendientes] = useState<FotoPendiente[]>([]);
 
   // Con useSyncExternalStore y no con estado propio: el navegador ya sabe si
   // hay conexión, y así no hace falta escribir estado dentro de un efecto.
@@ -65,7 +99,9 @@ export default function PendientesProvider({ children }: { children: React.React
   );
 
   const refrescar = useCallback(async () => {
-    setCantidad((await leerCola()).length);
+    const [cola, fotos] = await Promise.all([leerCola(), leerFotos()]);
+    setCantidad(cola.length + fotos.length);
+    setFotosPendientes(fotos);
   }, []);
 
   const registrar = useCallback(
@@ -77,6 +113,28 @@ export default function PendientesProvider({ children }: { children: React.React
         await quitar(p.clave);
       } catch {
         await encolar(p);
+      }
+      await refrescar();
+    },
+    [refrescar],
+  );
+
+  /**
+   * Guarda la foto y RECIÉN DESPUÉS intenta subirla. El orden importa: si se
+   * intentara subir primero y el teléfono se quedara sin señal a mitad de
+   * camino, o la persona cerrara la app, la foto se perdería. Guardada
+   * primero, siempre queda en algún lado.
+   */
+  const registrarFoto = useCallback(
+    async (parcial: Omit<FotoPendiente, "id" | "creadoEn">) => {
+      const f: FotoPendiente = { ...parcial, id: crypto.randomUUID(), creadoEn: Date.now() };
+      await encolarFoto(f);
+      await refrescar();
+      try {
+        await subirUna(f);
+        await quitarFoto(f.id);
+      } catch {
+        // Sin señal: queda guardada y sube cuando vuelva.
       }
       await refrescar();
     },
@@ -100,9 +158,21 @@ export default function PendientesProvider({ children }: { children: React.React
             break;
           }
         }
+        // Las fotos van después de los tildes: pesan más y son menos urgentes.
+        for (const f of (await leerFotos()).sort((a, b) => a.creadoEn - b.creadoEn)) {
+          try {
+            await subirUna(f);
+            await quitarFoto(f.id);
+          } catch {
+            break;
+          }
+        }
       }
-      const cuantas = (await leerCola()).length;
-      if (vivo) setCantidad(cuantas);
+      const [cola, fotos] = await Promise.all([leerCola(), leerFotos()]);
+      if (vivo) {
+        setCantidad(cola.length + fotos.length);
+        setFotosPendientes(fotos);
+      }
     };
     void ponerseAlDia();
     return () => {
@@ -111,7 +181,7 @@ export default function PendientesProvider({ children }: { children: React.React
   }, [enLinea]);
 
   return (
-    <Ctx.Provider value={{ cantidad, enLinea, registrar }}>
+    <Ctx.Provider value={{ cantidad, enLinea, registrar, registrarFoto, fotosPendientes }}>
       {(cantidad > 0 || !enLinea) && (
         <p
           role="status"
@@ -122,8 +192,12 @@ export default function PendientesProvider({ children }: { children: React.React
           }`}
         >
           {cantidad > 0
-            ? `Sin señal: ${cantidad} ${cantidad === 1 ? "cambio" : "cambios"} sin guardar. Se guardan solos cuando vuelva.`
-            : "Sin señal. Podés seguir trabajando."}
+            ? `${cantidad} ${cantidad === 1 ? "cosa" : "cosas"} sin subir todavía` +
+              (fotosPendientes.length > 0
+                ? ` (${fotosPendientes.length} ${fotosPendientes.length === 1 ? "foto" : "fotos"})`
+                : "") +
+              ". Están guardadas y suben solas cuando vuelva la señal."
+            : "Sin señal. Podés seguir trabajando: todo queda guardado."}
         </p>
       )}
       {children}

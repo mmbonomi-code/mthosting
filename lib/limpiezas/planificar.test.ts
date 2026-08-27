@@ -515,6 +515,27 @@ describe("eventos de estadía", () => {
     expect(plan.eventosACancelar).toHaveLength(0);
   });
 
+  it("una reserva descartada que reaparece recupera sus eventos", () => {
+    const plan = planificar({
+      eventos: [
+        { id: "e1", reserva_id: "r1", tipo: "checkin", estado: "cancelado" },
+        { id: "e2", reserva_id: "r1", tipo: "checkout", estado: "cancelado" },
+      ],
+    });
+    expect(plan.eventosAReactivar).toEqual(["e1", "e2"]);
+    expect(plan.eventosNuevos).toHaveLength(0);
+  });
+
+  it("los eventos de una reserva cancelada NO reviven", () => {
+    const plan = planificar({
+      reservas: [reserva({ cancelada: true })],
+      contexto: [],
+      eventos: [{ id: "e1", reserva_id: "r1", tipo: "checkin", estado: "cancelado" }],
+    });
+    expect(plan.eventosAReactivar).toHaveLength(0);
+    expect(plan.eventosACancelar).toHaveLength(0);
+  });
+
   it("una reserva cancelada cancela sus eventos", () => {
     const plan = planificar({
       reservas: [reserva({ cancelada: true })],

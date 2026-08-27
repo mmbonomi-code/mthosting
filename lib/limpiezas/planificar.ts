@@ -98,6 +98,8 @@ export type LimpiezaCambio = {
 export type Plan = {
   eventosNuevos: { reserva_id: string; tipo: "checkin" | "checkout" }[];
   eventosACancelar: string[];
+  /** Los de una reserva que volvió a estar viva: vuelven a pendiente. */
+  eventosAReactivar: string[];
   limpiezasNuevas: LimpiezaNueva[];
   limpiezasAActualizar: LimpiezaCambio[];
   anomalias: string[];
@@ -142,6 +144,7 @@ export function planificarLimpiezas({
   const plan: Plan = {
     eventosNuevos: [],
     eventosACancelar: [],
+    eventosAReactivar: [],
     limpiezasNuevas: [],
     limpiezasAActualizar: [],
     anomalias: [],
@@ -235,6 +238,13 @@ export function planificarLimpiezas({
         if (activa) plan.eventosNuevos.push({ reserva_id: reserva.id, tipo });
       } else if (!activa && existente.estado !== "cancelado") {
         plan.eventosACancelar.push(existente.id);
+      } else if (activa && existente.estado === "cancelado") {
+        // Una reserva descartada que reaparece vuelve entera (§2.10.ter): sin
+        // esto recuperaba la limpieza pero no el check-in ni el check-out, y
+        // la llegada del huésped no figuraba en el día. Los eventos solo los
+        // cancela el planificador, así que nunca se le está pisando la
+        // decisión a una persona.
+        plan.eventosAReactivar.push(existente.id);
       }
     }
   }

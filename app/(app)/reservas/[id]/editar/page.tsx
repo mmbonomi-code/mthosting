@@ -2,9 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeEditarReservas } from "@/lib/reservas/permisos";
+import { esManagerOAdmin } from "@/lib/permisos";
 import { airbnbPisaLoEditado } from "@/lib/reservas/validar";
 import { formatearFechaAR } from "@/lib/fechas";
-import { editarReserva } from "../../acciones";
+import {
+  descartarReserva,
+  editarReserva,
+  recuperarReserva,
+} from "../../acciones";
+import BotonDescartarReserva from "../../BotonDescartarReserva";
 import FormularioReserva from "../../FormularioReserva";
 import SinPermiso from "../../SinPermiso";
 
@@ -26,6 +32,10 @@ export default async function EditarReserva({
   const supabase = await crearClienteServidor();
 
   if (!(await puedeEditarReservas(supabase))) return <SinPermiso />;
+
+  // Descartar es de manager y administración nada más (§2.10.ter): saca una
+  // reserva entera de la operación, no es lo mismo que corregirle un dato.
+  const puedeDescartar = await esManagerOAdmin(supabase);
 
   const [{ data: reserva }, { data: departamentos }] = await Promise.all([
     supabase
@@ -71,7 +81,14 @@ export default async function EditarReserva({
         <p className="flex flex-wrap items-center gap-x-2 text-sm text-slate-400">
           <span className="font-mono">{reserva.codigo_reserva}</span>
           <span>· {ORIGEN[reserva.origen] ?? reserva.origen}</span>
-          {!reserva.datos_completos && (
+          {reserva.cancelada && (
+        <p className="rounded-lg bg-red-950/60 px-4 py-3 text-sm text-red-200">
+          Esta reserva está cancelada, con su check-in, su check-out y su limpieza.
+          No se reactiva desde acá: si el huésped vuelve, se carga una reserva nueva.
+        </p>
+      )}
+
+      {!reserva.datos_completos && (
             <span className="rounded-full bg-violet-950 px-2 py-0.5 text-xs text-violet-300">
               Tentativa
             </span>
@@ -90,6 +107,14 @@ export default async function EditarReserva({
           {reserva.fecha_checkin && (
             <>Entra el {formatearFechaAR(reserva.fecha_checkin)}.</>
           )}
+        </p>
+      )}
+
+      {reserva.descartada && (
+        <p className="rounded-lg bg-slate-800 px-4 py-3 text-sm text-slate-300">
+          Esta reserva está descartada: no figura en el día, en la semana ni en
+          las limpiezas. Si aparece en un archivo de Airbnb vuelve sola, y si fue
+          un error se recupera acá abajo.
         </p>
       )}
 
@@ -123,6 +148,31 @@ export default async function EditarReserva({
         avisoAirbnb={aviso}
         urlCancelar={urlVolver}
       />
+
+      {puedeDescartar && (
+        <div className="mt-4 border-t border-slate-800 pt-4">
+          <h2 className="text-sm font-medium text-slate-300">
+            La reserva no se concretó
+          </h2>
+          <p className="mb-3 text-sm text-slate-500">
+            Descartarla la saca del día, de la semana y de las limpiezas. No se
+            borra nada: si más adelante aparece en un archivo de Airbnb, vuelve
+            sola con su check-in, su check-out y su limpieza.
+          </p>
+          <BotonDescartarReserva
+            descartar={async () => {
+              "use server";
+              return descartarReserva(id);
+            }}
+            recuperar={async () => {
+              "use server";
+              return recuperarReserva(id);
+            }}
+            descartada={reserva.descartada}
+            codigo={reserva.codigo_reserva}
+          />
+        </div>
+      )}
     </main>
   );
 }

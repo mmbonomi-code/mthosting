@@ -8,6 +8,10 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../lib/database.types";
 import { generarLimpiezas } from "../lib/limpiezas/generar";
 import {
+  descartarReservaEnBase,
+  recuperarReservaEnBase,
+} from "../lib/reservas/descartar";
+import {
   calcularNoches,
   codigoDeReservaDirecta,
   airbnbPisaLoEditado,
@@ -168,5 +172,79 @@ describe.skipIf(!url || !clave)("alta manual de reservas (base dev)", () => {
       .eq("descartada", false);
     console.log(`reservas tentativas a completar: ${count}`);
     expect(count).toBeGreaterThanOrEqual(0);
+  });
+
+  it("descartar la reserva se lleva su limpieza y sus eventos, y recuperarla los devuelve", async () => {
+    const { data: depto } = await s
+      .from("departamentos")
+      .select("id")
+      .eq("estado", "activo")
+      .order("codigo")
+      .limit(1)
+      .single();
+
+    const codigo = codigoDeReservaDirecta(crypto.randomUUID());
+    const { data: reserva } = await s
+      .from("reservas")
+      .insert({
+        codigo_reserva: codigo,
+        canal: "directa",
+        origen: "manual",
+        datos_completos: true,
+        depto_id: depto!.id,
+        huesped_nombre: "PRUEBA e2e Descarte",
+        fecha_checkin: "2027-12-05",
+        fecha_checkout: "2027-12-08",
+        adultos: 2,
+        noches: calcularNoches("2027-12-05", "2027-12-08"),
+      })
+      .select("id")
+      .single();
+    creadas.push(reserva!.id);
+
+    await generarLimpiezas(s, [codigo], "2026-08-11");
+
+    const resultado = await descartarReservaEnBase(s, reserva!.id, "2026-08-11");
+    expect(resultado).not.toHaveProperty("error");
+
+    const { data: descartada } = await s
+      .from("reservas")
+      .select("descartada, cancelada")
+      .eq("id", reserva!.id)
+      .single();
+    expect(descartada!.descartada).toBe(true);
+    // Descartar NO es cancelar: la marca de Airbnb no se toca.
+    expect(descartada!.cancelada).toBe(false);
+
+    const eventosDe = async () =>
+      (
+        await s
+          .from("eventos_estadia")
+          .select("estado")
+          .eq("reserva_id", reserva!.id)
+      ).data!;
+    const limpiezasDe = async () =>
+      (await s.from("limpiezas").select("estado").eq("reserva_id", reserva!.id)).data!;
+
+    expect((await eventosDe()).every((e) => e.estado === "cancelado")).toBe(true);
+    expect((await limpiezasDe()).every((l) => l.estado === "cancelada")).toBe(true);
+
+    // Descartar dos veces no vuelve a tocar nada.
+    expect(await descartarReservaEnBase(s, reserva!.id, "2026-08-11")).toHaveProperty(
+      "error",
+    );
+
+    // Y vuelve entera, igual que cuando reaparece en un archivo de Airbnb.
+    const vuelta = await recuperarReservaEnBase(s, reserva!.id, "2026-08-11");
+    expect(vuelta).not.toHaveProperty("error");
+
+    const { data: recuperada } = await s
+      .from("reservas")
+      .select("descartada")
+      .eq("id", reserva!.id)
+      .single();
+    expect(recuperada!.descartada).toBe(false);
+    expect((await eventosDe()).every((e) => e.estado === "pendiente")).toBe(true);
+    expect((await limpiezasDe()).some((l) => l.estado === "pendiente")).toBe(true);
   });
 });

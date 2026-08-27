@@ -182,6 +182,14 @@ export async function generarLimpiezas(
     if (error) throw new Error(`No se pudieron cancelar los eventos: ${error.message}`);
   }
 
+  for (let i = 0; i < plan.eventosAReactivar.length; i += 500) {
+    const { error } = await supabase
+      .from("eventos_estadia")
+      .update({ estado: "pendiente" })
+      .in("id", plan.eventosAReactivar.slice(i, i + 500));
+    if (error) throw new Error(`No se pudieron reactivar los eventos: ${error.message}`);
+  }
+
   for (let i = 0; i < plan.limpiezasNuevas.length; i += 500) {
     const { error } = await supabase
       .from("limpiezas")

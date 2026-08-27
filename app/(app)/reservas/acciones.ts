@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeEditarReservas } from "@/lib/reservas/permisos";
+import { esManagerOAdmin } from "@/lib/permisos";
 import {
   calcularNoches,
   codigoDeReservaDirecta,
@@ -11,6 +12,10 @@ import {
   type OrigenManual,
 } from "@/lib/reservas/validar";
 import { generarLimpiezas } from "@/lib/limpiezas/generar";
+import {
+  descartarReservaEnBase,
+  recuperarReservaEnBase,
+} from "@/lib/reservas/descartar";
 import { hoyAR } from "@/lib/fechas";
 import { corregirContactoAR } from "@/lib/telefono";
 import type { EstadoFormulario } from "@/lib/reservas/tipos";
@@ -49,6 +54,20 @@ function datosDelFormulario(fd: FormData) {
     bebes: entero(fd, "bebes"),
     payout_monto: numero(fd, "payout_monto"),
   };
+}
+
+/** Las pantallas que muestran reservas, todas juntas. */
+function revalidar(id: string) {
+  revalidatePath("/dia");
+  revalidatePath("/semana");
+  revalidatePath("/limpiezas");
+  revalidatePath("/bandeja");
+  revalidatePath(`/reservas/${id}/editar`);
+}
+
+/** Las anomalías del planificador se muestran, no se tragan. */
+function avisos(anomalias: string[]): string {
+  return anomalias.length === 0 ? "" : ` ${anomalias.join(" ")}`;
 }
 
 /**
@@ -201,4 +220,53 @@ export async function editarReserva(
   revalidatePath("/semana");
   revalidatePath(`/reservas/${id}/editar`);
   return { ok: "Guardado." };
+}
+
+/**
+ * Descartar una reserva que nunca se concretó (§2.10.ter). Solo manager y
+ * administración. No se borra: sale de la operación junto con su check-in,
+ * su check-out y su limpieza, y si más adelante aparece en un archivo de
+ * Airbnb vuelve sola.
+ */
+export async function descartarReserva(id: string): Promise<EstadoFormulario> {
+  const supabase = await crearClienteServidor();
+  if (!(await esManagerOAdmin(supabase))) {
+    return { error: "Solo manager y administración pueden descartar una reserva." };
+  }
+
+  const resultado = await descartarReservaEnBase(supabase, id, hoyAR());
+  if ("error" in resultado) return resultado;
+
+  revalidar(id);
+
+  const limpiezas =
+    resultado.limpiezasCanceladas === 0
+      ? "No tenía limpiezas pendientes."
+      : resultado.limpiezasCanceladas === 1
+        ? "También se canceló su limpieza."
+        : `También se cancelaron sus ${resultado.limpiezasCanceladas} limpiezas.`;
+
+  return {
+    ok:
+      `Reserva descartada. Salieron del día el check-in y el check-out. ${limpiezas}` +
+      avisos(resultado.anomalias),
+  };
+}
+
+/** Deshacer el descarte: la reserva vuelve a la operación, entera. */
+export async function recuperarReserva(id: string): Promise<EstadoFormulario> {
+  const supabase = await crearClienteServidor();
+  if (!(await esManagerOAdmin(supabase))) {
+    return { error: "Solo manager y administración pueden recuperar una reserva." };
+  }
+
+  const resultado = await recuperarReservaEnBase(supabase, id, hoyAR());
+  if ("error" in resultado) return resultado;
+
+  revalidar(id);
+  return {
+    ok:
+      "Reserva recuperada. Volvieron el check-in, el check-out y la limpieza." +
+      avisos(resultado.anomalias),
+  };
 }

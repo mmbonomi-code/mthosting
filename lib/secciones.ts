@@ -60,6 +60,31 @@ const ACCESO: Partial<Record<Rol, Acceso>> = {
     ],
     vedadas: [/^\/departamentos\/nuevo$/, /\/editar$/, /\/equipamiento$/],
   },
+
+  /**
+   * Limpieza: sus propias limpiezas y el reporte, nada más (spec §3.8).
+   *
+   * Hasta ahora este rol no figuraba acá, y por la regla de arranque de este
+   * archivo —"un rol que no figura NO tiene límite"— terminaba viendo el menú
+   * entero: alertas, reclamos, caja, importar, propietarios. Los datos ya
+   * estaban cerrados por RLS, así que no se escapaba nada, pero tenía a la
+   * vista veinte pantallas que no le sirven y que no debería ni ver.
+   *
+   * `inicio` es "/mis-limpiezas" y no "/": aterriza directo donde marca sus
+   * limpiezas, en vez de en una pantalla vacía.
+   *
+   * El reporte lo LEE (§3.8, "leer el reporte" ✓ para limpieza); escribirlo
+   * ya está cerrado en `puede_escribir_reporte()`.
+   *
+   * La spec también le da la ficha de los departamentos que tiene asignados.
+   * Queda afuera a propósito por ahora: esa ficha muestra la comisión de
+   * MTHosting, el acuerdo de pago y los datos del propietario, que no son
+   * suyos. Se puede sumar cuando esa pantalla separe lo comercial.
+   */
+  limpieza: {
+    inicio: "/mis-limpiezas",
+    prefijos: ["/mis-limpiezas", "/reporte"],
+  },
 };
 
 /** Dónde aterriza al entrar. Sin restricción, la pantalla de inicio. */

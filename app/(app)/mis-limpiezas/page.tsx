@@ -52,7 +52,12 @@ export default async function MisLimpiezas({
   const hoy = hoyAR();
   const manana = mananaAR();
   const minFecha = sumarDias(hoy, -DIAS_ATRAS);
-  const fechaElegida = fecha && fecha >= minFecha && fecha <= manana ? fecha : manana;
+  // Abre en HOY (decisión del dueño, 27/08/2026). La spec decía "mañana",
+  // pensando en que la lista se manda la noche anterior; en el uso real la
+  // pantalla se abre durante el día para marcar lo que se va terminando, y
+  // aterrizar en mañana hacía parecer que no había nada. Mañana sigue a un
+  // toque de la flecha.
+  const fechaElegida = fecha && fecha >= minFecha && fecha <= manana ? fecha : hoy;
 
   const { data: limpiezas } = await supabase
     .from("limpiezas")
@@ -70,6 +75,7 @@ export default async function MisLimpiezas({
     lista.map((l) => ultimaLimpiezaDelDepto(supabase, l.depto_id, fechaElegida)),
   );
 
+  const esHoy = fechaElegida === hoy;
   const esManana = fechaElegida === manana;
   const esMinimo = fechaElegida === minFecha;
 
@@ -87,11 +93,11 @@ export default async function MisLimpiezas({
           </Link>
           <div className="text-center">
             <p className="text-lg font-medium text-white">
-              {esManana ? "Mañana" : formatearFechaAR(fechaElegida)}
+              {esHoy ? "Hoy" : esManana ? "Mañana" : formatearFechaAR(fechaElegida)}
             </p>
-            {!esManana && (
+            {!esHoy && (
               <Link href="/mis-limpiezas" className="text-xs text-slate-500 hover:text-slate-300">
-                Volver a mañana
+                Volver a hoy
               </Link>
             )}
           </div>
@@ -107,7 +113,11 @@ export default async function MisLimpiezas({
 
       {lista.length === 0 ? (
         <p className="py-12 text-center text-slate-500">
-          {esManana ? "No tenés limpiezas para mañana." : "No tenías limpiezas ese día."}
+          {esHoy
+            ? "No tenés limpiezas para hoy."
+            : esManana
+              ? "No tenés limpiezas para mañana."
+              : "No tenías limpiezas ese día."}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">

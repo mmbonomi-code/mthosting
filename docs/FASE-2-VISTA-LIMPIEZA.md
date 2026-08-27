@@ -88,9 +88,11 @@ para no perder trabajo si se corta la conexión.
 
 ## 3. Requisitos de diseño
 
-- **Abre mostrando MAÑANA, no hoy.** El ritmo operativo es anticipado: la
-  lista se envía el día anterior. Si abre a la noche en "hoy" y no ve nada,
-  no vuelve a abrir la app.
+- **Abre mostrando HOY** (decisión del dueño, 27/08/2026). Antes acá decía
+  "mañana, no hoy", razonando que la lista se manda la noche anterior. En el
+  primer uso real quedó claro que no: la pantalla se abre durante el día para
+  marcar lo que se va terminando, y aterrizar en mañana hacía parecer que no
+  había nada asignado. Mañana queda a un toque de la flecha.
 - **Navegación hacia días anteriores, hasta 15 días atrás.** Además de
   mañana, la persona tiene que poder mirar sus limpiezas ya hechas de las
   últimas dos semanas, para repasar el detalle, el checklist o lo que dejó

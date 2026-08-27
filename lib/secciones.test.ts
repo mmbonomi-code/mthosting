@@ -84,8 +84,54 @@ describe("los demás roles", () => {
     expect(inicioDelRol(null)).toBe("/");
   });
 
-  it("gobernanta es el único con el menú recortado, por ahora", () => {
+  it("gobernanta y limpieza tienen el menú recortado", () => {
     expect(tieneAccesoLimitado("gobernanta")).toBe(true);
-    expect(tieneAccesoLimitado("limpieza")).toBe(false);
+    expect(tieneAccesoLimitado("limpieza")).toBe(true);
+  });
+});
+
+describe("limpieza", () => {
+  it("aterriza en sus propias limpiezas, no en una pantalla vacía", () => {
+    expect(inicioDelRol("limpieza")).toBe("/mis-limpiezas");
+    expect(puedeEntrar("limpieza", inicioDelRol("limpieza"))).toBe(true);
+  });
+
+  it("abre su pantalla y el detalle de una limpieza suya", () => {
+    expect(puedeEntrar("limpieza", "/mis-limpiezas")).toBe(true);
+    expect(puedeEntrar("limpieza", "/mis-limpiezas/abc-123")).toBe(true);
+  });
+
+  it("lee el reporte (spec §3.8)", () => {
+    expect(puedeEntrar("limpieza", "/reporte")).toBe(true);
+  });
+
+  it("NO ve el resto del sistema: era lo que se veía de más", () => {
+    for (const ruta of [
+      "/",
+      "/alertas",
+      "/dia",
+      "/reclamos",
+      "/caja",
+      "/economico",
+      "/semana",
+      "/limpiezas",
+      "/departamentos",
+      "/propietarios",
+      "/personas",
+      "/tarifas",
+      "/parametros",
+      "/importar",
+      "/exportar",
+      "/bandeja",
+      "/ical",
+      "/puntos-acceso",
+    ]) {
+      expect(puedeEntrar("limpieza", ruta), ruta).toBe(false);
+    }
+  });
+
+  it("un prefijo parecido no le abre otra pantalla", () => {
+    expect(puedeEntrar("limpieza", "/mis-limpiezas-de-otro")).toBe(false);
+    expect(puedeEntrar("limpieza", "/reportes")).toBe(false);
   });
 });

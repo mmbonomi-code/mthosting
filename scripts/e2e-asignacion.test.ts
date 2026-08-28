@@ -206,5 +206,30 @@ describe.skipIf(!url || !clave)("asignación y alta manual (base dev)", () => {
       expect(error).toBeNull();
       creados.limpiezas.push(creada!.id);
     }
+
+    // Lo que la regla SÍ tiene que seguir impidiendo: dos limpiezas de salida
+    // para la misma reserva, que es como se duplicaban al reimportar.
+    const { data: salida } = await s
+      .from("limpiezas")
+      .select("id, depto_id, fecha, reserva_id")
+      .eq("rol_reserva", "salida")
+      .not("reserva_id", "is", null)
+      .limit(1)
+      .single();
+
+    const { data: repetida, error: choque } = await s
+      .from("limpiezas")
+      .insert({
+        depto_id: salida!.depto_id,
+        fecha: salida!.fecha,
+        tipo: "normal",
+        reserva_id: salida!.reserva_id,
+        rol_reserva: "salida",
+        estado: "pendiente",
+      })
+      .select("id")
+      .maybeSingle();
+    if (repetida) creados.limpiezas.push(repetida.id); // no debería pasar
+    expect(choque?.message).toMatch(/limpiezas_unica_por_reserva_rol/);
   });
 });

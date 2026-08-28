@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { congelarMonto, type Tarifa } from "@/lib/limpiezas/tarifas";
+import {
+  estadoAlQuitarResponsable,
+  type EstadoLimpieza,
+} from "@/lib/limpiezas/asignar";
 import type { Database } from "@/lib/database.types";
 
 type TipoLimpieza = Database["public"]["Enums"]["limpieza_tipo"];
@@ -85,6 +89,19 @@ export async function recalcularMonto(limpiezaId: string) {
  * (doble por inicial, profunda, domingo o feriado; 50% en repasos) y el
  * resultado no se recalcula solo nunca más.
  */
+/** El estado que le toca a la limpieza al soltarle la persona. */
+async function estadoSinResponsable(
+  supabase: Awaited<ReturnType<typeof crearClienteServidor>>,
+  limpiezaId: string,
+): Promise<EstadoLimpieza | null> {
+  const { data } = await supabase
+    .from("limpiezas")
+    .select("estado")
+    .eq("id", limpiezaId)
+    .maybeSingle();
+  return data ? estadoAlQuitarResponsable(data.estado) : null;
+}
+
 export async function asignarResponsable(
   limpiezaId: string,
   _estadoPrevio: EstadoFormulario,
@@ -93,13 +110,17 @@ export async function asignarResponsable(
   const personaId = texto(fd, "asignado_a");
   const supabase = await crearClienteServidor();
 
-  // Quitar el responsable: vuelve a pendiente y se suelta el monto.
+  // Quitar el responsable: vuelve a pendiente y se suelta el monto. Una
+  // limpieza cancelada sigue cancelada (ver estadoAlQuitarResponsable).
   if (!personaId) {
+    const estado = await estadoSinResponsable(supabase, limpiezaId);
+    if (estado === null) return { error: "No se encontró la limpieza." };
+
     const { error } = await supabase
       .from("limpiezas")
       .update({
         asignado_a: null,
-        estado: "pendiente",
+        estado,
         monto_pactado: null,
         moneda: null,
         tarifa_id: null,
@@ -151,11 +172,14 @@ export async function asignarRapido(limpiezaId: string, personaId: string | null
   const supabase = await crearClienteServidor();
 
   if (!personaId) {
+    const estado = await estadoSinResponsable(supabase, limpiezaId);
+    if (estado === null) return;
+
     await supabase
       .from("limpiezas")
       .update({
         asignado_a: null,
-        estado: "pendiente",
+        estado,
         monto_pactado: null,
         moneda: null,
         tarifa_id: null,

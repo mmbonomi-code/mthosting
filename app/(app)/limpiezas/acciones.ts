@@ -386,7 +386,18 @@ export async function crearLimpieza(
     .select("id")
     .single();
 
-  if (error) return { error: `No se pudo crear la limpieza: ${error.message}` };
+  if (error) {
+    // Lo que puede chocar es la limpieza de entrada o de salida que el sistema
+    // ya generó para esa reserva. En castellano, no con el texto de Postgres.
+    if (error.message.includes("limpiezas_unica_por_reserva_rol")) {
+      return {
+        error:
+          "Esa reserva ya tiene cargada su limpieza de entrada o de salida. " +
+          "Editá la que está en vez de crear otra.",
+      };
+    }
+    return { error: `No se pudo crear la limpieza: ${error.message}` };
+  }
 
   revalidatePath("/limpiezas");
   redirect(`/limpiezas/${data.id}`);

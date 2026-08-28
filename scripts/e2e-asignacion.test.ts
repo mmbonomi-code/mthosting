@@ -170,4 +170,41 @@ describe.skipIf(!url || !clave)("asignación y alta manual (base dev)", () => {
     expect(creada!.rol_reserva).toBe("durante");
     expect(creada!.tipo).toBe("con_huespedes");
   });
+
+  it("una estadía larga admite VARIAS limpiezas con huéspedes adentro", async () => {
+    // Una estadía larga de verdad: en seis meses van varios cambios de
+    // blancos, y el índice único los rechazaba a todos menos al primero
+    // (ECUADOR 1, 28/08/2026).
+    const { data: reserva } = await s
+      .from("reservas")
+      .select("id, depto_id, fecha_checkin")
+      .eq("cancelada", false)
+      .eq("descartada", false)
+      .not("depto_id", "is", null)
+      .gt("noches", 20)
+      .limit(1)
+      .single();
+    expect(reserva).toBeTruthy();
+
+    const [a, m, d] = reserva!.fecha_checkin!.split("-").map(Number);
+    const diaDeLaEstadia = (sumar: number) =>
+      new Date(Date.UTC(a, m - 1, d + sumar)).toISOString().slice(0, 10);
+
+    for (const dia of [diaDeLaEstadia(7), diaDeLaEstadia(14)]) {
+      const { data: creada, error } = await s
+        .from("limpiezas")
+        .insert({
+          depto_id: reserva!.depto_id!,
+          fecha: dia,
+          tipo: "cambio_blancos",
+          reserva_id: reserva!.id,
+          rol_reserva: "durante",
+          estado: "pendiente",
+        })
+        .select("id")
+        .single();
+      expect(error).toBeNull();
+      creados.limpiezas.push(creada!.id);
+    }
+  });
 });

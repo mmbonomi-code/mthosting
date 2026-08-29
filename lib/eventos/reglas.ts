@@ -151,6 +151,13 @@ export function ventanaDisponible(
  * de por medio (caso real, MARCELO VIANNA en AUSTRIA 1, 20/08/2026). La regla
  * de la ventana insuficiente es solo para el recambio el mismo día; en
  * cualquier otro caso no aplica, así que ni se evalúa.
+ *
+ * Tampoco aplica cuando la llegada temprana es SOLO para dejar las valijas
+ * (decisión del dueño, 29/08/2026). Una llegada a las 10:30 con acceso de
+ * método "valijas" no es el huésped entrando: en Talcahuano las valijas
+ * quedan en un lugar del edificio, y si no, se las deja a la limpieza. El
+ * departamento no queda ocupado y la limpieza avanza igual, así que esa hora
+ * no acorta ninguna ventana.
  */
 export function ventanaInsuficiente({
   fechaSalida,
@@ -159,6 +166,7 @@ export function ventanaInsuficiente({
   horaEntrada,
   horaLimiteCheckout,
   horaMinimaCheckin,
+  entradaSoloValijas = false,
 }: {
   fechaSalida: string | null;
   horaSalida: string | null;
@@ -166,7 +174,10 @@ export function ventanaInsuficiente({
   horaEntrada: string | null;
   horaLimiteCheckout: string;
   horaMinimaCheckin: string;
+  /** La llegada es una entrega de valijas, no el huésped entrando. */
+  entradaSoloValijas?: boolean;
 }): boolean {
+  if (entradaSoloValijas) return false;
   if (!horaSalida || !horaEntrada) return false;
   // Sin las dos fechas no se puede saber si es el mismo día: mejor no
   // alertar que alertar con un falso positivo.

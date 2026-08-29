@@ -9,6 +9,32 @@ import {
 describe("ventanasInsuficientesGlobal", () => {
   const umbrales = { horaLimiteCheckout: "11:00", horaMinimaCheckin: "12:00" };
 
+  it("no alerta si la llegada temprana es solo para dejar las valijas", () => {
+    const alertas = ventanasInsuficientesGlobal(
+      [
+        {
+          reserva_id: "r1",
+          codigo_reserva: "HM1",
+          depto_id: "d1",
+          tipo: "checkout",
+          fecha: "2026-08-20",
+          hora: "11:30",
+        },
+        {
+          reserva_id: "r2",
+          codigo_reserva: "HM2",
+          depto_id: "d1",
+          tipo: "checkin",
+          fecha: "2026-08-20",
+          hora: "10:30",
+          soloValijas: true,
+        },
+      ],
+      umbrales,
+    );
+    expect(alertas).toHaveLength(0);
+  });
+
   it("marca el depto con salida tarde y entrada temprano el mismo día", () => {
     const alertas = ventanasInsuficientesGlobal(
       [

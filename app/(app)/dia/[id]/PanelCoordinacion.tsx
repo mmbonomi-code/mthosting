@@ -90,6 +90,9 @@ export default function PanelCoordinacion({
   const personas = opciones.filter((o) => o.grupo === "Personas");
   const elegida = opciones.find((o) => o.valor === acceso);
   const esSelf = elegida?.metodo === "self";
+  // Llegar temprano solo a dejar las valijas no ocupa el departamento: la
+  // limpieza avanza igual, así que no se avisa por los tiempos (§2.8.quater).
+  const esValijas = elegida?.metodo === "valijas";
   const fechaDistinta = fecha !== "" && fecha !== valores.fechaReserva;
   // Un check-out tarde deja sin tiempo para limpiar.
   const salidaTarde = esCheckout && hora !== "" && hora > horaLimiteCheckout.slice(0, 5);
@@ -111,6 +114,7 @@ export default function PanelCoordinacion({
       horaEntrada: hora,
       horaLimiteCheckout,
       horaMinimaCheckin,
+      entradaSoloValijas: esValijas,
     });
 
   return (

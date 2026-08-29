@@ -129,7 +129,11 @@ export default async function FichaEvento({
 
   // --- Contexto del departamento: salida anterior, próxima llegada, limpieza ---
   let salidaAnterior: { fecha: string; hora: string | null } | null = null;
-  let proximaLlegada: { fecha: string; hora: string | null } | null = null;
+  let proximaLlegada: {
+    fecha: string;
+    hora: string | null;
+    soloValijas: boolean;
+  } | null = null;
   let listo = false;
   let hayEntradaEseDia = false;
 
@@ -148,7 +152,12 @@ export default async function FichaEvento({
           .limit(1),
         supabase
           .from("reservas")
-          .select("id, fecha_checkin, eventos:eventos_estadia(tipo, fecha_coordinada, hora_coordinada)")
+          .select(
+            `id, fecha_checkin, eventos:eventos_estadia(
+               tipo, fecha_coordinada, hora_coordinada,
+               punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(metodo)
+             )`,
+          )
           .eq("depto_id", depto.id)
           .eq("cancelada", false)
           .eq("descartada", false)
@@ -185,6 +194,7 @@ export default async function FichaEvento({
       proximaLlegada = {
         fecha: ev?.fecha_coordinada ?? siguiente.fecha_checkin,
         hora: ev?.hora_coordinada ?? null,
+        soloValijas: ev?.punto?.metodo === "valijas",
       };
     }
 
@@ -258,6 +268,15 @@ export default async function FichaEvento({
   const horaEntrada = esLlegada ? (evento.hora_coordinada ?? null) : (proximaLlegada?.hora ?? null);
   const fechaEntrada = esLlegada ? fechaEvento : (proximaLlegada?.fecha ?? null);
 
+  // Si la llegada es solo para dejar las valijas, esa hora no acorta nada:
+  // el huésped no entra al departamento (§2.8.quater).
+  const metodoDeEsteAcceso = (puntos ?? []).find(
+    (p) => p.id === evento.punto_acceso_id,
+  )?.metodo;
+  const entradaSoloValijas = esLlegada
+    ? metodoDeEsteAcceso === "valijas"
+    : (proximaLlegada?.soloValijas ?? false);
+
   const ventana = ventanaDisponible(horaSalida, horaEntrada);
   const imposible = ventanaInsuficiente({
     fechaSalida,
@@ -266,6 +285,7 @@ export default async function FichaEvento({
     horaEntrada,
     horaLimiteCheckout: config.hora_limite_checkout ?? "11:00",
     horaMinimaCheckin: config.hora_minima_checkin ?? "12:00",
+    entradaSoloValijas,
   });
 
   const telefono = soloDigitos(r.huesped_contacto);

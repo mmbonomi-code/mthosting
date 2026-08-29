@@ -70,7 +70,10 @@ export async function calcularPanelAlertas(
       .from("reservas")
       .select(
         `id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout,
-         eventos:eventos_estadia(id, tipo, fecha_coordinada, hora_coordinada, late_checkout)`,
+         eventos:eventos_estadia(
+           id, tipo, fecha_coordinada, hora_coordinada, late_checkout,
+           punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(metodo)
+         )`,
       )
       .not("depto_id", "is", null)
       .eq("cancelada", false)
@@ -147,6 +150,8 @@ export async function calcularPanelAlertas(
       tipo: "checkin",
       fecha: eventoCheckin?.fecha_coordinada ?? r.fecha_checkin,
       hora: eventoCheckin?.hora_coordinada ?? null,
+      // Llegar temprano a dejar las valijas no acorta la ventana.
+      soloValijas: eventoCheckin?.punto?.metodo === "valijas",
     });
 
     cobertura.push({

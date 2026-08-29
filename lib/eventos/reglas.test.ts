@@ -202,6 +202,28 @@ describe("ventanaInsuficiente", () => {
     ).toBe(false);
   });
 
+  it("una llegada que es solo para dejar valijas no acorta la ventana", () => {
+    // 10:30 con el anterior saliendo a las 11:30 sería imposible, salvo que
+    // la llegada sea una entrega de equipaje: el huésped no entra.
+    expect(
+      ventanaInsuficiente({
+        ...mismoDia,
+        horaSalida: "11:30",
+        horaEntrada: "10:30",
+        ...umbrales,
+      }),
+    ).toBe(true);
+    expect(
+      ventanaInsuficiente({
+        ...mismoDia,
+        horaSalida: "11:30",
+        horaEntrada: "10:30",
+        ...umbrales,
+        entradaSoloValijas: true,
+      }),
+    ).toBe(false);
+  });
+
   it("entrar antes o al mismo tiempo que sale el anterior el mismo día siempre alerta", () => {
     // El huésped nuevo llegaría con el viejo todavía adentro.
     expect(

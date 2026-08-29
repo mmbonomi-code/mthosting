@@ -30,6 +30,11 @@ export type MovimientoVentana = {
   fecha: string;
   /** Hora coordinada si existe. Sin ella no hay ventana que evaluar. */
   hora: string | null;
+  /**
+   * Solo en las llegadas: el acceso coordinado es de método "valijas", así
+   * que esa hora es una entrega de equipaje y no el huésped entrando.
+   */
+  soloValijas?: boolean;
 };
 
 export type AlertaVentana = {
@@ -68,6 +73,7 @@ export function ventanasInsuficientesGlobal(
           horaEntrada: entrada.hora,
           horaLimiteCheckout: umbrales.horaLimiteCheckout,
           horaMinimaCheckin: umbrales.horaMinimaCheckin,
+          entradaSoloValijas: entrada.soloValijas ?? false,
         });
         if (!imposible) continue;
         alertas.push({

@@ -19,6 +19,7 @@ type Valores = {
   instrucciones?: string | null;
   sirve_checkin?: boolean;
   sirve_checkout?: boolean;
+  recibe_limpieza?: boolean;
   activo?: boolean;
 };
 
@@ -102,6 +103,23 @@ export default function FormularioPuntoAcceso({
           <span className="text-base text-slate-200">Check-out (salida)</span>
         </label>
       </fieldset>
+
+      <label className="flex items-start gap-3 py-1 sm:col-span-2">
+        <input
+          type="checkbox"
+          name="recibe_limpieza"
+          defaultChecked={valores.recibe_limpieza ?? false}
+          className="mt-0.5 size-5 accent-white"
+        />
+        <span className="text-base text-slate-200">
+          Acá las valijas las recibe la limpieza
+          <span className="block text-sm text-slate-400">
+            Se les avisa en su pantalla. Si las valijas quedan en un lugar del
+            edificio o en la oficina, dejalo sin tildar: a la limpieza no le
+            cambia nada.
+          </span>
+        </span>
+      </label>
 
       <label className="flex items-center gap-3 py-1 sm:col-span-2">
         <input

@@ -2187,6 +2187,7 @@ export type Database = {
           instrucciones: string | null
           metodo: Database["public"]["Enums"]["metodo_acceso"]
           orden: number
+          recibe_limpieza: boolean
           sirve_checkin: boolean
           sirve_checkout: boolean
           ubicacion: string | null
@@ -2200,6 +2201,7 @@ export type Database = {
           instrucciones?: string | null
           metodo: Database["public"]["Enums"]["metodo_acceso"]
           orden?: number
+          recibe_limpieza?: boolean
           sirve_checkin?: boolean
           sirve_checkout?: boolean
           ubicacion?: string | null
@@ -2213,6 +2215,7 @@ export type Database = {
           instrucciones?: string | null
           metodo?: Database["public"]["Enums"]["metodo_acceso"]
           orden?: number
+          recibe_limpieza?: boolean
           sirve_checkin?: boolean
           sirve_checkout?: boolean
           ubicacion?: string | null

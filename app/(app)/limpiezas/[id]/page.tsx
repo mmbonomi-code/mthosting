@@ -103,6 +103,31 @@ export default async function FichaLimpieza({
   const proximoCheckin = limpieza.prox_checkin?.slice(0, 10) ?? null;
   const esMismoDia = proximoCheckin === limpieza.fecha;
 
+  // Si el huésped que llega ese mismo día deja las valijas con la limpieza,
+  // quien coordina y quien limpia tienen que saberlo (29/08/2026).
+  const { data: llegadaMismoDia } =
+    esMismoDia && limpieza.depto_id
+      ? await supabase
+          .from("reservas")
+          .select(
+            `id, eventos:eventos_estadia(
+               tipo, hora_coordinada,
+               punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(recibe_limpieza)
+             )`,
+          )
+          .eq("depto_id", limpieza.depto_id)
+          .eq("cancelada", false)
+          .eq("descartada", false)
+          .eq("fecha_checkin", limpieza.fecha)
+          .limit(1)
+          .maybeSingle()
+      : { data: null };
+
+  const llegadaConValijas = (llegadaMismoDia?.eventos ?? []).find(
+    (e) => e.tipo === "checkin" && e.punto?.recibe_limpieza,
+  );
+  const horaValijas = formatearHora(llegadaConValijas?.hora_coordinada ?? null);
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <Link href="/limpiezas" className="text-sm text-slate-400 hover:text-white">
@@ -176,6 +201,13 @@ export default async function FichaLimpieza({
           </Dato>
         </div>
       </dl>
+
+      {llegadaConValijas && (
+        <p className="rounded-xl bg-sky-950/60 px-4 py-3 text-sm text-sky-200">
+          🧳 El huésped que llega{horaValijas ? " a las " + horaValijas : ""} deja
+          las valijas con la limpieza.
+        </p>
+      )}
 
       {/* Asignación */}
       <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">

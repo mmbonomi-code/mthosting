@@ -22,6 +22,7 @@ function datosPunto(fd: FormData) {
     instrucciones: texto(fd, "instrucciones"),
     sirve_checkin: fd.get("sirve_checkin") === "on",
     sirve_checkout: fd.get("sirve_checkout") === "on",
+    recibe_limpieza: fd.get("recibe_limpieza") === "on",
     activo: fd.get("activo") === "on",
   };
 }

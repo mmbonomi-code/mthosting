@@ -135,7 +135,12 @@ export default async function DetalleMiLimpieza({
     limpieza.prox_checkin
       ? supabase
           .from("reservas")
-          .select("id, fecha_checkin, eventos:eventos_estadia(tipo, hora_coordinada)")
+          .select(
+            `id, fecha_checkin, eventos:eventos_estadia(
+               tipo, hora_coordinada,
+               punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(recibe_limpieza)
+             )`,
+          )
           .eq("depto_id", depto.id)
           .eq("cancelada", false)
           .eq("descartada", false)
@@ -179,9 +184,12 @@ export default async function DetalleMiLimpieza({
   const horaSalida = formatearHora(eventoCheckout?.hora_coordinada ?? limpieza.hora_checkout);
   const proximaEntradaFecha = limpieza.prox_checkin?.slice(0, 10) ?? null;
   const esHoyMismo = proximaEntradaFecha === limpieza.fecha;
-  const horaEntrada = formatearHora(
-    proximaReserva?.eventos?.find((e) => e.tipo === "checkin")?.hora_coordinada ?? null,
-  );
+  const entrada = proximaReserva?.eventos?.find((e) => e.tipo === "checkin");
+  const horaEntrada = formatearHora(entrada?.hora_coordinada ?? null);
+
+  // El huésped que llega deja las valijas con la limpieza: tienen que saberlo
+  // antes de llegar. Si quedan en el edificio o en la oficina, no se avisa.
+  const recibeValijas = esHoyMismo && (entrada?.punto?.recibe_limpieza ?? false);
 
   const mapsUrl =
     depto.url_mapa ??
@@ -270,6 +278,12 @@ export default async function DetalleMiLimpieza({
             {diasSin === null ? "sin limpiezas previas" : `${diasSin} días`}
           </span>
         </div>
+        {recibeValijas && (
+          <p className="rounded-lg bg-sky-950/60 px-3 py-2 text-sm text-sky-200">
+            🧳 El huésped que llega{horaEntrada ? ` a las ${horaEntrada}` : ""} deja
+            las valijas con vos.
+          </p>
+        )}
         {(limpieza.reserva?.noches ?? 0) >= 10 && (
           <p className="rounded-lg bg-amber-950/50 px-3 py-2 text-sm text-amber-300">
             ⚠ Estadía larga: puede llevar más tiempo de lo habitual.

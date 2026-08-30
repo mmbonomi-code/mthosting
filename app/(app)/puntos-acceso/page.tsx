@@ -10,7 +10,9 @@ export default async function PuntosAcceso() {
   // El orden lo decide el usuario: así se ofrecen al coordinar.
   const { data: puntos } = await supabase
     .from("puntos_acceso")
-    .select("id, metodo, ubicacion, identificador, sirve_checkin, sirve_checkout, activo")
+    .select(
+      "id, metodo, ubicacion, identificador, sirve_checkin, sirve_checkout, recibe_limpieza, activo",
+    )
     .order("orden")
     .order("ubicacion");
 
@@ -88,7 +90,11 @@ export default async function PuntosAcceso() {
                     )}
                   </span>
                   <span className="block text-xs text-slate-500">
-                    {[p.sirve_checkin ? "entrada" : null, p.sirve_checkout ? "salida" : null]
+                    {[
+                      p.sirve_checkin ? "entrada" : null,
+                      p.sirve_checkout ? "salida" : null,
+                      p.recibe_limpieza ? "valijas a limpieza" : null,
+                    ]
                       .filter(Boolean)
                       .join(" · ") || "no se usa"}
                   </span>

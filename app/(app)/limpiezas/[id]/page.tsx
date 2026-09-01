@@ -10,6 +10,7 @@ import {
 } from "@/lib/limpiezas/etiquetas";
 import { rolDelUsuario } from "@/lib/permisos";
 import { rolPuedeGestionarFotos } from "@/lib/limpiezas/permisos";
+import { ETIQUETA_FOTO, TIPOS_FOTO } from "@/lib/limpiezas/fotos";
 import Wifi from "@/app/componentes/Wifi";
 import SubidorFotos from "@/app/(app)/mis-limpiezas/SubidorFotos";
 import PendientesProvider from "@/app/(app)/mis-limpiezas/PendientesProvider";
@@ -320,24 +321,15 @@ export default async function FichaLimpieza({
               navegador antes de subirla, y necesita su cola. De paso, si a
               back office se le corta internet tampoco pierde lo que cargó. */}
           <PendientesProvider>
-            <SubidorFotos
-              fotos={fotosDe("terminado")}
-              limpiezaId={id}
-              tipo="terminado"
-              etiqueta="Depto terminado"
-            />
-            <SubidorFotos
-              fotos={fotosDe("arreglar")}
-              limpiezaId={id}
-              tipo="arreglar"
-              etiqueta="Algo para arreglar"
-            />
-            <SubidorFotos
-              fotos={fotosDe("huesped")}
-              limpiezaId={id}
-              tipo="huesped"
-              etiqueta="Lo que dejó el huésped"
-            />
+            {TIPOS_FOTO.map((t) => (
+              <SubidorFotos
+                key={t}
+                fotos={fotosDe(t)}
+                limpiezaId={id}
+                tipo={t}
+                etiqueta={ETIQUETA_FOTO[t]}
+              />
+            ))}
           </PendientesProvider>
           {limpieza.observacion_proxima && (
             <div className="flex flex-col gap-1">

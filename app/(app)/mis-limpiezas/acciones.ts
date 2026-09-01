@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import type { TipoFoto } from "@/lib/limpiezas/fotos";
 import { BUCKET, type EstadoFormulario } from "./tipos";
 
 const TIPOS_ACEPTADOS = ["image/jpeg", "image/png", "image/webp", "image/heic"];
@@ -39,7 +40,7 @@ export async function tildarChecklistItem(limpiezaId: string, filaId: string, he
  */
 export async function subirFotos(
   limpiezaId: string,
-  tipo: "terminado" | "arreglar" | "huesped",
+  tipo: TipoFoto,
   _estadoPrevio: EstadoFormulario,
   fd: FormData,
 ): Promise<EstadoFormulario> {

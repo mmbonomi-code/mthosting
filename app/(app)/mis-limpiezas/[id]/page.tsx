@@ -5,6 +5,7 @@ import { puedeVerMisLimpiezas, miPersonaId } from "@/lib/limpiezas/permisos";
 import { rolDelUsuario } from "@/lib/permisos";
 import { diasSinLimpiar, tareaPeriodicaVencida } from "@/lib/limpiezas/diasSinLimpiar";
 import { calcularQueLlevar } from "@/lib/limpiezas/quellevar";
+import { AYUDA_FOTO, ETIQUETA_FOTO, TIPOS_FOTO } from "@/lib/limpiezas/fotos";
 import { ultimaLimpiezaDelDepto } from "@/lib/limpiezas/ultimaLimpieza";
 import { formatearHora, TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
 import SinPermiso from "@/app/componentes/SinPermiso";
@@ -398,24 +399,16 @@ export default async function DetalleMiLimpieza({
 
       {limpieza.estado === "en_curso" && (
         <>
-          <SubidorFotos
-            fotos={fotosPorTipo("terminado")}
-            limpiezaId={id}
-            tipo="terminado"
-            etiqueta="Fotos del depto terminado"
-          />
-          <SubidorFotos
-            fotos={fotosPorTipo("arreglar")}
-            limpiezaId={id}
-            tipo="arreglar"
-            etiqueta="Fotos de algo para arreglar"
-          />
-          <SubidorFotos
-            fotos={fotosPorTipo("huesped")}
-            limpiezaId={id}
-            tipo="huesped"
-            etiqueta="Fotos de lo que dejó el huésped"
-          />
+          {TIPOS_FOTO.map((t) => (
+            <SubidorFotos
+              key={t}
+              fotos={fotosPorTipo(t)}
+              limpiezaId={id}
+              tipo={t}
+              etiqueta={ETIQUETA_FOTO[t]}
+              ayuda={AYUDA_FOTO[t]}
+            />
+          ))}
 
           <AlTerminar
             limpiezaId={id}
@@ -432,20 +425,14 @@ export default async function DetalleMiLimpieza({
 
       {(limpieza.estado === "hecha" || limpieza.estado === "verificada") && (
         <>
-          {["terminado", "arreglar", "huesped"].map((tipo) =>
-            fotosPorTipo(tipo).length > 0 ? (
+          {TIPOS_FOTO.map((t) =>
+            fotosPorTipo(t).length > 0 ? (
               <SubidorFotos
-                key={tipo}
-                fotos={fotosPorTipo(tipo)}
+                key={t}
+                fotos={fotosPorTipo(t)}
                 limpiezaId={id}
-                tipo={tipo as "terminado" | "arreglar" | "huesped"}
-                etiqueta={
-                  tipo === "terminado"
-                    ? "Fotos del depto terminado"
-                    : tipo === "arreglar"
-                      ? "Fotos de algo para arreglar"
-                      : "Fotos de lo que dejó el huésped"
-                }
+                tipo={t}
+                etiqueta={ETIQUETA_FOTO[t]}
               />
             ) : null,
           )}

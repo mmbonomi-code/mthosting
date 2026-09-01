@@ -140,7 +140,6 @@ export default function AlTerminar({
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/heic"
-              capture="environment"
               className="hidden"
               onChange={(e) => {
                 const archivo = e.target.files?.[0];

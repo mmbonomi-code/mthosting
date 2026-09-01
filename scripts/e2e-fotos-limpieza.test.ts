@@ -57,7 +57,7 @@ describe.skipIf(!url || !clave)("fotos de limpieza → reclamo (base dev)", () =
     const contenido = new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 9, 9])], {
       type: "image/jpeg",
     });
-    for (const tipo of ["terminado", "arreglar", "huesped"] as const) {
+    for (const tipo of ["terminado", "arreglar", "huesped", "olvido"] as const) {
       const ruta = `${limpiezaId}/${tipo}/${randomUUID()}.jpg`;
       const { error } = await s.storage
         .from(BUCKET_LIMPIEZAS)
@@ -74,7 +74,9 @@ describe.skipIf(!url || !clave)("fotos de limpieza → reclamo (base dev)", () =
     const copiadas = await fotosDeLimpieza(s, reservaId!, reclamoId);
     rutasCopiadas.push(...copiadas.map((f) => f.storage_path));
 
-    // Las tres se cargaron, pero solo las dos de daño viajan al reclamo.
+    // Se cargaron cuatro, pero solo las dos de DAÑO viajan al reclamo. El
+    // depto terminado no prueba nada, y un olvido del huésped (una campera,
+    // un cargador) no es un daño que se le pueda reclamar a Airbnb.
     expect(copiadas).toHaveLength(2);
     // Van a la carpeta del reclamo, no a la de la limpieza.
     expect(copiadas.every((f) => f.storage_path.startsWith(`${reclamoId}/`))).toBe(true);

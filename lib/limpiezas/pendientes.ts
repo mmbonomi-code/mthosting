@@ -1,3 +1,5 @@
+import type { TipoFoto } from "./fotos";
+
 /**
  * La cola de lo que todavía no se pudo mandar al servidor (spec Fase 2 §10:
  * "cachear la lista del día y encolar el cambio de estado + las fotos").
@@ -101,7 +103,7 @@ export function contar(cola: Pendiente[]): number {
 export type FotoPendiente = {
   id: string;
   limpiezaId: string;
-  tipo: "terminado" | "arreglar" | "huesped";
+  tipo: TipoFoto;
   /** Ya comprimida: lo que se guarda es lo mismo que se va a subir. */
   archivo: Blob;
   nombre: string;
@@ -112,7 +114,7 @@ export type FotoPendiente = {
 export function fotosDe(
   cola: FotoPendiente[],
   limpiezaId: string,
-  tipo: FotoPendiente["tipo"],
+  tipo: TipoFoto,
 ): FotoPendiente[] {
   return cola
     .filter((f) => f.limpiezaId === limpiezaId && f.tipo === tipo)

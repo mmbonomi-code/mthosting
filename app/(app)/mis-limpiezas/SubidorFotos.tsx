@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useTransition } from "react";
 import { comprimirImagen } from "@/lib/limpiezas/comprimir";
 import { fotosDe } from "@/lib/limpiezas/pendientes";
+import type { TipoFoto } from "@/lib/limpiezas/fotos";
 import { usePendientes } from "./PendientesProvider";
 
 export type FotoExistente = { id: string; url: string | null };
@@ -21,11 +22,14 @@ export default function SubidorFotos({
   limpiezaId,
   tipo,
   etiqueta,
+  ayuda,
 }: {
   fotos: FotoExistente[];
   limpiezaId: string;
-  tipo: "terminado" | "arreglar" | "huesped";
+  tipo: TipoFoto;
   etiqueta: string;
+  /** Una línea que explica para qué sirve esa categoría. Opcional. */
+  ayuda?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [subiendo, iniciar] = useTransition();
@@ -67,7 +71,12 @@ export default function SubidorFotos({
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{etiqueta}</span>
+      <div>
+        <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          {etiqueta}
+        </span>
+        {ayuda && <p className="text-xs text-slate-500">{ayuda}</p>}
+      </div>
       <div className="grid grid-cols-3 gap-2">
         {fotos.map((f) =>
           f.url ? (
@@ -119,7 +128,6 @@ export default function SubidorFotos({
         type="file"
         multiple
         accept="image/jpeg,image/png,image/webp,image/heic"
-        capture="environment"
         onChange={(e) => enviar(e.target.files)}
         className="hidden"
       />

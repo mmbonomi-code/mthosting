@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cerrarSesion } from "@/app/ingresar/acciones";
+import { Isotipo } from "@/app/componentes/Logo";
 
 export type ItemNav = {
   href: string;
@@ -91,7 +92,11 @@ export default function Sidebar({
     <>
       {/* Escritorio: fijo, siempre visible */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col self-start border-r border-slate-800 bg-slate-900 md:flex">
-        <Link href={inicio} className="border-b border-slate-800 px-4 py-4">
+        <Link
+          href={inicio}
+          className="flex items-center gap-2.5 border-b border-slate-800 px-4 py-4"
+        >
+          <Isotipo alto={26} decorativo />
           <span className="text-lg font-semibold tracking-tight text-white">MTHosting</span>
         </Link>
         {listaNav}
@@ -100,7 +105,8 @@ export default function Sidebar({
 
       {/* Celular: barra angosta + botón que abre el mismo menú como panel */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur md:hidden">
-        <Link href={inicio}>
+        <Link href={inicio} className="flex items-center gap-2.5">
+          <Isotipo alto={26} decorativo />
           <span className="text-lg font-semibold tracking-tight text-white">MTHosting</span>
         </Link>
         <button

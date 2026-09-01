@@ -48,18 +48,26 @@ export function Isotipo({
   alto = 32,
   tono = "color",
   className,
+  decorativo = false,
 }: {
   alto?: number;
   tono?: TonoLogo;
   className?: string;
+  /**
+   * Cuando al lado ya está escrito "MTHosting", el isotipo no aporta nada a
+   * quien usa lector de pantalla: repetirlo hace que lo lea dos veces. Así se
+   * oculta del árbol de accesibilidad sin sacarlo de la pantalla.
+   */
+  decorativo?: boolean;
 }) {
   return (
     <svg
       viewBox="0 0 32 32"
       width={alto}
       height={alto}
-      role="img"
-      aria-label="MTHosting"
+      role={decorativo ? undefined : "img"}
+      aria-label={decorativo ? undefined : "MTHosting"}
+      aria-hidden={decorativo || undefined}
       className={className}
     >
       <Barras tono={tono} />

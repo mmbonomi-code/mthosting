@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  arreglosSinResolver,
   conflictosCancelacionOFecha,
   conflictosLateCheckout,
   detectarFaltaLimpieza,
@@ -435,5 +436,44 @@ describe("conflictosLateCheckout", () => {
       },
     ]);
     expect(conflictos).toEqual([]);
+  });
+});
+
+describe("arreglosSinResolver", () => {
+  const base = {
+    depto_id: "d1",
+    limpieza_id: "l1",
+    descripcion: "La persiana no cierra",
+    estado: "pendiente" as string | null,
+    activo: true,
+    created_at: "2026-08-20T10:00:00Z",
+  };
+
+  it("un arreglo reportado desde una limpieza y sin resolver alerta", () => {
+    expect(arreglosSinResolver([{ ...base, id: "a1" }])).toHaveLength(1);
+  });
+
+  it("uno ya resuelto no alerta: es lo que apaga el aviso", () => {
+    expect(arreglosSinResolver([{ ...base, id: "a1", estado: "resuelto" }])).toEqual([]);
+  });
+
+  it("uno dado de baja no alerta", () => {
+    expect(arreglosSinResolver([{ ...base, id: "a1", activo: false }])).toEqual([]);
+  });
+
+  it("uno sin estado cuenta como pendiente, no se pierde", () => {
+    expect(arreglosSinResolver([{ ...base, id: "a1", estado: null }])).toHaveLength(1);
+  });
+
+  it("uno cargado a mano por administración no alerta: ya lo mira quien lo cargó", () => {
+    expect(arreglosSinResolver([{ ...base, id: "a1", limpieza_id: null }])).toEqual([]);
+  });
+
+  it("el más viejo va primero: es el que lleva más tiempo esperando", () => {
+    const orden = arreglosSinResolver([
+      { ...base, id: "nuevo", created_at: "2026-08-25T10:00:00Z" },
+      { ...base, id: "viejo", created_at: "2026-08-01T10:00:00Z" },
+    ]).map((a) => a.id);
+    expect(orden).toEqual(["viejo", "nuevo"]);
   });
 });

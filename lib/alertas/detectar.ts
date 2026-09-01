@@ -327,3 +327,58 @@ export function conflictosLateCheckout(reservas: ReservaLate[]): ConflictoLate[]
   }
   return conflictos;
 }
+
+// ---------------------------------------------------------------------------
+// 6 — Arreglos reportados desde una limpieza, sin resolver
+// ---------------------------------------------------------------------------
+
+export type ArregloCrudo = {
+  id: string;
+  depto_id: string;
+  limpieza_id: string | null;
+  descripcion: string;
+  estado: string | null;
+  activo: boolean;
+  created_at: string;
+};
+
+export type ArregloPendiente = {
+  id: string;
+  depto_id: string;
+  limpieza_id: string;
+  descripcion: string;
+  created_at: string;
+};
+
+/** El único estado que apaga la alerta. Lo demás sigue pendiente. */
+export const ARREGLO_RESUELTO = "resuelto";
+
+/**
+ * Lo que la limpieza reportó para arreglar y todavía nadie resolvió.
+ *
+ * Solo los que nacieron de una limpieza (`limpieza_id`): son los que alguien
+ * vio con sus propios ojos en el departamento y quedaron esperando. Un
+ * arreglo cargado a mano por administración ya lo está mirando quien lo
+ * cargó.
+ *
+ * Antes de esto, "algo para arreglar" creaba una fila que no leía ninguna
+ * pantalla: la persiana rota se reportaba y no se enteraba nadie.
+ */
+export function arreglosSinResolver(arreglos: ArregloCrudo[]): ArregloPendiente[] {
+  return arreglos
+    .filter(
+      (a) =>
+        a.activo &&
+        a.limpieza_id !== null &&
+        (a.estado ?? "") !== ARREGLO_RESUELTO,
+    )
+    .map((a) => ({
+      id: a.id,
+      depto_id: a.depto_id,
+      limpieza_id: a.limpieza_id!,
+      descripcion: a.descripcion,
+      created_at: a.created_at,
+    }))
+    // El más viejo primero: es el que lleva más tiempo esperando.
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+}

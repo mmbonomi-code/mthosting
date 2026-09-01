@@ -16,11 +16,13 @@ import { hoyAR, sumarDias } from "@/lib/fechas";
 import { limpiezasEnMedioDeEstadia, type Alerta } from "@/lib/limpiezas/alertas";
 import { semaforoDeLimpieza, type Semaforo } from "@/lib/limpiezas/semaforo";
 import {
+  arreglosSinResolver,
   conflictosCancelacionOFecha,
   conflictosLateCheckout,
   detectarFaltaLimpieza,
   ventanasInsuficientesGlobal,
   type AlertaVentana,
+  type ArregloPendiente,
   type ConflictoLate,
   type ConflictoReserva,
   type FaltaLimpieza,
@@ -47,6 +49,8 @@ export type PanelAlertas = {
   sinDepto: number;
   conflictos: ConflictoReserva[];
   lateCheckout: ConflictoLate[];
+  /** Lo que la limpieza reportó para arreglar y sigue sin resolverse. */
+  arreglos: ArregloPendiente[];
 };
 
 export async function calcularPanelAlertas(
@@ -64,6 +68,7 @@ export async function calcularPanelAlertas(
     { data: reservasRango },
     { data: sinResponsableCruda },
     { count: sinDepto },
+    { data: arreglosCrudos },
   ] = await Promise.all([
     supabase.from("parametros_operativos").select("clave, valor"),
     supabase
@@ -114,6 +119,13 @@ export async function calcularPanelAlertas(
       .select("id", { count: "exact", head: true })
       .is("depto_id", null)
       .eq("descartada", false),
+    // Sin ventana de fechas: un arreglo reportado hace un mes y nunca
+    // resuelto sigue siendo un arreglo pendiente.
+    supabase
+      .from("arreglos")
+      .select("id, depto_id, limpieza_id, descripcion, estado, activo, created_at")
+      .eq("activo", true)
+      .not("limpieza_id", "is", null),
   ]);
 
   const config = Object.fromEntries((parametros ?? []).map((p) => [p.clave, p.valor]));
@@ -293,11 +305,15 @@ export async function calcularPanelAlertas(
     sinDepto: sinDepto ?? 0,
     conflictos,
     lateCheckout,
+    arreglos: arreglosSinResolver(arreglosCrudos ?? []),
   };
 }
 
 export function contarCriticas(panel: PanelAlertas): number {
-  return panel.estadiaOcupada.length + panel.ventanaInsuficiente.length;
+  // Los arreglos van acá y no en el resto: se pidieron en rojo (decisión del
+  // dueño, 29/08/2026). Alguien vio algo roto en un departamento y hasta que
+  // no se resuelve sigue roto.
+  return panel.estadiaOcupada.length + panel.ventanaInsuficiente.length + panel.arreglos.length;
 }
 
 export function contarResto(panel: PanelAlertas): number {

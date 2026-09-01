@@ -3,7 +3,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import { faltantesDeEvento } from "@/lib/eventos/faltantes";
-import { momentoDeEvento } from "@/lib/eventos/reglas";
+import { departamentoListo, momentoDeEvento, type EstadoLimpieza } from "@/lib/eventos/reglas";
 import { puedeEditarReservas } from "@/lib/reservas/permisos";
 import { describirAcceso, esAccesoPresencial } from "@/lib/eventos/etiquetas";
 import BuscadorDia from "./BuscadorDia";
@@ -27,7 +27,7 @@ const CAMPOS = `
     id, codigo_reserva, huesped_nombre, huesped_contacto, noches, adultos, ninos, bebes,
     fecha_checkin, fecha_checkout, cancelada, descartada, datos_completos, origen,
     registro_hecho, aviso_seguridad_hecho,
-    depto:departamentos(codigo, nombre_interno, direccion, barrio, requiere_registro, requiere_aviso_seguridad)
+    depto:departamentos(id, codigo, nombre_interno, direccion, barrio, requiere_registro, requiere_aviso_seguridad)
   )
 `;
 
@@ -66,6 +66,7 @@ type Evento = {
     registro_hecho: boolean;
     aviso_seguridad_hecho: boolean;
     depto: {
+      id: string;
       codigo: string;
       nombre_interno: string;
       direccion: string | null;
@@ -88,7 +89,7 @@ function fechaOperativa(e: Evento): string | null {
     : (e.reserva?.fecha_checkout ?? null);
 }
 
-function Fila({ evento }: { evento: Evento }) {
+function Fila({ evento, listo }: { evento: Evento; listo?: boolean }) {
   const r = evento.reserva!;
   const esLlegada = evento.tipo === "checkin";
   const punto = esLlegada ? evento.punto : evento.punto_devolucion;
@@ -158,6 +159,17 @@ function Fila({ evento }: { evento: Evento }) {
             {evento.observaciones && (
               <span title={evento.observaciones} className="ml-2 text-sky-300">
                 ✎
+              </span>
+            )}
+            {/* Marca chica: el depto ya se limpió después de la última salida,
+                así que el huésped que llega puede entrar. Antes esto solo se
+                veía entrando a la ficha (spec §3.5.bis). */}
+            {listo && (
+              <span
+                title="Departamento listo: ya se limpió después de la última salida"
+                className="ml-2 text-emerald-400"
+              >
+                ✓
               </span>
             )}
           </span>
@@ -301,6 +313,66 @@ export default async function DelDia({
   const llegadas = eventos.filter((e) => e.tipo === "checkin").sort(ordenar);
   const salidas = eventos.filter((e) => e.tipo === "checkout").sort(ordenar);
 
+  // "Departamento listo" para cada llegada (spec §3.5.bis). Se calculaba solo
+  // adentro de la ficha de un evento, así que había que entrar a cada una
+  // para saberlo. Acá se resuelve para todas juntas: dos consultas para toda
+  // la lista, no dos por fila.
+  const deptosQueLlegan = [...new Set(llegadas.map((e) => e.reserva?.depto?.id).filter(Boolean))] as string[];
+
+  const [{ data: limpiezasDeptos }, { data: salidasPrevias }] =
+    deptosQueLlegan.length > 0
+      ? await Promise.all([
+          supabase
+            .from("limpiezas")
+            .select("depto_id, fecha, estado")
+            .in("depto_id", deptosQueLlegan)
+            .in("estado", ["hecha", "verificada"])
+            .lte("fecha", fecha),
+          supabase
+            .from("reservas")
+            .select("depto_id, fecha_checkout")
+            .in("depto_id", deptosQueLlegan)
+            .eq("cancelada", false)
+            .eq("descartada", false)
+            .lte("fecha_checkout", fecha),
+        ])
+      : [{ data: [] }, { data: [] }];
+
+  const limpiezasPorDepto = new Map<string, { fecha: string; estado: EstadoLimpieza }[]>();
+  for (const l of limpiezasDeptos ?? []) {
+    if (!l.depto_id) continue;
+    limpiezasPorDepto.set(l.depto_id, [
+      ...(limpiezasPorDepto.get(l.depto_id) ?? []),
+      { fecha: l.fecha, estado: l.estado as EstadoLimpieza },
+    ]);
+  }
+
+  // La última salida de cada depto: es la referencia contra la que se mide si
+  // la limpieza sirve todavía.
+  const ultimaSalidaPorDepto = new Map<string, string>();
+  for (const r of salidasPrevias ?? []) {
+    if (!r.depto_id || !r.fecha_checkout) continue;
+    const previa = ultimaSalidaPorDepto.get(r.depto_id);
+    if (!previa || r.fecha_checkout > previa) {
+      ultimaSalidaPorDepto.set(r.depto_id, r.fecha_checkout);
+    }
+  }
+
+  const listoPorEvento = new Map<string, boolean>();
+  for (const e of llegadas) {
+    const deptoId = e.reserva?.depto?.id;
+    const llegada = fechaOperativa(e);
+    if (!deptoId || !llegada) continue;
+    listoPorEvento.set(
+      e.id,
+      departamentoListo({
+        limpiezas: limpiezasPorDepto.get(deptoId) ?? [],
+        ultimoCheckout: ultimaSalidaPorDepto.get(deptoId) ?? null,
+        fechaLlegada: llegada,
+      }),
+    );
+  }
+
   const sinCoordinar = eventos.filter(
     (e) => !e.hora_coordinada || (!e.punto && !e.responsable && !e.punto_devolucion && !e.responsable_devolucion),
   ).length;
@@ -368,7 +440,7 @@ export default async function DelDia({
             ) : (
               <ul className="flex flex-col gap-2">
                 {llegadas.map((e) => (
-                  <Fila key={e.id} evento={e} />
+                  <Fila key={e.id} evento={e} listo={listoPorEvento.get(e.id)} />
                 ))}
               </ul>
             )}

@@ -11,11 +11,13 @@ import {
 import { rolDelUsuario } from "@/lib/permisos";
 import { rolPuedeGestionarFotos } from "@/lib/limpiezas/permisos";
 import { ETIQUETA_FOTO, TIPOS_FOTO } from "@/lib/limpiezas/fotos";
+import { ARREGLO_RESUELTO } from "@/lib/alertas/detectar";
 import Wifi from "@/app/componentes/Wifi";
 import SubidorFotos from "@/app/(app)/mis-limpiezas/SubidorFotos";
 import PendientesProvider from "@/app/(app)/mis-limpiezas/PendientesProvider";
 import { BUCKET } from "@/app/(app)/mis-limpiezas/tipos";
 import { FormularioAsignar, FormularioEditar } from "./FormulariosLimpieza";
+import { reabrirArreglo, resolverArreglo } from "../arreglos";
 import {
   asignarResponsable,
   cancelarLimpieza,
@@ -51,8 +53,14 @@ export default async function FichaLimpieza({
 
   if (!limpieza) notFound();
 
-  const [{ data: personas }, { data: eventos }, { data: anterior }, rol, { data: fotos }] =
-    await Promise.all([
+  const [
+    { data: personas },
+    { data: eventos },
+    { data: anterior },
+    rol,
+    { data: fotos },
+    { data: arreglosCrudos },
+  ] = await Promise.all([
     supabase
       .from("personas")
       .select("id, nombre")
@@ -77,6 +85,13 @@ export default async function FichaLimpieza({
       .maybeSingle(),
     rolDelUsuario(supabase),
     supabase.from("limpieza_fotos").select("id, tipo, storage_path").eq("limpieza_id", id),
+    // Lo que la limpieza reportó para arreglar en ESTA limpieza.
+    supabase
+      .from("arreglos")
+      .select("id, descripcion, estado, created_at")
+      .eq("limpieza_id", id)
+      .eq("activo", true)
+      .order("created_at"),
   ]);
 
   // Fotos de la limpieza, para back office (spec Fase 2 §3). Se sirven por
@@ -93,6 +108,15 @@ export default async function FichaLimpieza({
     (fotos ?? [])
       .filter((f) => f.tipo === tipo)
       .map((f) => ({ id: f.id, url: urlPorRuta.get(f.storage_path) ?? null }));
+
+  const arreglos = verFotos ? (arreglosCrudos ?? []) : [];
+
+  // El comprobante del viático vive en el mismo bucket privado que las fotos.
+  const { data: firmaViatico } =
+    verFotos && limpieza.viatico_comprobante
+      ? await supabase.storage.from(BUCKET).createSignedUrl(limpieza.viatico_comprobante, 3600)
+      : { data: null };
+  const urlViatico = firmaViatico?.signedUrl ?? null;
 
   // La hora de salida sale de lo coordinado en el check-out; la cargada a
   // mano solo se usa cuando la limpieza no tiene reserva.
@@ -339,6 +363,82 @@ export default async function FichaLimpieza({
               <p className="whitespace-pre-wrap rounded-lg bg-slate-900/60 px-3 py-2 text-sm italic text-slate-300">
                 {limpieza.observacion_proxima}
               </p>
+            </div>
+          )}
+
+          {/* Lo que la limpieza reportó para arreglar. Antes esto se guardaba
+              en la base y no lo leía ninguna pantalla. */}
+          {arreglos.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Reportado para arreglar
+              </span>
+              {arreglos.map((a) => {
+                const resuelto = a.estado === ARREGLO_RESUELTO;
+                return (
+                  <div
+                    key={a.id}
+                    className={`flex flex-wrap items-start justify-between gap-3 rounded-lg px-3 py-2 ${
+                      resuelto ? "bg-slate-900/60" : "bg-red-950/40"
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`whitespace-pre-wrap text-sm ${
+                          resuelto ? "text-slate-500 line-through" : "text-red-200"
+                        }`}
+                      >
+                        {a.descripcion}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {formatearFechaAR(a.created_at.slice(0, 10))}
+                      </p>
+                    </div>
+                    <form
+                      action={
+                        resuelto
+                          ? reabrirArreglo.bind(null, a.id, id)
+                          : resolverArreglo.bind(null, a.id, id)
+                      }
+                    >
+                      <button
+                        type="submit"
+                        className="h-9 shrink-0 rounded-md border border-slate-700 px-3 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700"
+                      >
+                        {resuelto ? "Reabrir" : "Marcar resuelto"}
+                      </button>
+                    </form>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Viático: plata que la persona adelantó de su bolsillo. Por ahora
+              solo se muestra; la aprobación va con el pago al personal
+              (decisión del dueño, 29/08/2026). */}
+          {(limpieza.viatico_monto !== null || urlViatico) && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Viático
+              </span>
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="text-base font-semibold text-slate-200">
+                  {limpieza.viatico_monto !== null
+                    ? `${limpieza.moneda ?? "ARS"} ${limpieza.viatico_monto.toLocaleString("es-AR")}`
+                    : "sin monto cargado"}
+                </span>
+                {urlViatico && (
+                  <a
+                    href={urlViatico}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-slate-300 underline decoration-slate-600 underline-offset-4 hover:text-white"
+                  >
+                    Ver comprobante
+                  </a>
+                )}
+              </div>
             </div>
           )}
         </section>

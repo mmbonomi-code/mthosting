@@ -107,6 +107,23 @@ export default async function Alertas({
         </Seccion>
 
         <Seccion
+          titulo="Arreglos reportados por limpieza"
+          detalle="Lo que alguien vio roto en un departamento y todavía no se resolvió. Se apaga desde la ficha de la limpieza."
+          cantidad={panel.arreglos.length}
+          tono="rojo"
+          ocultar={ocultar}
+        >
+          {panel.arreglos.map((a) => (
+            <Fila key={a.id} href={`/limpiezas/${a.limpieza_id}`}>
+              <FilaTitulo>
+                {nombreDepto(a.depto_id)} · {formatearFechaAR(a.created_at.slice(0, 10))}
+              </FilaTitulo>
+              <FilaSub>{a.descripcion}</FilaSub>
+            </Fila>
+          ))}
+        </Seccion>
+
+        <Seccion
           titulo="Falta limpieza"
           detalle="Entre un check-out y el siguiente check-in del departamento no hay ninguna limpieza cargada."
           cantidad={panel.faltaLimpieza.length}

@@ -197,6 +197,8 @@ export type LimpiezaConReserva = {
   estado: string;
   rol_reserva: "salida" | "entrada" | "durante" | null;
   reserva_id: string | null;
+  /** La firma del conflicto que alguien ya revisó y dio por bueno. */
+  conflicto_resuelto?: string | null;
 };
 
 export type ReservaEstado = {
@@ -208,6 +210,20 @@ export type ReservaEstado = {
   fecha_checkout: string | null;
 };
 
+/**
+ * Qué situación exacta se está avisando.
+ *
+ * Se guarda esto y no un simple "resuelto" para que la alerta VUELVA si la
+ * situación cambia: dar por bueno un cambio al 15/09 no debería tapar un
+ * segundo cambio al 20/09.
+ */
+export function firmaConflicto(
+  motivo: ConflictoReserva["motivo"],
+  fechaEsperada: string | null,
+): string {
+  return motivo === "fecha_cambio" ? `fecha_cambio|${fechaEsperada ?? ""}` : motivo;
+}
+
 export type ConflictoReserva = {
   limpieza_id: string;
   reserva_id: string;
@@ -216,6 +232,8 @@ export type ConflictoReserva = {
   fecha_limpieza: string;
   motivo: "cancelada" | "descartada" | "fecha_cambio";
   detalle: string;
+  /** Lo que hay que guardar si alguien da esto por resuelto. */
+  firma: string;
 };
 
 /**
@@ -248,28 +266,37 @@ export function conflictosCancelacionOFecha(
       fecha_limpieza: l.fecha,
     };
 
+    /** Lo que ya se revisó no vuelve a avisar, salvo que cambie. */
+    const yaRevisado = (motivo: ConflictoReserva["motivo"], fecha: string | null) =>
+      (l.conflicto_resuelto ?? null) === firmaConflicto(motivo, fecha);
+
     if (r.cancelada) {
+      if (yaRevisado("cancelada", null)) continue;
       conflictos.push({
         ...base,
         motivo: "cancelada",
+        firma: firmaConflicto("cancelada", null),
         detalle: `La reserva se canceló, pero su limpieza del ${l.fecha} ya está ${l.estado}. Si el huésped estaba de verdad adentro, cargá la fecha real de salida en la reserva.`,
       });
       continue;
     }
     if (r.descartada) {
+      if (yaRevisado("descartada", null)) continue;
       conflictos.push({
         ...base,
         motivo: "descartada",
+        firma: firmaConflicto("descartada", null),
         detalle: `La reserva se descartó, pero su limpieza del ${l.fecha} ya está ${l.estado}. No se canceló sola.`,
       });
       continue;
     }
 
     const fechaEsperada = l.rol_reserva === "entrada" ? r.fecha_checkin : r.fecha_checkout;
-    if (fechaEsperada && fechaEsperada !== l.fecha) {
+    if (fechaEsperada && fechaEsperada !== l.fecha && !yaRevisado("fecha_cambio", fechaEsperada)) {
       conflictos.push({
         ...base,
         motivo: "fecha_cambio",
+        firma: firmaConflicto("fecha_cambio", fechaEsperada),
         detalle: `La reserva cambió de fecha (ahora ${fechaEsperada}), pero la limpieza del ${l.fecha} ya está ${l.estado}. No se movió sola.`,
       });
     }

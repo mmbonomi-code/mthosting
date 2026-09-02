@@ -89,7 +89,7 @@ export async function calcularPanelAlertas(
     supabase
       .from("limpiezas")
       .select(
-        `id, depto_id, fecha, estado, rol_reserva, reserva_id,
+        `id, depto_id, fecha, estado, rol_reserva, reserva_id, conflicto_resuelto,
          reserva:reservas(id, codigo_reserva, cancelada, descartada, fecha_checkin, fecha_checkout)`,
       )
       .in("estado", ["en_curso", "hecha", "verificada"])
@@ -261,6 +261,7 @@ export async function calcularPanelAlertas(
       estado: l.estado,
       rol_reserva: l.rol_reserva,
       reserva_id: l.reserva_id,
+      conflicto_resuelto: l.conflicto_resuelto,
     })),
     [...reservasDeIntocables.values()],
   );
@@ -285,15 +286,20 @@ export async function calcularPanelAlertas(
   ).filter((a) => a.motivo === "en_medio_de_estadia");
 
   // --- 2: sin responsable, solo semáforo rojo o ámbar ---
+  // Solo hoy y lo que ya quedó atrasado (decisión del dueño, 29/08/2026).
+  // Antes entraban también las de los días siguientes y la lista quedaba
+  // llena de cosas que todavía había tiempo de asignar: el aviso perdía
+  // sentido y se ignoraba. Lo de mañana en adelante se reparte desde
+  // /semana, que es la pantalla hecha para eso.
   const sinResponsable: FilaSinResponsable[] = (sinResponsableCruda ?? [])
+    .filter((l) => l.fecha <= hoy)
     .map((l) => ({
       id: l.id,
       depto_id: l.depto_id,
       fecha: l.fecha,
       tipo: l.tipo,
       semaforo: semaforoDeLimpieza({ fecha: l.fecha, hoy, tieneResponsable: false }),
-    }))
-    .filter((f) => f.semaforo === "rojo" || f.semaforo === "ambar");
+    }));
 
   return {
     desde,

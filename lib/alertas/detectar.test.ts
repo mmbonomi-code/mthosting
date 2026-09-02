@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   arreglosSinResolver,
   conflictosCancelacionOFecha,
+  firmaConflicto,
   conflictosLateCheckout,
   detectarFaltaLimpieza,
   ventanasInsuficientesGlobal,
@@ -475,5 +476,63 @@ describe("arreglosSinResolver", () => {
       { ...base, id: "viejo", created_at: "2026-08-01T10:00:00Z" },
     ]).map((a) => a.id);
     expect(orden).toEqual(["viejo", "nuevo"]);
+  });
+});
+
+describe("firmaConflicto y conflictos ya revisados", () => {
+  const limpieza = {
+    id: "l1",
+    depto_id: "d1",
+    fecha: "2026-08-15",
+    estado: "hecha",
+    rol_reserva: "salida" as const,
+    reserva_id: "r1",
+  };
+  const reservaCancelada = {
+    id: "r1",
+    codigo_reserva: "HM1",
+    cancelada: true,
+    descartada: false,
+    fecha_checkin: "2026-08-10",
+    fecha_checkout: "2026-08-15",
+  };
+  const reservaMovida = { ...reservaCancelada, cancelada: false, fecha_checkout: "2026-08-17" };
+
+  it("la firma de un cambio de fecha incluye la fecha nueva", () => {
+    expect(firmaConflicto("fecha_cambio", "2026-09-15")).toBe("fecha_cambio|2026-09-15");
+    expect(firmaConflicto("cancelada", null)).toBe("cancelada");
+  });
+
+  it("marcado como revisado, deja de alertar", () => {
+    const sinMarcar = conflictosCancelacionOFecha([limpieza], [reservaCancelada]);
+    expect(sinMarcar).toHaveLength(1);
+
+    const marcado = conflictosCancelacionOFecha(
+      [{ ...limpieza, conflicto_resuelto: sinMarcar[0].firma }],
+      [reservaCancelada],
+    );
+    expect(marcado).toEqual([]);
+  });
+
+  it("si la reserva se mueve OTRA VEZ, el aviso vuelve solo", () => {
+    // Se dio por bueno el cambio al 17. Después Airbnb la mueve al 20: eso
+    // es una situación nueva y tiene que volver a avisar.
+    const revisado = firmaConflicto("fecha_cambio", "2026-08-17");
+    const conNuevoCambio = conflictosCancelacionOFecha(
+      [{ ...limpieza, conflicto_resuelto: revisado }],
+      [{ ...reservaMovida, fecha_checkout: "2026-08-20" }],
+    );
+    expect(conNuevoCambio).toHaveLength(1);
+    expect(conNuevoCambio[0].firma).toBe("fecha_cambio|2026-08-20");
+  });
+
+  it("haber revisado un cambio de fecha no tapa una cancelación posterior", () => {
+    const revisado = firmaConflicto("fecha_cambio", "2026-08-17");
+    const ahoraCancelada = conflictosCancelacionOFecha(
+      [{ ...limpieza, conflicto_resuelto: revisado }],
+      [reservaCancelada],
+    );
+    expect(ahoraCancelada).toHaveLength(1);
+    expect(ahoraCancelada[0].motivo).toBe("cancelada");
   });
 });

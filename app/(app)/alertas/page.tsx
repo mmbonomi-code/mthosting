@@ -2,9 +2,10 @@ import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerAlertas } from "@/lib/alertas/permisos";
 import { calcularPanelAlertas } from "@/lib/alertas/consultar";
-import { formatearFechaAR } from "@/lib/fechas";
+import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import SinPermiso from "@/app/componentes/SinPermiso";
+import { resolverConflicto } from "./acciones";
 
 const TEXTO_TIPO_LIMPIEZA: Record<string, string> = {
   normal: "Limpieza",
@@ -27,6 +28,7 @@ export default async function Alertas({
 }) {
   const { ocultarVacias } = await searchParams;
   const ocultar = ocultarVacias === "1";
+  const hoy = hoyAR();
 
   const supabase = await crearClienteServidor();
 
@@ -144,7 +146,7 @@ export default async function Alertas({
 
         <Seccion
           titulo="Sin responsable"
-          detalle="Limpiezas próximas (hoy, mañana, o a 2-3 días) sin nadie asignado."
+          detalle="Limpiezas de hoy, o ya atrasadas, sin nadie asignado. Las de los días siguientes se reparten desde Limpiezas."
           cantidad={panel.sinResponsable.length}
           tono="ambar"
           ocultar={ocultar}
@@ -155,7 +157,7 @@ export default async function Alertas({
                 {nombreDepto(f.depto_id)} · {formatearFechaAR(f.fecha)}
               </FilaTitulo>
               <FilaSub>
-                {TEXTO_TIPO_LIMPIEZA[f.tipo] ?? f.tipo} · {f.semaforo === "rojo" ? "para hoy o mañana" : "a 2-3 días"}
+                {TEXTO_TIPO_LIMPIEZA[f.tipo] ?? f.tipo} · {f.fecha < hoy ? "atrasada" : "para hoy"}
               </FilaSub>
             </Fila>
           ))}
@@ -183,12 +185,33 @@ export default async function Alertas({
           ocultar={ocultar}
         >
           {panel.conflictos.map((c) => (
-            <Fila key={c.limpieza_id} href={`/reservas/${c.reserva_id}/editar`}>
-              <FilaTitulo>
-                {nombreDepto(c.depto_id)} · {formatearFechaAR(c.fecha_limpieza)}
-              </FilaTitulo>
-              <FilaSub>{c.detalle}</FilaSub>
-            </Fila>
+            <div
+              key={c.limpieza_id}
+              className="flex items-start gap-2 rounded-lg bg-slate-900/40 transition-colors hover:bg-slate-900/70"
+            >
+              <Link
+                href={`/reservas/${c.reserva_id}/editar`}
+                className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2"
+              >
+                <FilaTitulo>
+                  {nombreDepto(c.depto_id)} · {formatearFechaAR(c.fecha_limpieza)}
+                </FilaTitulo>
+                <FilaSub>{c.detalle}</FilaSub>
+              </Link>
+              {/* Se guarda QUÉ se revisó: si la reserva vuelve a moverse, el
+                  aviso reaparece solo. */}
+              <form
+                action={resolverConflicto.bind(null, c.limpieza_id, c.firma)}
+                className="shrink-0 p-2"
+              >
+                <button
+                  type="submit"
+                  className="h-9 rounded-md border border-slate-700 px-3 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700"
+                >
+                  Ya lo revisé
+                </button>
+              </form>
+            </div>
           ))}
         </Seccion>
 

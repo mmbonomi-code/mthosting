@@ -158,3 +158,116 @@ export function reservaAReclamar(
 
   return delDepto.find((r) => r.fecha_checkout === limpieza.fecha) ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// Algo para arreglar: la foto Y el texto, juntos
+// ---------------------------------------------------------------------------
+
+/** La clase con la que se guarda un "revisado" de arreglos. */
+export const CLASE_ARREGLO = "arreglo";
+
+/** Un arreglo reportado desde una limpieza y todavía sin resolver. */
+export type ArregloDeLimpieza = {
+  id: string;
+  depto_id: string;
+  limpieza_id: string;
+  descripcion: string;
+  created_at: string;
+};
+
+export type AlertaArreglo = {
+  limpieza_id: string;
+  depto_id: string;
+  fecha: string;
+  /** Lo que escribió la persona. Puede estar vacío: la foto alcanza. */
+  descripciones: string[];
+  /** Cuántas fotos de "algo para arreglar" tiene esa limpieza. */
+  fotos: number;
+  /** Los arreglos que hay que dar por resueltos si se marca revisado. */
+  arreglo_ids: string[];
+  /** Firma de las fotos, o null si la alerta es solo por texto. */
+  firma: string | null;
+};
+
+/**
+ * Lo que la limpieza reportó para arreglar, UNA alerta por limpieza
+ * (decisión del dueño, 02/09/2026): si en el mismo departamento hay tres
+ * cosas rotas, es un solo viaje del electricista.
+ *
+ * Se enciende con lo que llegue primero, la foto o el texto. Antes solo el
+ * texto encendía algo: sacar la foto de la persiana rota y no escribir nada
+ * dejaba el problema invisible, que es justo lo que pasa cuando alguien está
+ * apurado terminando un departamento.
+ *
+ * Se apaga cuando se resuelven los arreglos Y se dan por vistas las fotos.
+ * Si después aparece una foto nueva, la firma cambia y el aviso vuelve.
+ */
+export function alertasDeArreglos(
+  arreglos: ArregloDeLimpieza[],
+  fotos: FotoCruda[],
+  limpiezas: LimpiezaDeFoto[],
+  revisadas: RevisadaCruda[],
+): AlertaArreglo[] {
+  const limpiezaPorId = new Map(limpiezas.map((l) => [l.id, l]));
+  const firmaRevisada = new Map(
+    revisadas.filter((r) => r.clase === CLASE_ARREGLO).map((r) => [r.limpieza_id, r.firma]),
+  );
+
+  const porLimpieza = new Map<
+    string,
+    { depto_id: string; fecha: string; arreglos: ArregloDeLimpieza[]; fotos: FotoCruda[] }
+  >();
+
+  const asegurar = (limpiezaId: string, deptoId: string, fecha: string) => {
+    let fila = porLimpieza.get(limpiezaId);
+    if (!fila) {
+      const limpieza = limpiezaPorId.get(limpiezaId);
+      fila = {
+        // La limpieza es la fuente buena; el arreglo es el respaldo para los
+        // que quedaron de antes de la ventana de fotos.
+        depto_id: limpieza?.depto_id ?? deptoId,
+        fecha: limpieza?.fecha ?? fecha,
+        arreglos: [],
+        fotos: [],
+      };
+      porLimpieza.set(limpiezaId, fila);
+    }
+    return fila;
+  };
+
+  for (const a of arreglos) {
+    asegurar(a.limpieza_id, a.depto_id, a.created_at.slice(0, 10)).arreglos.push(a);
+  }
+
+  for (const f of fotos) {
+    if (f.tipo !== "arreglar") continue;
+    const limpieza = limpiezaPorId.get(f.limpieza_id);
+    if (!limpieza) continue;
+    asegurar(f.limpieza_id, limpieza.depto_id, limpieza.fecha).fotos.push(f);
+  }
+
+  const alertas: AlertaArreglo[] = [];
+  for (const [limpiezaId, fila] of porLimpieza) {
+    const firma = fila.fotos.length > 0 ? firmaFotos(fila.fotos) : null;
+    const fotosYaVistas = firma === null || firmaRevisada.get(limpiezaId) === firma;
+    // Sin arreglos abiertos y con las fotos ya miradas, no queda nada que
+    // avisar. Alcanza con que quede una de las dos cosas.
+    if (fila.arreglos.length === 0 && fotosYaVistas) continue;
+
+    alertas.push({
+      limpieza_id: limpiezaId,
+      depto_id: fila.depto_id,
+      fecha: fila.fecha,
+      descripciones: fila.arreglos
+        .slice()
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .map((a) => a.descripcion),
+      fotos: fila.fotos.length,
+      arreglo_ids: fila.arreglos.map((a) => a.id),
+      firma,
+    });
+  }
+
+  // El más viejo primero: lleva más tiempo roto.
+  return alertas.sort((a, b) => a.fecha.localeCompare(b.fecha));
+}

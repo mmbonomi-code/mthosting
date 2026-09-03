@@ -6,7 +6,7 @@ import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import SinPermiso from "@/app/componentes/SinPermiso";
 import { crearReclamo } from "@/app/(app)/reclamos/acciones";
-import { marcarRevisada, resolverConflicto } from "./acciones";
+import { marcarRevisada, resolverConflicto, revisarArreglos } from "./acciones";
 
 const TEXTO_TIPO_LIMPIEZA: Record<string, string> = {
   normal: "Limpieza",
@@ -110,19 +110,23 @@ export default async function Alertas({
         </Seccion>
 
         <Seccion
-          titulo="Arreglos reportados por limpieza"
-          detalle="Lo que alguien vio roto en un departamento y todavía no se resolvió. Se apaga desde la ficha de la limpieza."
+          titulo="Algo para arreglar"
+          detalle="Lo que alguien vio roto en un departamento y todavía no se resolvió. Se enciende con la foto o con el texto, lo que llegue primero."
           cantidad={panel.arreglos.length}
           tono="rojo"
           ocultar={ocultar}
         >
           {panel.arreglos.map((a) => (
-            <Fila key={a.id} href={`/limpiezas/${a.limpieza_id}`}>
-              <FilaTitulo>
-                {nombreDepto(a.depto_id)} · {formatearFechaAR(a.created_at.slice(0, 10))}
-              </FilaTitulo>
-              <FilaSub>{a.descripcion}</FilaSub>
-            </Fila>
+            <FilaAcciones
+              key={a.limpieza_id}
+              href={`/limpiezas/${a.limpieza_id}`}
+              titulo={`${nombreDepto(a.depto_id)} · ${formatearFechaAR(a.fecha)}`}
+              sub={detalleArreglo(a.descripciones, a.fotos)}
+            >
+              <form action={revisarArreglos.bind(null, a.limpieza_id, a.arreglo_ids, a.firma)}>
+                <BotonAlerta>Revisado</BotonAlerta>
+              </form>
+            </FilaAcciones>
           ))}
         </Seccion>
 
@@ -342,6 +346,16 @@ function FilaTitulo({ children }: { children: React.ReactNode }) {
 
 function FilaSub({ children }: { children: React.ReactNode }) {
   return <span className="text-xs text-slate-400">{children}</span>;
+}
+
+/**
+ * Lo que se reportó, en una línea. Si solo hay fotos y nadie escribió nada,
+ * lo dice: es la señal de que hay que entrar a mirar para saber qué pasa.
+ */
+function detalleArreglo(descripciones: string[], fotos: number): string {
+  const texto = descripciones.join(" · ");
+  if (descripciones.length === 0) return `${contarFotos(fotos)}, sin descripción`;
+  return fotos > 0 ? `${texto} · ${contarFotos(fotos)}` : texto;
 }
 
 /** "3 fotos" / "1 foto". La cantidad importa: no es lo mismo una que seis. */

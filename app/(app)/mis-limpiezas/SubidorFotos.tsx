@@ -23,6 +23,7 @@ export default function SubidorFotos({
   tipo,
   etiqueta,
   ayuda,
+  children,
 }: {
   fotos: FotoExistente[];
   limpiezaId: string;
@@ -30,6 +31,8 @@ export default function SubidorFotos({
   etiqueta: string;
   /** Una línea que explica para qué sirve esa categoría. Opcional. */
   ayuda?: string;
+  /** Lo que va debajo de las fotos: hoy, el texto del arreglo. */
+  children?: React.ReactNode;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [subiendo, iniciar] = useTransition();
@@ -131,6 +134,7 @@ export default function SubidorFotos({
         onChange={(e) => enviar(e.target.files)}
         className="hidden"
       />
+      {children}
     </div>
   );
 }

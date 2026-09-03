@@ -6,6 +6,7 @@ import { rolDelUsuario } from "@/lib/permisos";
 import { diasSinLimpiar, tareaPeriodicaVencida } from "@/lib/limpiezas/diasSinLimpiar";
 import { calcularQueLlevar } from "@/lib/limpiezas/quellevar";
 import { AYUDA_FOTO, ETIQUETA_FOTO, TIPOS_FOTO } from "@/lib/limpiezas/fotos";
+import ReportarArreglo from "../ReportarArreglo";
 import { ultimaLimpiezaDelDepto } from "@/lib/limpiezas/ultimaLimpieza";
 import { formatearHora, TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
 import SinPermiso from "@/app/componentes/SinPermiso";
@@ -407,7 +408,11 @@ export default async function DetalleMiLimpieza({
               tipo={t}
               etiqueta={ETIQUETA_FOTO[t]}
               ayuda={AYUDA_FOTO[t]}
-            />
+            >
+              {/* El texto va pegado a la foto, no al final de la pantalla:
+                  son las dos mitades del mismo reporte. */}
+              {t === "arreglar" && <ReportarArreglo crearArreglo={crearArreglo.bind(null, id, depto.id)} />}
+            </SubidorFotos>
           ))}
 
           <AlTerminar
@@ -415,7 +420,6 @@ export default async function DetalleMiLimpieza({
             observacionInicial={limpieza.observacion_proxima ?? ""}
             viaticoInicial={limpieza.viatico_monto?.toString() ?? ""}
             monedaMonto={monedaMonto}
-            crearArreglo={crearArreglo.bind(null, id, depto.id)}
             subirComprobanteViatico={subirComprobanteViatico.bind(null, id)}
             finalizarLimpieza={finalizarLimpieza.bind(null, id)}
             puedeFinalizar={fotosPorTipo("terminado").length > 0}

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { ARREGLO_RESUELTO } from "@/lib/alertas/detectar";
+import { CLASE_ARREGLO } from "@/lib/alertas/fotos";
 
 /**
  * Da por revisado un conflicto de cancelación / cambio de fecha (spec §3.6,
@@ -45,5 +47,30 @@ export async function marcarRevisada(clase: string, limpiezaId: string, firma: s
     },
     { onConflict: "clase,limpieza_id" },
   );
+  revalidatePath("/alertas");
+}
+
+/**
+ * Da por revisado todo lo que la limpieza reportó para arreglar en una
+ * limpieza: los arreglos escritos pasan a resueltos, y las fotos quedan
+ * marcadas con su firma.
+ *
+ * Es un solo botón porque es una sola alerta (decisión del dueño,
+ * 02/09/2026): si en el departamento hay tres cosas rotas, es un solo viaje
+ * del electricista. El detalle fino —resolver una sí y otra no— sigue
+ * estando en la ficha de la limpieza.
+ */
+export async function revisarArreglos(
+  limpiezaId: string,
+  arregloIds: string[],
+  firma: string | null,
+) {
+  const supabase = await crearClienteServidor();
+
+  if (arregloIds.length > 0) {
+    await supabase.from("arreglos").update({ estado: ARREGLO_RESUELTO }).in("id", arregloIds);
+  }
+  if (firma !== null) await marcarRevisada(CLASE_ARREGLO, limpiezaId, firma);
+
   revalidatePath("/alertas");
 }

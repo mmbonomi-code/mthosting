@@ -22,7 +22,6 @@ import {
   detectarFaltaLimpieza,
   ventanasInsuficientesGlobal,
   type AlertaVentana,
-  type ArregloPendiente,
   type ConflictoLate,
   type ConflictoReserva,
   type FaltaLimpieza,
@@ -31,8 +30,10 @@ import {
   type ReservaLate,
 } from "@/lib/alertas/detectar";
 import {
+  alertasDeArreglos,
   alertasDeFotos,
   reservaAReclamar,
+  type AlertaArreglo,
   type AlertaFotos,
   type LimpiezaDeFoto,
   type ReservaDelDepto,
@@ -56,8 +57,8 @@ export type PanelAlertas = {
   sinDepto: number;
   conflictos: ConflictoReserva[];
   lateCheckout: ConflictoLate[];
-  /** Lo que la limpieza reportó para arreglar y sigue sin resolverse. */
-  arreglos: ArregloPendiente[];
+  /** Lo que la limpieza reportó para arreglar: una fila por limpieza. */
+  arreglos: AlertaArreglo[];
   /** Fotos de daño del huésped que todavía no derivaron en un reclamo. */
   danioHuesped: FilaDanioHuesped[];
   /** Cosas que el huésped se olvidó y nadie miró todavía. */
@@ -150,12 +151,12 @@ export async function calcularPanelAlertas(
       .select("id, depto_id, limpieza_id, descripcion, estado, activo, created_at")
       .eq("activo", true)
       .not("limpieza_id", "is", null),
-    // Solo las dos categorías que piden acción: el depto terminado no avisa
-    // nada, y "algo para arreglar" ya tiene su propia lista vía arreglos.
+    // Las tres categorías que piden acción. La única que queda afuera es
+    // "depto terminado", que no le pide nada a nadie.
     supabase
       .from("limpieza_fotos")
       .select("limpieza_id, tipo, created_at")
-      .in("tipo", ["huesped", "olvido"])
+      .in("tipo", ["huesped", "olvido", "arreglar"])
       .gte("created_at", desdeFotos + "T00:00:00Z"),
     supabase.from("alerta_revisada").select("clase, limpieza_id, firma"),
     // Los reclamos son pocos (decenas por año): traerlos enteros sale más
@@ -338,7 +339,15 @@ export async function calcularPanelAlertas(
 
   // --- Fotos de limpieza que piden acción: daño del huésped y olvidos ---
   // (decisión del dueño, 02/09/2026). Una alerta por limpieza, no por foto.
-  const idsLimpiezaFoto = [...new Set((fotosAccion ?? []).map((f) => f.limpieza_id))];
+  const arreglosPendientes = arreglosSinResolver(arreglosCrudos ?? []);
+  const idsLimpiezaFoto = [
+    ...new Set([
+      ...(fotosAccion ?? []).map((f) => f.limpieza_id),
+      // También las de los arreglos abiertos: la fecha buena de la alerta es
+      // la de la limpieza, no la del día en que se cargó el arreglo.
+      ...arreglosPendientes.map((a) => a.limpieza_id),
+    ]),
+  ];
   const { data: limpiezasDeFoto } =
     idsLimpiezaFoto.length > 0
       ? await supabase
@@ -400,6 +409,13 @@ export async function calcularPanelAlertas(
 
   const olvidos = alertasDeFotos("olvido", fotosAccion ?? [], limpiezasFoto, revisadas ?? []);
 
+  const arreglos = alertasDeArreglos(
+    arreglosPendientes,
+    fotosAccion ?? [],
+    limpiezasFoto,
+    revisadas ?? [],
+  );
+
   return {
     desde,
     hasta,
@@ -410,7 +426,7 @@ export async function calcularPanelAlertas(
     sinDepto: sinDepto ?? 0,
     conflictos,
     lateCheckout,
-    arreglos: arreglosSinResolver(arreglosCrudos ?? []),
+    arreglos,
     danioHuesped,
     olvidos,
   };

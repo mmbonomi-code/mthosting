@@ -7,20 +7,22 @@ import type { EstadoFormulario } from "./tipos";
 import { clsAreaTexto, clsEntrada, clsEtiqueta } from "@/lib/ui";
 
 /**
- * El cierre de la limpieza: reportar un arreglo, dejar la observación para
- * la próxima, cargar el viático, y marcar como terminada. Agrupado porque es
- * lo último que se hace, en ese orden.
+ * El cierre de la limpieza: dejar la observación para la próxima, cargar el
+ * viático, y marcar como terminada. Agrupado porque es lo último que se
+ * hace, en ese orden.
+ *
+ * "Algo para arreglar" ya NO vive acá: se mudó abajo de sus fotos
+ * (ReportarArreglo.tsx), que es donde la persona lo busca.
  *
  * Los dos campos de texto van por la cola de envío: si no hay señal se
- * guardan igual y salen cuando vuelve. El arreglo, el comprobante y el
- * cierre NO: son acciones puntuales con confirmación en pantalla, y encolar
- * un "terminé" que en realidad no llegó sería peor que avisar que falló.
+ * guardan igual y salen cuando vuelve. El comprobante y el cierre NO: son
+ * acciones puntuales con confirmación en pantalla, y encolar un "terminé"
+ * que en realidad no llegó sería peor que avisar que falló.
  */
 export default function AlTerminar({
   limpiezaId,
   observacionInicial,
   viaticoInicial,
-  crearArreglo,
   subirComprobanteViatico,
   finalizarLimpieza,
   puedeFinalizar,
@@ -29,7 +31,6 @@ export default function AlTerminar({
   limpiezaId: string;
   observacionInicial: string;
   viaticoInicial: string;
-  crearArreglo: (estadoPrevio: EstadoFormulario, fd: FormData) => Promise<EstadoFormulario>;
   subirComprobanteViatico: (
     estadoPrevio: EstadoFormulario,
     fd: FormData,
@@ -41,10 +42,6 @@ export default function AlTerminar({
   const [, guardarObs] = useTransition();
   const [, guardarMonto] = useTransition();
   const { registrar } = usePendientes();
-  const [estadoArreglo, enviarArreglo, pendienteArreglo] = useActionState<
-    EstadoFormulario,
-    FormData
-  >(crearArreglo, null);
   const [estadoComprobante, enviarComprobante, pendienteComprobante] = useActionState<
     EstadoFormulario,
     FormData
@@ -57,35 +54,6 @@ export default function AlTerminar({
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
       <h2 className="font-medium text-white">Al terminar</h2>
-
-      <form action={enviarArreglo} className="flex flex-col gap-2">
-        <span className={clsEtiqueta}>
-          Algo para arreglar o informar
-          <span className="mt-0.5 block text-xs font-normal normal-case tracking-normal text-slate-500">
-            Va a administración: roturas, cosas que no funcionan.
-          </span>
-        </span>
-        <textarea
-          name="descripcion"
-          placeholder="Ej: la persiana del dormitorio no cierra bien…"
-          className={clsAreaTexto}
-        />
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={pendienteArreglo}
-            className="h-10 shrink-0 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-60"
-          >
-            {pendienteArreglo ? "Reportando…" : "Reportar"}
-          </button>
-          {estadoArreglo && "ok" in estadoArreglo && (
-            <span className="text-sm text-emerald-400">✓ {estadoArreglo.ok}</span>
-          )}
-          {estadoArreglo && "error" in estadoArreglo && (
-            <span className="text-sm text-red-400">{estadoArreglo.error}</span>
-          )}
-        </div>
-      </form>
 
       <label className="flex flex-col gap-1.5">
         <span className={clsEtiqueta}>

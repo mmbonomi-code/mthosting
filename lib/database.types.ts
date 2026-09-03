@@ -39,6 +39,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      alerta_revisada: {
+        Row: {
+          clase: string
+          created_at: string
+          firma: string
+          id: string
+          limpieza_id: string
+          revisada_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          clase: string
+          created_at?: string
+          firma: string
+          id?: string
+          limpieza_id: string
+          revisada_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clase?: string
+          created_at?: string
+          firma?: string
+          id?: string
+          limpieza_id?: string
+          revisada_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerta_revisada_limpieza_id_fkey"
+            columns: ["limpieza_id"]
+            isOneToOne: false
+            referencedRelation: "limpiezas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerta_revisada_revisada_por_fkey"
+            columns: ["revisada_por"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       archivos_economico: {
         Row: {
           created_at: string

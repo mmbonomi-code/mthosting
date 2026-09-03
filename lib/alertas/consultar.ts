@@ -30,6 +30,13 @@ import {
   type ReservaCobertura,
   type ReservaLate,
 } from "@/lib/alertas/detectar";
+import {
+  alertasDeFotos,
+  reservaAReclamar,
+  type AlertaFotos,
+  type LimpiezaDeFoto,
+  type ReservaDelDepto,
+} from "@/lib/alertas/fotos";
 
 export type FilaSinResponsable = {
   id: string;
@@ -51,6 +58,15 @@ export type PanelAlertas = {
   lateCheckout: ConflictoLate[];
   /** Lo que la limpieza reportó para arreglar y sigue sin resolverse. */
   arreglos: ArregloPendiente[];
+  /** Fotos de daño del huésped que todavía no derivaron en un reclamo. */
+  danioHuesped: FilaDanioHuesped[];
+  /** Cosas que el huésped se olvidó y nadie miró todavía. */
+  olvidos: AlertaFotos[];
+};
+
+export type FilaDanioHuesped = AlertaFotos & {
+  /** A quién se le reclama. Null si no se pudo determinar: ahí se entra a mano. */
+  reserva: { id: string; codigo_reserva: string } | null;
 };
 
 export async function calcularPanelAlertas(
@@ -59,6 +75,11 @@ export async function calcularPanelAlertas(
   const hoy = hoyAR();
   const desde = sumarDias(hoy, -3);
   const hasta = sumarDias(hoy, 21);
+  // Las fotos que piden acción tienen su propia ventana, mucho más larga: un
+  // daño de hace tres semanas que nadie miró todavía sigue siendo urgente
+  // (Airbnb da 14 días para reclamar). Más atrás de dos meses ya no es una
+  // alerta, es historia.
+  const desdeFotos = sumarDias(hoy, -60);
 
   const [
     { data: parametros },
@@ -69,6 +90,9 @@ export async function calcularPanelAlertas(
     { data: sinResponsableCruda },
     { count: sinDepto },
     { data: arreglosCrudos },
+    { data: fotosAccion },
+    { data: revisadas },
+    { data: reclamosExistentes },
   ] = await Promise.all([
     supabase.from("parametros_operativos").select("clave, valor"),
     supabase
@@ -126,6 +150,17 @@ export async function calcularPanelAlertas(
       .select("id, depto_id, limpieza_id, descripcion, estado, activo, created_at")
       .eq("activo", true)
       .not("limpieza_id", "is", null),
+    // Solo las dos categorías que piden acción: el depto terminado no avisa
+    // nada, y "algo para arreglar" ya tiene su propia lista vía arreglos.
+    supabase
+      .from("limpieza_fotos")
+      .select("limpieza_id, tipo, created_at")
+      .in("tipo", ["huesped", "olvido"])
+      .gte("created_at", desdeFotos + "T00:00:00Z"),
+    supabase.from("alerta_revisada").select("clase, limpieza_id, firma"),
+    // Los reclamos son pocos (decenas por año): traerlos enteros sale más
+    // barato que una segunda vuelta con la lista de reservas candidatas.
+    supabase.from("reclamos").select("reserva_id"),
   ]);
 
   const config = Object.fromEntries((parametros ?? []).map((p) => [p.clave, p.valor]));
@@ -301,6 +336,70 @@ export async function calcularPanelAlertas(
       semaforo: semaforoDeLimpieza({ fecha: l.fecha, hoy, tieneResponsable: false }),
     }));
 
+  // --- Fotos de limpieza que piden acción: daño del huésped y olvidos ---
+  // (decisión del dueño, 02/09/2026). Una alerta por limpieza, no por foto.
+  const idsLimpiezaFoto = [...new Set((fotosAccion ?? []).map((f) => f.limpieza_id))];
+  const { data: limpiezasDeFoto } =
+    idsLimpiezaFoto.length > 0
+      ? await supabase
+          .from("limpiezas")
+          .select("id, depto_id, fecha, tipo, rol_reserva, reserva_id")
+          .in("id", idsLimpiezaFoto)
+      : { data: [] as LimpiezaDeFoto[] };
+
+  const limpiezasFoto: LimpiezaDeFoto[] = limpiezasDeFoto ?? [];
+  const deptosDeFoto = [...new Set(limpiezasFoto.map((l) => l.depto_id))];
+
+  const { data: reservasDeFoto } =
+    deptosDeFoto.length > 0
+      ? await supabase
+          .from("reservas")
+          .select("id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout")
+          .in("depto_id", deptosDeFoto)
+          .eq("cancelada", false)
+          .eq("descartada", false)
+          .gte("fecha_checkout", desdeFotos)
+      : { data: [] };
+
+  const reservasFoto: ReservaDelDepto[] = (reservasDeFoto ?? [])
+    .filter(
+      (r): r is typeof r & { depto_id: string; fecha_checkin: string; fecha_checkout: string } =>
+        r.depto_id !== null && r.fecha_checkin !== null && r.fecha_checkout !== null,
+    )
+    .map((r) => ({
+      id: r.id,
+      codigo_reserva: r.codigo_reserva,
+      depto_id: r.depto_id,
+      fecha_checkin: r.fecha_checkin,
+      fecha_checkout: r.fecha_checkout,
+    }));
+
+  const conReclamo = new Set(
+    (reclamosExistentes ?? []).map((r) => r.reserva_id).filter((id): id is string => id !== null),
+  );
+  const limpiezaFotoPorId = new Map(limpiezasFoto.map((l) => [l.id, l]));
+
+  const danioHuesped: FilaDanioHuesped[] = alertasDeFotos(
+    "huesped",
+    fotosAccion ?? [],
+    limpiezasFoto,
+    revisadas ?? [],
+  )
+    .map((a) => {
+      const limpieza = limpiezaFotoPorId.get(a.limpieza_id);
+      const reserva = limpieza ? reservaAReclamar(limpieza, reservasFoto) : null;
+      return {
+        ...a,
+        reserva: reserva ? { id: reserva.id, codigo_reserva: reserva.codigo_reserva } : null,
+      };
+    })
+    // Con el reclamo ya creado el tema está encarado: sigue su curso en
+    // /reclamos, que tiene su propio semáforo de plazo. Acá queda solo lo
+    // que todavía no agarró nadie.
+    .filter((f) => !(f.reserva && conReclamo.has(f.reserva.id)));
+
+  const olvidos = alertasDeFotos("olvido", fotosAccion ?? [], limpiezasFoto, revisadas ?? []);
+
   return {
     desde,
     hasta,
@@ -312,6 +411,8 @@ export async function calcularPanelAlertas(
     conflictos,
     lateCheckout,
     arreglos: arreglosSinResolver(arreglosCrudos ?? []),
+    danioHuesped,
+    olvidos,
   };
 }
 
@@ -319,7 +420,14 @@ export function contarCriticas(panel: PanelAlertas): number {
   // Los arreglos van acá y no en el resto: se pidieron en rojo (decisión del
   // dueño, 29/08/2026). Alguien vio algo roto en un departamento y hasta que
   // no se resuelve sigue roto.
-  return panel.estadiaOcupada.length + panel.ventanaInsuficiente.length + panel.arreglos.length;
+  // El daño del huésped va en rojo junto con los arreglos (decisión del
+  // dueño, 02/09/2026): hay plata en juego y Airbnb da 14 días.
+  return (
+    panel.estadiaOcupada.length +
+    panel.ventanaInsuficiente.length +
+    panel.arreglos.length +
+    panel.danioHuesped.length
+  );
 }
 
 export function contarResto(panel: PanelAlertas): number {
@@ -328,6 +436,7 @@ export function contarResto(panel: PanelAlertas): number {
     panel.sinResponsable.length +
     panel.sinDepto +
     panel.conflictos.length +
-    panel.lateCheckout.length
+    panel.lateCheckout.length +
+    panel.olvidos.length
   );
 }

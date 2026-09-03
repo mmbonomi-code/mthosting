@@ -5,7 +5,8 @@ import { calcularPanelAlertas } from "@/lib/alertas/consultar";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import SinPermiso from "@/app/componentes/SinPermiso";
-import { resolverConflicto } from "./acciones";
+import { crearReclamo } from "@/app/(app)/reclamos/acciones";
+import { marcarRevisada, resolverConflicto } from "./acciones";
 
 const TEXTO_TIPO_LIMPIEZA: Record<string, string> = {
   normal: "Limpieza",
@@ -126,6 +127,57 @@ export default async function Alertas({
         </Seccion>
 
         <Seccion
+          titulo="Dejó mal el huésped"
+          detalle="La limpieza fotografió algo roto, manchado o sucio fuera de lo normal. Airbnb da 14 días para reclamar: el botón crea el reclamo y le engancha las fotos."
+          cantidad={panel.danioHuesped.length}
+          tono="rojo"
+          ocultar={ocultar}
+        >
+          {panel.danioHuesped.map((d) => (
+            <FilaAcciones
+              key={d.limpieza_id}
+              href={`/limpiezas/${d.limpieza_id}`}
+              titulo={`${nombreDepto(d.depto_id)} · ${formatearFechaAR(d.fecha)}`}
+              sub={
+                d.reserva
+                  ? `${contarFotos(d.cantidad)} · se le reclama a ${d.reserva.codigo_reserva}`
+                  : `${contarFotos(d.cantidad)} · no se pudo identificar a qué reserva reclamarle`
+              }
+            >
+              {d.reserva && (
+                <form action={crearReclamo.bind(null, d.reserva.id)}>
+                  <BotonAlerta destacado>Crear reclamo</BotonAlerta>
+                </form>
+              )}
+              <form action={marcarRevisada.bind(null, "huesped", d.limpieza_id, d.firma)}>
+                <BotonAlerta>No corresponde</BotonAlerta>
+              </form>
+            </FilaAcciones>
+          ))}
+        </Seccion>
+
+        <Seccion
+          titulo="Se lo olvidó el huésped"
+          detalle="Cosas que quedaron en el departamento. El huésped ya se fue: cuanto antes se le avise, mejor."
+          cantidad={panel.olvidos.length}
+          tono="ambar"
+          ocultar={ocultar}
+        >
+          {panel.olvidos.map((o) => (
+            <FilaAcciones
+              key={o.limpieza_id}
+              href={`/limpiezas/${o.limpieza_id}`}
+              titulo={`${nombreDepto(o.depto_id)} · ${formatearFechaAR(o.fecha)}`}
+              sub={contarFotos(o.cantidad)}
+            >
+              <form action={marcarRevisada.bind(null, "olvido", o.limpieza_id, o.firma)}>
+                <BotonAlerta>Revisado</BotonAlerta>
+              </form>
+            </FilaAcciones>
+          ))}
+        </Seccion>
+
+        <Seccion
           titulo="Falta limpieza"
           detalle="Entre un check-out y el siguiente check-in del departamento no hay ninguna limpieza cargada."
           cantidad={panel.faltaLimpieza.length}
@@ -185,33 +237,18 @@ export default async function Alertas({
           ocultar={ocultar}
         >
           {panel.conflictos.map((c) => (
-            <div
+            <FilaAcciones
               key={c.limpieza_id}
-              className="flex items-start gap-2 rounded-lg bg-slate-900/40 transition-colors hover:bg-slate-900/70"
+              href={`/reservas/${c.reserva_id}/editar`}
+              titulo={`${nombreDepto(c.depto_id)} · ${formatearFechaAR(c.fecha_limpieza)}`}
+              sub={c.detalle}
             >
-              <Link
-                href={`/reservas/${c.reserva_id}/editar`}
-                className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2"
-              >
-                <FilaTitulo>
-                  {nombreDepto(c.depto_id)} · {formatearFechaAR(c.fecha_limpieza)}
-                </FilaTitulo>
-                <FilaSub>{c.detalle}</FilaSub>
-              </Link>
               {/* Se guarda QUÉ se revisó: si la reserva vuelve a moverse, el
                   aviso reaparece solo. */}
-              <form
-                action={resolverConflicto.bind(null, c.limpieza_id, c.firma)}
-                className="shrink-0 p-2"
-              >
-                <button
-                  type="submit"
-                  className="h-9 rounded-md border border-slate-700 px-3 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700"
-                >
-                  Ya lo revisé
-                </button>
+              <form action={resolverConflicto.bind(null, c.limpieza_id, c.firma)}>
+                <BotonAlerta>Ya lo revisé</BotonAlerta>
               </form>
-            </div>
+            </FilaAcciones>
           ))}
         </Seccion>
 
@@ -305,4 +342,57 @@ function FilaTitulo({ children }: { children: React.ReactNode }) {
 
 function FilaSub({ children }: { children: React.ReactNode }) {
   return <span className="text-xs text-slate-400">{children}</span>;
+}
+
+/** "3 fotos" / "1 foto". La cantidad importa: no es lo mismo una que seis. */
+function contarFotos(cantidad: number): string {
+  return cantidad === 1 ? "1 foto" : `${cantidad} fotos`;
+}
+
+/**
+ * Fila con botones al costado. No puede ser un `<Fila>`, porque un `<form>`
+ * adentro de un `<Link>` no es HTML válido: el link ocupa el texto y los
+ * botones van aparte.
+ */
+function FilaAcciones({
+  href,
+  titulo,
+  sub,
+  children,
+}: {
+  href: string;
+  titulo: React.ReactNode;
+  sub: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-2 rounded-lg bg-slate-900/40 transition-colors hover:bg-slate-900/70">
+      <Link href={href} className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2">
+        <FilaTitulo>{titulo}</FilaTitulo>
+        <FilaSub>{sub}</FilaSub>
+      </Link>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 p-2">{children}</div>
+    </div>
+  );
+}
+
+function BotonAlerta({
+  children,
+  destacado,
+}: {
+  children: React.ReactNode;
+  destacado?: boolean;
+}) {
+  return (
+    <button
+      type="submit"
+      className={`h-9 rounded-md px-3 text-xs font-medium transition-colors ${
+        destacado
+          ? "bg-red-500 text-red-950 hover:bg-red-400"
+          : "border border-slate-700 text-slate-300 hover:bg-slate-700"
+      }`}
+    >
+      {children}
+    </button>
+  );
 }

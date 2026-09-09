@@ -11,9 +11,22 @@
  * Para poder compararlos en la misma moneda hace falta un tipo de cambio en
  * los dos sentidos:
  *
- *   - Gastos → USD: cada movimiento de Caja ya tiene su propio TC congelado
- *     el día que se cargó (`enDolares`, de `lib/caja/saldo.ts`). Se suma fila
- *     por fila con SU tipo de cambio, no con uno global del mes.
+ *   - Gastos → USD: fila por fila, nunca con un tipo de cambio global del
+ *     mes. Hay dos criterios y se puede elegir con cuál mirar la tabla
+ *     (pedido de Marcos, 09/09/2026):
+ *
+ *       BOLSAS (el que manda) — el gasto se valúa por los cambios de moneda
+ *       que lo pagaron, o sea el costo real de esa plata. Es el mismo número
+ *       que muestra la ficha del movimiento en Caja, así que las dos
+ *       pantallas dejan de decir cosas distintas.
+ *
+ *       DÍA — el gasto se valúa a la cotización cargada para su fecha.
+ *
+ *     Con los datos de 2026 los dos dan casi lo mismo, porque la cotización
+ *     del día sale de esos mismos cambios. Se dejan los dos porque un cambio
+ *     hecho a un dólar distinto del cargado separa las cifras, y ahí conviene
+ *     poder ver las dos.
+ *
  *   - Ganancia → ARS: acá no hay un TC por fila, así que se usa un
  *     representativo del mes: la MEDIANA de las cotizaciones que Marcos cargó
  *     ese mes en Caja (no el promedio, para que un solo día disparatado no
@@ -28,6 +41,10 @@
  */
 
 import { enDolares } from "../caja/saldo";
+import { costoEnDolares, type Cobertura } from "../caja/cobertura";
+
+/** Con qué dólar se valúa un gasto. */
+export type CriterioCosto = "bolsas" | "dia";
 
 export type GastoCaja = {
   fecha: string;
@@ -38,6 +55,12 @@ export type GastoCaja = {
   tipo: "ingreso" | "egreso";
   reembolsable: boolean;
   activo: boolean;
+  /**
+   * Los tramos de cambio que pagaron este gasto. Vacío mientras el reparto no
+   * esté hecho: ahí el criterio de bolsas no se puede aplicar y el gasto se
+   * valúa al dólar del día, en vez de inventarle un costo.
+   */
+  tramos?: Cobertura[];
 };
 
 export type MesRentabilidad = {
@@ -49,6 +72,11 @@ export type MesRentabilidad = {
   gastosUsd: number;
   /** Gastos de ese mes que no se pudieron convertir: faltan para completar el número en USD. */
   gastosSinConvertir: number;
+  /**
+   * Gastos que se pidieron por bolsas y no tienen reparto: se valuaron al
+   * dólar del día. Siempre 0 con el criterio del día.
+   */
+  gastosSinReparto: number;
   resultadoUsd: number;
   resultadoArs: number | null;
 };
@@ -58,6 +86,32 @@ export function esGastoReal(
   g: Pick<GastoCaja, "activo" | "tipo" | "reembolsable">,
 ): boolean {
   return g.activo && g.tipo === "egreso" && !g.reembolsable;
+}
+
+/**
+ * ¿Los tramos cubren el gasto entero?
+ *
+ * Un reparto a medias no sirve para valuar: si el gasto se cargó después del
+ * último recálculo, o si quedó un tramo colgado, la suma de los tramos no
+ * llega al monto y el costo por bolsas saldría corto. Se prefiere caer al
+ * dólar del día y avisar, antes que mostrar un número que no cierra.
+ */
+export function tieneRepartoCompleto(g: GastoCaja): boolean {
+  if (!g.tramos || g.tramos.length === 0) return false;
+  const cubierto = g.tramos.reduce((suma, t) => suma + t.monto, 0);
+  return Math.abs(cubierto - g.monto) < 0.01;
+}
+
+/**
+ * El costo en dólares de un gasto, según el criterio pedido.
+ *
+ * Devuelve `null` cuando no hay con qué convertirlo: no se inventa un tipo de
+ * cambio. Con `bolsas`, un gasto sin reparto completo se valúa al dólar del
+ * día (`tieneRepartoCompleto` dice cuáles son, para poder contarlos).
+ */
+export function costoDelGasto(g: GastoCaja, criterio: CriterioCosto): number | null {
+  if (criterio === "dia" || !tieneRepartoCompleto(g)) return enDolares(g);
+  return costoEnDolares(g.tramos!, g.tc);
 }
 
 /** La mediana. Un solo valor fuera de línea no debe correr el representativo. */
@@ -94,19 +148,22 @@ export function calcularRentabilidad(
   gastos: GastoCaja[],
   cotizaciones: { fecha: string; tc: number }[],
   desde: string,
+  criterio: CriterioCosto,
 ): MesRentabilidad[] {
   const tcPorMes = tcRepresentativoPorMes(cotizaciones);
 
   const gastosPorMes = new Map<
     string,
-    { ars: number; usd: number; sinConvertir: number }
+    { ars: number; usd: number; sinConvertir: number; sinReparto: number }
   >();
   for (const g of gastos) {
     if (!esGastoReal(g)) continue;
     const mes = g.fecha.slice(0, 7);
-    const acc = gastosPorMes.get(mes) ?? { ars: 0, usd: 0, sinConvertir: 0 };
+    const acc =
+      gastosPorMes.get(mes) ?? { ars: 0, usd: 0, sinConvertir: 0, sinReparto: 0 };
     acc.ars += g.monto;
-    const usd = enDolares(g);
+    if (criterio === "bolsas" && !tieneRepartoCompleto(g)) acc.sinReparto++;
+    const usd = costoDelGasto(g, criterio);
     if (usd !== null) acc.usd += usd;
     else acc.sinConvertir++;
     gastosPorMes.set(mes, acc);
@@ -118,7 +175,8 @@ export function calcularRentabilidad(
   for (const mes of meses) {
     if (mes < desde) continue;
     const gananciaUsd = gananciaPorMesUsd.get(mes) ?? 0;
-    const g = gastosPorMes.get(mes) ?? { ars: 0, usd: 0, sinConvertir: 0 };
+    const g =
+      gastosPorMes.get(mes) ?? { ars: 0, usd: 0, sinConvertir: 0, sinReparto: 0 };
     const tcMes = tcPorMes.get(mes) ?? null;
     const gananciaArs = tcMes === null ? null : gananciaUsd * tcMes;
 
@@ -129,6 +187,7 @@ export function calcularRentabilidad(
       gastosArs: g.ars,
       gastosUsd: g.usd,
       gastosSinConvertir: g.sinConvertir,
+      gastosSinReparto: g.sinReparto,
       resultadoUsd: gananciaUsd - g.usd,
       resultadoArs: gananciaArs === null ? null : gananciaArs - g.ars,
     });

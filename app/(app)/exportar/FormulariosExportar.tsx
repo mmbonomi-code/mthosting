@@ -152,6 +152,20 @@ export default function FormulariosExportar({
           </p>
         </div>
       </Seccion>
+
+      <Seccion
+        titulo="Reservas tentativas"
+        descripcion="Todas las que trajo el calendario y todavía no tienen nombre ni teléfono, futuras y pasadas, con el link a cada una en Airbnb. Las columnas resaltadas son las que faltan completar. No incluye canceladas ni descartadas."
+      >
+        <div className="flex flex-wrap gap-3">
+          <a
+            href="/api/exportar/tentativas"
+            className={`${clsBotonPrimario} flex items-center justify-center`}
+          >
+            Descargar Excel
+          </a>
+        </div>
+      </Seccion>
     </div>
   );
 }

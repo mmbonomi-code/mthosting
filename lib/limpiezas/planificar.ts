@@ -26,6 +26,8 @@
  *    reservas superpuestas, que es el problema de verdad.
  */
 
+import { estadoAlQuitarResponsable } from "./asignar";
+
 export type EstadoLimpieza =
   | "pendiente"
   | "asignada"
@@ -74,6 +76,8 @@ export type LimpiezaExistente = {
   fecha_manual: boolean;
   /** La canceló una persona: no revive sola. */
   cancelada_manual: boolean;
+  /** Quién la tiene. Se suelta si la limpieza cambia de edificio. */
+  asignado_a: string | null;
 };
 
 export type LimpiezaNueva = {
@@ -93,6 +97,12 @@ export type LimpiezaCambio = {
   urgente?: boolean;
   prox_checkin?: string | null;
   estado?: EstadoLimpieza;
+  depto_id?: string;
+  // Al cambiar de edificio se suelta el responsable y su monto congelado.
+  asignado_a?: null;
+  monto_pactado?: null;
+  moneda?: null;
+  tarifa_id?: null;
 };
 
 export type Plan = {
@@ -185,6 +195,9 @@ export function planificarLimpiezas({
     if (l.estado !== "cancelada") ocupadas.set(dia(l.depto_id, l.fecha), l.id);
   }
 
+  /** Limpiezas que en este plan pasan a otro departamento: id → depto nuevo. */
+  const mudadas = new Map<string, string>();
+
   /** Cancela UNA limpieza, salvo que ya la esté haciendo alguien. */
   const cancelarLimpieza = (
     reserva: ReservaPlan,
@@ -201,9 +214,11 @@ export function planificarLimpiezas({
     }
     plan.limpiezasAActualizar.push({ id: existente.id, estado: "cancelada" });
     plan.canceladas++;
-    // El día del departamento vuelve a quedar libre.
-    if (ocupadas.get(dia(existente.depto_id, existente.fecha)) === existente.id) {
-      ocupadas.delete(dia(existente.depto_id, existente.fecha));
+    // El día del departamento vuelve a quedar libre (en el edificio donde
+    // quedó, si en esta misma pasada se mudó).
+    const deptoActual = mudadas.get(existente.id) ?? existente.depto_id;
+    if (ocupadas.get(dia(deptoActual, existente.fecha)) === existente.id) {
+      ocupadas.delete(dia(deptoActual, existente.fecha));
     }
   };
 
@@ -275,6 +290,63 @@ export function planificarLimpiezas({
       );
     }
     cancelarLimpiezasDe(reserva, "la reserva se canceló");
+  }
+
+  // --- La reserva cambió de departamento: sus limpiezas van con ella ---
+  //
+  // Antes no se movían: la reserva pasaba al departamento nuevo y la limpieza
+  // se quedaba en el edificio viejo, así que alguien iba a limpiar donde no
+  // había nadie. Va antes de las altas para que el cálculo de días ocupados
+  // ya las vea en su lugar nuevo.
+  for (const reserva of utiles) {
+    if (reserva.cancelada || reserva.descartada) continue;
+    const depto_id = reserva.depto_id!;
+
+    for (const existente of limpiezas) {
+      if (existente.reserva_id !== reserva.id || existente.depto_id === depto_id) continue;
+
+      if (INTOCABLES.has(existente.estado)) {
+        plan.anomalias.push(
+          `${reserva.codigo_reserva}: la reserva cambió de departamento, pero su limpieza del ${existente.fecha} ya está ${existente.estado} en el anterior. No se movió: decidilo a mano.`,
+        );
+        continue;
+      }
+
+      const cambios: LimpiezaCambio = { id: existente.id, depto_id };
+
+      // Otro edificio es otro viaje y, si cambia el tamaño, otro monto: la
+      // asignación no se arrastra, se vuelve a decidir (decisión del dueño,
+      // 13/09/2026). El monto pactado se suelta, no se recalcula.
+      if (existente.asignado_a !== null) {
+        Object.assign(cambios, {
+          asignado_a: null,
+          monto_pactado: null,
+          moneda: null,
+          tarifa_id: null,
+          estado: estadoAlQuitarResponsable(existente.estado),
+        });
+        plan.anomalias.push(
+          `${reserva.codigo_reserva}: su limpieza del ${existente.fecha} pasó al departamento nuevo y quedó sin responsable. Hay que volver a asignarla y avisarle a quien la tenía.`,
+        );
+      }
+
+      if (existente.estado !== "cancelada") {
+        const ocupadaPor = ocupadas.get(dia(depto_id, existente.fecha));
+        if (ocupadaPor !== undefined) {
+          plan.anomalias.push(
+            `${reserva.codigo_reserva}: su limpieza pasó al departamento nuevo, que el ${existente.fecha} ya tenía otra. Quedaron dos: resolvelo a mano.`,
+          );
+        }
+        if (ocupadas.get(dia(existente.depto_id, existente.fecha)) === existente.id) {
+          ocupadas.delete(dia(existente.depto_id, existente.fecha));
+        }
+        ocupadas.set(dia(depto_id, existente.fecha), existente.id);
+      }
+
+      mudadas.set(existente.id, depto_id);
+      plan.limpiezasAActualizar.push(cambios);
+      plan.movidas++;
+    }
   }
 
   // --- DESPUÉS las altas ---

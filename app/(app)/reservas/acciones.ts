@@ -166,7 +166,7 @@ export async function editarReserva(
 
   const { data: actual } = await supabase
     .from("reservas")
-    .select("id, codigo_reserva, origen, fecha_checkin, fecha_checkout, datos_completos")
+    .select("id, codigo_reserva, origen, depto_id, fecha_checkin, fecha_checkout, datos_completos")
     .eq("id", id)
     .maybeSingle();
   if (!actual) return { error: "No se encontró la reserva." };
@@ -198,15 +198,21 @@ export async function editarReserva(
 
   if (error) return { error: `No se pudo guardar: ${error.message}` };
 
-  // Si se movieron las fechas, la limpieza se reacomoda sola, con las mismas
-  // reglas del importador (no toca una limpieza en curso o hecha).
+  // Si se movieron las fechas o el departamento, la limpieza se reacomoda
+  // sola, con las mismas reglas del importador (no toca una limpieza en curso
+  // o hecha). Antes el departamento no contaba y la limpieza se quedaba en el
+  // edificio viejo.
   const cambiaronFechas =
     datos.fecha_checkin !== actual.fecha_checkin ||
     datos.fecha_checkout !== actual.fecha_checkout;
+  const cambioDepto = datos.depto_id !== actual.depto_id;
 
-  if (cambiaronFechas) {
+  // Lo que avisa el planificador (por ejemplo, que la limpieza quedó sin
+  // responsable al cambiar de edificio) se muestra al guardar.
+  let anomalias: string[] = [];
+  if (cambiaronFechas || cambioDepto) {
     try {
-      await generarLimpiezas(supabase, [actual.codigo_reserva], hoyAR());
+      ({ anomalias } = await generarLimpiezas(supabase, [actual.codigo_reserva], hoyAR()));
     } catch (e) {
       return {
         error: `Los datos se guardaron pero la limpieza no se pudo reacomodar: ${
@@ -216,10 +222,8 @@ export async function editarReserva(
     }
   }
 
-  revalidatePath("/dia");
-  revalidatePath("/semana");
-  revalidatePath(`/reservas/${id}/editar`);
-  return { ok: "Guardado." };
+  revalidar(id);
+  return { ok: "Guardado." + avisos(anomalias) };
 }
 
 /**

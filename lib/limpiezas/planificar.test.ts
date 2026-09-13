@@ -34,6 +34,7 @@ function limpieza(parcial: Partial<LimpiezaExistente> = {}): LimpiezaExistente {
     prox_checkin: null,
     fecha_manual: false,
     cancelada_manual: false,
+    asignado_a: null,
     ...parcial,
   };
 }
@@ -336,6 +337,103 @@ describe("cambio de fecha de la reserva", () => {
       expect(plan.limpiezasAActualizar.some((c) => c.fecha !== undefined)).toBe(false);
       expect(plan.anomalias.join(" ")).toMatch(new RegExp(estado));
     }
+  });
+});
+
+describe("cambio de departamento de la reserva", () => {
+  const OTRO = "depto-2";
+
+  /** Lo que el plan le cambia a una limpieza, todo junto. */
+  function cambiosDe(plan: ReturnType<typeof planificar>, id: string) {
+    return plan.limpiezasAActualizar
+      .filter((c) => c.id === id)
+      .reduce((todo, c) => ({ ...todo, ...c }), {});
+  }
+
+  it("la limpieza pendiente se muda con la reserva, sin crear otra", () => {
+    const plan = planificar({
+      reservas: [reserva({ depto_id: OTRO })],
+      limpiezas: [limpieza()],
+    });
+    expect(cambiosDe(plan, "l1")).toMatchObject({ depto_id: OTRO });
+    expect(plan.limpiezasNuevas.filter((l) => l.rol_reserva === "salida")).toHaveLength(0);
+    expect(plan.movidas).toBe(1);
+  });
+
+  it("una asignada se muda y queda sin responsable, con el monto suelto (decisión del dueño, 13/09/2026)", () => {
+    const plan = planificar({
+      reservas: [reserva({ depto_id: OTRO })],
+      limpiezas: [limpieza({ estado: "asignada", asignado_a: "persona-1" })],
+    });
+    expect(cambiosDe(plan, "l1")).toMatchObject({
+      depto_id: OTRO,
+      asignado_a: null,
+      monto_pactado: null,
+      moneda: null,
+      tarifa_id: null,
+      estado: "pendiente",
+    });
+    expect(plan.anomalias.join(" ")).toContain("sin responsable");
+  });
+
+  it("una sin responsable no genera aviso de reasignar", () => {
+    const plan = planificar({
+      reservas: [reserva({ depto_id: OTRO })],
+      limpiezas: [limpieza()],
+    });
+    expect(cambiosDe(plan, "l1")).not.toHaveProperty("asignado_a");
+    expect(plan.anomalias).toEqual([]);
+  });
+
+  it("una limpieza en curso, hecha o verificada NO se muda: avisa", () => {
+    for (const estado of ["en_curso", "hecha", "verificada"] as const) {
+      const plan = planificar({
+        reservas: [reserva({ depto_id: OTRO })],
+        limpiezas: [limpieza({ estado, asignado_a: "persona-1" })],
+      });
+      expect(cambiosDe(plan, "l1")).not.toHaveProperty("depto_id");
+      expect(plan.anomalias.join(" ")).toContain("cambió de departamento");
+    }
+  });
+
+  it("también se mudan las limpiezas con huéspedes de la estadía", () => {
+    const plan = planificar({
+      reservas: [reserva({ depto_id: OTRO })],
+      limpiezas: [
+        limpieza(),
+        limpieza({ id: "l-durante", rol_reserva: "durante", fecha: "2026-08-12" }),
+      ],
+    });
+    expect(cambiosDe(plan, "l-durante")).toMatchObject({ depto_id: OTRO });
+  });
+
+  it("si el departamento nuevo ya tenía limpieza ese día, se muda igual y avisa", () => {
+    const plan = planificar({
+      reservas: [reserva({ depto_id: OTRO })],
+      limpiezas: [
+        limpieza(),
+        limpieza({ id: "ajena", depto_id: OTRO, reserva_id: "otra", fecha: "2026-08-15" }),
+      ],
+    });
+    expect(cambiosDe(plan, "l1")).toMatchObject({ depto_id: OTRO });
+    expect(plan.anomalias.join(" ")).toContain("Quedaron dos");
+  });
+
+  it("una reserva cancelada no muda nada: su limpieza se cancela donde está", () => {
+    const plan = planificar({
+      reservas: [reserva({ depto_id: OTRO, cancelada: true })],
+      limpiezas: [limpieza()],
+    });
+    expect(cambiosDe(plan, "l1")).toEqual({ id: "l1", estado: "cancelada" });
+  });
+
+  it("volver a planificar ya mudada no cambia nada", () => {
+    const plan = planificar({
+      reservas: [reserva({ depto_id: OTRO })],
+      limpiezas: [limpieza({ depto_id: OTRO, id: "l1" })],
+    });
+    expect(cambiosDe(plan, "l1")).not.toHaveProperty("depto_id");
+    expect(plan.movidas).toBe(0);
   });
 });
 

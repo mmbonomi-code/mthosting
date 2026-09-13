@@ -15,7 +15,7 @@ import {
 } from "./planificar";
 
 const CAMPOS_LIMPIEZA =
-  "id, depto_id, reserva_id, rol_reserva, fecha, estado, urgente, prox_checkin, fecha_manual, cancelada_manual";
+  "id, depto_id, reserva_id, rol_reserva, fecha, estado, urgente, prox_checkin, fecha_manual, cancelada_manual, asignado_a";
 
 type Cliente = SupabaseClient<Database>;
 
@@ -199,8 +199,16 @@ export async function generarLimpiezas(
 
   // Las actualizaciones se agrupan por cambio idéntico: la mayoría comparte
   // el mismo (por ejemplo, "cancelada"), así que salen en pocas consultas.
+  //
+  // Antes, los cambios de UNA limpieza se juntan en uno: si se muda de
+  // edificio (vuelve a pendiente) y en la misma pasada se cancela, aplicados
+  // por separado el orden de los grupos podía dejarla pendiente otra vez.
+  const porLimpieza = new Map<string, (typeof plan.limpiezasAActualizar)[number]>();
+  for (const cambio of plan.limpiezasAActualizar) {
+    porLimpieza.set(cambio.id, { ...porLimpieza.get(cambio.id), ...cambio });
+  }
   const porCambio = new Map<string, string[]>();
-  for (const { id, ...cambios } of plan.limpiezasAActualizar) {
+  for (const { id, ...cambios } of porLimpieza.values()) {
     const clave = JSON.stringify(cambios);
     if (!porCambio.has(clave)) porCambio.set(clave, []);
     porCambio.get(clave)!.push(id);

@@ -320,7 +320,7 @@ async function marcarCambios(
   // Las marcas vivas son pocas (decenas): se traen enteras.
   const { data: marcasCrudas, error: errorMarcas } = await supabase
     .from("cambios_calendario")
-    .select("id, reserva_id, tipo, estado, firma, activo, reserva:reservas(cancelada, descartada)")
+    .select("id, reserva_id, tipo, estado, firma, activo, origen, reserva:reservas(cancelada, descartada)")
     .or("estado.eq.pendiente,and(estado.eq.descartado,activo.eq.true)");
   if (errorMarcas) throw new Error(errorMarcas.message);
 
@@ -331,6 +331,7 @@ async function marcarCambios(
     estado: m.estado,
     firma: m.firma,
     activo: m.activo,
+    origen: m.origen === "excel" ? "excel" : "calendario",
   }));
 
   const plan = planificarCambios({ reservas, vistos, marcas });

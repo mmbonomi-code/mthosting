@@ -404,7 +404,9 @@ function detalleCambio(c: FilaCambioCalendario, nombreDepto: (id: string) => str
 
   const queVio =
     c.tipo === "posible_cancelacion"
-      ? `Ya no está en Airbnb. Acá figura ${fechas(c.fecha_checkin, c.fecha_checkout)}.`
+      ? c.origen === "excel"
+        ? `Según el Excel de tentativas se canceló en Airbnb, pero el calendario todavía la muestra. Acá figura ${fechas(c.fecha_checkin, c.fecha_checkout)}.`
+        : `Ya no está en Airbnb. Acá figura ${fechas(c.fecha_checkin, c.fecha_checkout)}.`
       : c.tipo === "cambio_fechas"
         ? `Airbnb la muestra ${fechas(c.calendario_checkin, c.calendario_checkout)}; acá figura ${fechas(c.fecha_checkin, c.fecha_checkout)}.`
         : `Airbnb la muestra en el calendario de ${c.calendario_depto_id ? nombreDepto(c.calendario_depto_id) : "otro departamento"}. Se corrige desde la ficha de la reserva.`;

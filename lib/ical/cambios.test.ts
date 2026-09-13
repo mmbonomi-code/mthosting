@@ -35,7 +35,7 @@ function marca(
   firma: string,
   activo = true,
 ): MarcaExistente {
-  return { id: `m-${r.codigo_reserva}-${tipo}-${estado}`, reserva_id: r.id, tipo, estado, firma, activo };
+  return { id: `m-${r.codigo_reserva}-${tipo}-${estado}`, reserva_id: r.id, tipo, estado, firma, activo, origen: "calendario" };
 }
 
 /** Un departamento con varias reservas que siguen todas en su calendario. */
@@ -165,6 +165,17 @@ describe("planificarCambios", () => {
       const m = marca(r, "posible_cancelacion", "pendiente", firma);
       const plan = planificarCambios({ reservas: [r], vistos: [igual(r)], marcas: [m] });
       expect(plan.resueltasSolas).toEqual([m.id]);
+      expect(plan.nuevas).toEqual([]);
+    });
+
+    it("una cancelación que pidió el Excel NO se cierra porque el calendario la muestre", () => {
+      // El Excel dijo "Cancelada" sobre una reserva que el calendario todavía
+      // muestra: se deja para confirmar en Alertas. Si la sincronización la
+      // cerrara por "volver a coincidir", nadie llegaría a verla.
+      const firma = firmaCambio("posible_cancelacion", r, undefined);
+      const m = { ...marca(r, "posible_cancelacion", "pendiente", firma), origen: "excel" as const };
+      const plan = planificarCambios({ reservas: [r], vistos: [igual(r)], marcas: [m] });
+      expect(plan.resueltasSolas).toEqual([]);
       expect(plan.nuevas).toEqual([]);
     });
 

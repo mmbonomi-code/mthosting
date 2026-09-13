@@ -358,6 +358,7 @@ export type Database = {
           estado: Database["public"]["Enums"]["cambio_calendario_estado"]
           firma: string
           id: string
+          origen: string
           reserva_checkin: string | null
           reserva_checkout: string | null
           reserva_depto_id: string | null
@@ -376,6 +377,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["cambio_calendario_estado"]
           firma: string
           id?: string
+          origen?: string
           reserva_checkin?: string | null
           reserva_checkout?: string | null
           reserva_depto_id?: string | null
@@ -394,6 +396,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["cambio_calendario_estado"]
           firma?: string
           id?: string
+          origen?: string
           reserva_checkin?: string | null
           reserva_checkout?: string | null
           reserva_depto_id?: string | null
@@ -1063,6 +1066,7 @@ export type Database = {
           nuevas: number | null
           sin_asignar: number | null
           sin_cambios: number | null
+          tipo: string
           updated_at: string
           usuario_id: string | null
         }
@@ -1078,6 +1082,7 @@ export type Database = {
           nuevas?: number | null
           sin_asignar?: number | null
           sin_cambios?: number | null
+          tipo?: string
           updated_at?: string
           usuario_id?: string | null
         }
@@ -1093,6 +1098,7 @@ export type Database = {
           nuevas?: number | null
           sin_asignar?: number | null
           sin_cambios?: number | null
+          tipo?: string
           updated_at?: string
           usuario_id?: string | null
         }

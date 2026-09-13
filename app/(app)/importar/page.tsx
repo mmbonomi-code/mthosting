@@ -1,5 +1,6 @@
 import { crearClienteServidor } from "@/lib/supabase/server";
 import FormularioImportar from "./FormularioImportar";
+import FormularioExcelTentativas from "./FormularioExcelTentativas";
 
 // Un lote grande puede tardar: se le da a la función el máximo del plan.
 export const maxDuration = 60;
@@ -10,7 +11,7 @@ export default async function PaginaImportar() {
   const { data: historial } = await supabase
     .from("importaciones")
     .select(
-      "id, created_at, archivos, filas_total, nuevas, actualizadas, sin_cambios, sin_asignar, canceladas_detectadas, descartadas_reaparecidas",
+      "id, tipo, created_at, archivos, filas_total, nuevas, actualizadas, sin_cambios, sin_asignar, canceladas_detectadas, descartadas_reaparecidas",
     )
     .order("created_at", { ascending: false })
     .limit(10);
@@ -26,7 +27,15 @@ export default async function PaginaImportar() {
         </p>
       </div>
 
-      <FormularioImportar />
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium text-white">Excel de tentativas</h2>
+        <FormularioExcelTentativas />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium text-white">Archivo de reservas de Airbnb (CSV)</h2>
+        <FormularioImportar />
+      </section>
 
       {(historial ?? []).length > 0 && (
         <section className="flex flex-col gap-2">
@@ -49,12 +58,15 @@ export default async function PaginaImportar() {
                 >
                   <span className="text-slate-300">{fecha}</span>
                   <span className="text-slate-500">
-                    {archivos} {archivos === 1 ? "archivo" : "archivos"} ·{" "}
-                    {imp.filas_total ?? 0} reservas
+                    {imp.tipo === "excel_tentativas"
+                      ? "Excel de tentativas"
+                      : `${archivos} ${archivos === 1 ? "archivo" : "archivos"} CSV`}{" "}
+                    · {imp.filas_total ?? 0} reservas
                   </span>
                   <span className="text-slate-400">
-                    {imp.nuevas ?? 0} nuevas · {imp.actualizadas ?? 0} actualizadas ·{" "}
-                    {imp.sin_cambios ?? 0} sin cambios
+                    {imp.tipo === "excel_tentativas"
+                      ? `${imp.actualizadas ?? 0} con datos actualizados · ${imp.canceladas_detectadas ?? 0} canceladas · ${imp.sin_cambios ?? 0} sin cambios`
+                      : `${imp.nuevas ?? 0} nuevas · ${imp.actualizadas ?? 0} actualizadas · ${imp.sin_cambios ?? 0} sin cambios`}
                   </span>
                   {(imp.sin_asignar ?? 0) > 0 && (
                     <span className="rounded-full bg-amber-950 px-2.5 py-0.5 text-xs font-medium text-amber-300">

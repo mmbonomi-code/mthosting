@@ -13,6 +13,8 @@ import type { MotivoRetencion, Retenida, TipoCambio } from "@/lib/ical/cambios";
 export type FilaCambioCalendario = {
   id: string;
   tipo: TipoCambio;
+  /** excel: la pidió el Excel de tentativas y el calendario todavía la muestra. */
+  origen: "calendario" | "excel";
   reserva_id: string;
   codigo_reserva: string;
   /** Donde está hoy la reserva en el sistema. */
@@ -52,7 +54,7 @@ export async function alertasDelCalendario(
     supabase
       .from("cambios_calendario")
       .select(
-        `id, tipo, reserva_id, calendario_depto_id, calendario_checkin, calendario_checkout,
+        `id, tipo, origen, reserva_id, calendario_depto_id, calendario_checkin, calendario_checkout,
          reserva:reservas(codigo_reserva, depto_id, fecha_checkin, fecha_checkout, huesped_nombre,
            limpiezas(fecha, estado, responsable:personas(nombre)))`,
       )
@@ -83,6 +85,7 @@ export async function alertasDelCalendario(
       return {
         id: m.id,
         tipo: m.tipo,
+        origen: m.origen === "excel" ? ("excel" as const) : ("calendario" as const),
         reserva_id: m.reserva_id,
         codigo_reserva: r.codigo_reserva,
         depto_id: r.depto_id,

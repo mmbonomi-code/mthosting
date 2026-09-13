@@ -53,6 +53,12 @@ export type MarcaExistente = {
   estado: EstadoCambio;
   firma: string;
   activo: boolean;
+  /**
+   * `excel`: la pidió el Excel de tentativas sobre una reserva que el
+   * calendario todavía muestra. Que la muestre no la cierra: nunca dejó de
+   * mostrarla.
+   */
+  origen: "calendario" | "excel";
 };
 
 export type MarcaNueva = {
@@ -202,7 +208,7 @@ export function planificarCambios({
   for (const { reserva, tipo } of sinSituacion) {
     const clave = `${reserva.id}|${tipo}`;
     const pendiente = pendientes.get(clave);
-    if (pendiente) plan.resueltasSolas.push(pendiente.id);
+    if (pendiente && pendiente.origen !== "excel") plan.resueltasSolas.push(pendiente.id);
     for (const d of descartes.get(clave) ?? []) plan.descartesVencidos.push(d.id);
   }
 

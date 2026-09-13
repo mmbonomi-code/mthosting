@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  COLUMNA_ESTADO,
+  COLUMNAS_NUMERO,
   COLUMNAS_TEXTO,
   cuando,
   ENCABEZADOS_TENTATIVAS,
@@ -20,7 +22,6 @@ function reserva(parcial: Partial<ReservaTentativa> = {}): ReservaTentativa {
     adultos: null,
     ninos: null,
     bebes: null,
-    payout_monto: null,
     raw: { origen: "ical", telefono_ultimos_4: "0137" },
     depto: { codigo: "CABELLO 2" },
     cambios: null,
@@ -29,6 +30,20 @@ function reserva(parcial: Partial<ReservaTentativa> = {}): ReservaTentativa {
 }
 
 const HOY = "2026-09-13";
+
+describe("columnas", () => {
+  it("el payout no va (decisión del dueño, 13/09/2026)", () => {
+    expect(ENCABEZADOS_TENTATIVAS.join(" ")).not.toMatch(/payout/i);
+  });
+
+  it("las columnas especiales apuntan a lo que dicen", () => {
+    const nombre = (c: number) => ENCABEZADOS_TENTATIVAS[c - 1];
+    expect(COLUMNAS_TEXTO.map(nombre)).toEqual(["Código", "Últimos 4 del teléfono", "Teléfono"]);
+    expect(COLUMNAS_NUMERO.map(nombre)).toEqual(["Noches", "Adultos", "Niños", "Bebés"]);
+    expect(nombre(COLUMNA_ESTADO)).toBe("Estado en Airbnb");
+    expect(nombre(PRIMERA_A_COMPLETAR)).toBe("Estado en Airbnb");
+  });
+});
 
 describe("filaTentativa", () => {
   it("tiene una celda por encabezado", () => {
@@ -42,9 +57,7 @@ describe("filaTentativa", () => {
   });
 
   it("los últimos 4 conservan el cero adelante", () => {
-    // Por eso esa columna va como texto: como número, "0137" sería 137.
     expect(filaTentativa(reserva(), HOY)[7]).toBe("0137");
-    expect(COLUMNAS_TEXTO).toContain(8);
   });
 
   it("las fechas van en formato argentino", () => {
@@ -53,17 +66,17 @@ describe("filaTentativa", () => {
     expect(fila[4]).toBe("06/10/2026");
   });
 
-  it("lo que hay que completar sale vacío si no se sabe", () => {
+  it("lo que hay que completar sale vacío si no se sabe, estado incluido", () => {
     const fila = filaTentativa(reserva(), HOY);
     expect(fila.slice(PRIMERA_A_COMPLETAR - 1)).toEqual(["", "", "", "", "", ""]);
   });
 
-  it("lo que ya se sabe viene cargado, para que no se pise con un vacío", () => {
+  it("lo que ya se sabe viene cargado; el estado sale siempre vacío", () => {
     const fila = filaTentativa(
-      reserva({ huesped_nombre: "Sabina", adultos: 2, ninos: 0, payout_monto: 185.5 }),
+      reserva({ huesped_nombre: "Sabina", huesped_contacto: "+54 9 11 5555-1234", adultos: 2, ninos: 0 }),
       HOY,
     );
-    expect(fila.slice(PRIMERA_A_COMPLETAR - 1)).toEqual(["Sabina", "", "2", "0", "", "185.5"]);
+    expect(fila.slice(PRIMERA_A_COMPLETAR - 1)).toEqual(["", "Sabina", "+54 9 11 5555-1234", "2", "0", ""]);
   });
 
   it("muestra la marca pendiente del calendario, no las ya resueltas", () => {

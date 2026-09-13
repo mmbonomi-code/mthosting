@@ -6,9 +6,9 @@ import type { EstadoCambio } from "./acciones";
 type Accion = () => Promise<EstadoCambio>;
 
 const clsBoton =
-  "h-9 rounded-md border border-slate-700 px-3 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700 disabled:opacity-60";
+  "h-11 rounded-md border border-slate-700 px-3 text-xs sm:h-9 font-medium text-slate-300 transition-colors hover:bg-slate-700 disabled:opacity-60";
 const clsBotonFuerte =
-  "h-9 rounded-md bg-red-500 px-3 text-xs font-medium text-red-950 transition-colors hover:bg-red-400 disabled:opacity-60";
+  "h-11 rounded-md bg-red-500 px-3 text-xs sm:h-9 font-medium text-red-950 transition-colors hover:bg-red-400 disabled:opacity-60";
 
 /**
  * Los botones de una marca del calendario.
@@ -54,9 +54,9 @@ export default function AccionesCambio({
     null;
 
   return (
-    <div className="flex max-w-xs flex-col items-end gap-1.5">
+    <div className="flex flex-col items-start gap-1.5 sm:max-w-xs sm:items-end">
       {preguntando ? (
-        <div className="flex flex-wrap items-center justify-end gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
           <span className="text-xs text-red-200">
             ¿Cancelar <span className="font-mono">{codigo}</span>? No se deshace.
           </span>
@@ -75,7 +75,7 @@ export default function AccionesCambio({
           </button>
         </div>
       ) : (
-        <div className="flex flex-wrap items-center justify-end gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
           {confirmar &&
             (terminal ? (
               <button
@@ -101,11 +101,11 @@ export default function AccionesCambio({
         </div>
       )}
       {error && (
-        <p role="alert" className="text-right text-xs text-red-300">
+        <p role="alert" className="text-xs text-red-300 sm:text-right">
           {error}
         </p>
       )}
-      {ok && <p className="text-right text-xs text-emerald-300">{ok}</p>}
+      {ok && <p className="text-xs text-emerald-300 sm:text-right">{ok}</p>}
     </div>
   );
 }

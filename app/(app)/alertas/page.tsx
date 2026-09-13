@@ -149,7 +149,7 @@ export default async function Alertas({
                 href={`https://www.airbnb.com/hosting/reservations/details/${c.codigo_reserva}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-9 items-center rounded-md border border-slate-700 px-3 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700"
+                className="flex h-11 items-center rounded-md border border-slate-700 px-3 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700 sm:h-9"
               >
                 Ver en Airbnb ↗
               </a>
@@ -520,12 +520,16 @@ function FilaAcciones({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg bg-slate-900/40 transition-colors hover:bg-slate-900/70">
+    // En el celular los botones van abajo del texto: al costado lo aplastaban
+    // a una palabra por renglón.
+    <div className="flex flex-col gap-x-2 rounded-lg bg-slate-900/40 transition-colors hover:bg-slate-900/70 sm:flex-row sm:items-start">
       <Link href={href} className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2">
         <FilaTitulo>{titulo}</FilaTitulo>
         <FilaSub>{sub}</FilaSub>
       </Link>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 p-2">{children}</div>
+      <div className="flex flex-wrap items-start gap-1.5 px-3 pb-2 sm:shrink-0 sm:justify-end sm:p-2">
+        {children}
+      </div>
     </div>
   );
 }

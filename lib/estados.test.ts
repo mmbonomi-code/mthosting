@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CATALOGO,
   FILA_VENCE,
+  TONO_CAMBIO_CALENDARIO,
   TONO_LIMPIEZA,
   TONO_RECLAMO,
   TONO_RESERVA,
@@ -13,7 +14,8 @@ describe("el mapa de estados", () => {
     expect(Object.keys(TONO_RESERVA)).toHaveLength(5);
     expect(Object.keys(TONO_LIMPIEZA)).toHaveLength(6);
     expect(Object.keys(TONO_RECLAMO)).toHaveLength(7);
-    expect(CATALOGO).toHaveLength(19);
+    expect(Object.keys(TONO_CAMBIO_CALENDARIO)).toHaveLength(3);
+    expect(CATALOGO).toHaveLength(22);
   });
 
   it("ningún estado se queda sin color", () => {
@@ -85,10 +87,17 @@ describe("la lógica de color es la misma en los tres dominios", () => {
     expect(TONO_RESERVA.finalizada.clases).toBe(TONO_LIMPIEZA.pendiente.clases);
   });
 
-  it("la excepción es violeta, y hay una sola", () => {
+  it("la excepción es violeta, y solo la excepción", () => {
     expect(TONO_RECLAMO.escalado.clases).toContain("excepcion");
+    // Además del reclamo escalado, lo que el calendario de Airbnb puso en
+    // duda: también pasó por fuera del flujo normal.
     const violetas = CATALOGO.filter((c) => c.tono.clases.includes("excepcion"));
-    expect(violetas.map((c) => c.estado)).toEqual(["escalado"]);
+    expect(violetas.map((c) => `${c.dominio}/${c.estado}`)).toEqual([
+      "reclamo/escalado",
+      "calendario/posible_cancelacion",
+      "calendario/cambio_fechas",
+      "calendario/cambio_depto",
+    ]);
   });
 
   it("lo que pasa ahora es naranja, y no se confunde con lo que vence", () => {

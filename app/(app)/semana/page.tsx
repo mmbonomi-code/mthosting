@@ -15,6 +15,7 @@ import SelectorResponsable, {
 } from "../limpiezas/SelectorResponsable";
 import { asignarRapido } from "../limpiezas/acciones";
 import NavegadorSemana from "./NavegadorSemana";
+import MarcaCalendario from "@/app/componentes/MarcaCalendario";
 
 const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
@@ -49,7 +50,7 @@ export default async function Semana({
       supabase
         .from("limpiezas")
         .select(
-          "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, fecha_manual, depto_id, asignado_a, monto_pactado, moneda, pago_doble, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, noches, fecha_checkout, datos_completos)",
+          "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, fecha_manual, depto_id, asignado_a, monto_pactado, moneda, pago_doble, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, noches, fecha_checkout, datos_completos, cambios:cambios_calendario(tipo, estado))",
         )
         .gte("fecha", desde)
         .lte("fecha", hasta)
@@ -322,6 +323,9 @@ export default async function Semana({
                                 Tentativa
                               </span>
                             )}
+                            {/* El calendario de Airbnb puso la reserva en
+                                duda: antes de mandar a alguien, mirarlo. */}
+                            <MarcaCalendario cambios={l.reserva?.cambios} />
                             {/* Para que se sepa por qué esta no cae el día del
                                 check-out, y que la importación no la va a
                                 mover. */}

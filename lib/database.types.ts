@@ -348,6 +348,92 @@ export type Database = {
           },
         ]
       }
+      cambios_calendario: {
+        Row: {
+          activo: boolean
+          calendario_checkin: string | null
+          calendario_checkout: string | null
+          calendario_depto_id: string | null
+          created_at: string
+          estado: Database["public"]["Enums"]["cambio_calendario_estado"]
+          firma: string
+          id: string
+          reserva_checkin: string | null
+          reserva_checkout: string | null
+          reserva_depto_id: string | null
+          reserva_id: string
+          resuelto_at: string | null
+          resuelto_por: string | null
+          tipo: Database["public"]["Enums"]["cambio_calendario_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          calendario_checkin?: string | null
+          calendario_checkout?: string | null
+          calendario_depto_id?: string | null
+          created_at?: string
+          estado?: Database["public"]["Enums"]["cambio_calendario_estado"]
+          firma: string
+          id?: string
+          reserva_checkin?: string | null
+          reserva_checkout?: string | null
+          reserva_depto_id?: string | null
+          reserva_id: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          tipo: Database["public"]["Enums"]["cambio_calendario_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          calendario_checkin?: string | null
+          calendario_checkout?: string | null
+          calendario_depto_id?: string | null
+          created_at?: string
+          estado?: Database["public"]["Enums"]["cambio_calendario_estado"]
+          firma?: string
+          id?: string
+          reserva_checkin?: string | null
+          reserva_checkout?: string | null
+          reserva_depto_id?: string | null
+          reserva_id?: string
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          tipo?: Database["public"]["Enums"]["cambio_calendario_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cambios_calendario_calendario_depto_id_fkey"
+            columns: ["calendario_depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_calendario_reserva_depto_id_fkey"
+            columns: ["reserva_depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_calendario_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "reservas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_calendario_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categorias_movimiento: {
         Row: {
           activo: boolean
@@ -2500,6 +2586,33 @@ export type Database = {
           },
         ]
       }
+      sincronizaciones_ical: {
+        Row: {
+          completa: boolean
+          created_at: string
+          fallidos: Json
+          id: string
+          resumen: Json
+          retenidas: Json
+        }
+        Insert: {
+          completa: boolean
+          created_at?: string
+          fallidos?: Json
+          id?: string
+          resumen: Json
+          retenidas?: Json
+        }
+        Update: {
+          completa?: boolean
+          created_at?: string
+          fallidos?: Json
+          id?: string
+          resumen?: Json
+          retenidas?: Json
+        }
+        Relationships: []
+      }
       tareas_periodicas_catalogo: {
         Row: {
           activo: boolean
@@ -2599,6 +2712,15 @@ export type Database = {
       ambientes_tipo: "monoambiente" | "dos" | "tres" | "cuatro"
       bloqueo_motivo: "mantenimiento" | "uso_propietario" | "vacio" | "otro"
       caja_tipo: "ingreso" | "egreso"
+      cambio_calendario_estado:
+        | "pendiente"
+        | "confirmado"
+        | "descartado"
+        | "resuelto_solo"
+      cambio_calendario_tipo:
+        | "posible_cancelacion"
+        | "cambio_fechas"
+        | "cambio_depto"
       canal_tipo: "airbnb" | "booking" | "directa"
       cuenta_clasificacion: "mth" | "propietario" | "sin_clasificar"
       depto_estado: "activo" | "suspendido"
@@ -2810,6 +2932,17 @@ export const Constants = {
       ambientes_tipo: ["monoambiente", "dos", "tres", "cuatro"],
       bloqueo_motivo: ["mantenimiento", "uso_propietario", "vacio", "otro"],
       caja_tipo: ["ingreso", "egreso"],
+      cambio_calendario_estado: [
+        "pendiente",
+        "confirmado",
+        "descartado",
+        "resuelto_solo",
+      ],
+      cambio_calendario_tipo: [
+        "posible_cancelacion",
+        "cambio_fechas",
+        "cambio_depto",
+      ],
       canal_tipo: ["airbnb", "booking", "directa"],
       cuenta_clasificacion: ["mth", "propietario", "sin_clasificar"],
       depto_estado: ["activo", "suspendido"],

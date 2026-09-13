@@ -9,6 +9,8 @@ import { describirAcceso, esAccesoPresencial } from "@/lib/eventos/etiquetas";
 import BuscadorDia from "./BuscadorDia";
 import NavegadorFecha from "./NavegadorFecha";
 import AvisosDelDia from "./AvisosDelDia";
+import MarcaCalendario from "@/app/componentes/MarcaCalendario";
+import type { EstadoCambio, TipoCambio } from "@/lib/ical/cambios";
 
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
@@ -27,6 +29,7 @@ const CAMPOS = `
     id, codigo_reserva, huesped_nombre, huesped_contacto, noches, adultos, ninos, bebes,
     fecha_checkin, fecha_checkout, cancelada, descartada, datos_completos, origen,
     registro_hecho, aviso_seguridad_hecho,
+    cambios:cambios_calendario(tipo, estado),
     depto:departamentos(id, codigo, nombre_interno, direccion, barrio, requiere_registro, requiere_aviso_seguridad)
   )
 `;
@@ -63,6 +66,7 @@ type Evento = {
     descartada: boolean;
     datos_completos: boolean;
     origen: string;
+    cambios: { tipo: TipoCambio; estado: EstadoCambio }[] | null;
     registro_hecho: boolean;
     aviso_seguridad_hecho: boolean;
     depto: {
@@ -192,6 +196,7 @@ function Fila({ evento, listo }: { evento: Evento; listo?: boolean }) {
               Tentativa
             </span>
           )}
+          <MarcaCalendario cambios={r.cambios} />
           {coordinado && (
             <span className="rounded-full bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
               Coordinado

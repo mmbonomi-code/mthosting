@@ -38,6 +38,11 @@ import {
   type LimpiezaDeFoto,
   type ReservaDelDepto,
 } from "@/lib/alertas/fotos";
+import {
+  alertasDelCalendario,
+  type FilaCambioCalendario,
+  type ProblemaCalendario,
+} from "@/lib/alertas/calendario";
 
 export type FilaSinResponsable = {
   id: string;
@@ -63,6 +68,10 @@ export type PanelAlertas = {
   danioHuesped: FilaDanioHuesped[];
   /** Cosas que el huésped se olvidó y nadie miró todavía. */
   olvidos: AlertaFotos[];
+  /** Lo que el calendario de Airbnb sugiere y nadie confirmó todavía. */
+  cambiosCalendario: FilaCambioCalendario[];
+  /** Calendarios que no se leyeron, desapariciones frenadas, sync parada. */
+  problemasCalendario: ProblemaCalendario[];
 };
 
 export type FilaDanioHuesped = AlertaFotos & {
@@ -94,6 +103,7 @@ export async function calcularPanelAlertas(
     { data: fotosAccion },
     { data: revisadas },
     { data: reclamosExistentes },
+    calendario,
   ] = await Promise.all([
     supabase.from("parametros_operativos").select("clave, valor"),
     supabase
@@ -162,6 +172,7 @@ export async function calcularPanelAlertas(
     // Los reclamos son pocos (decenas por año): traerlos enteros sale más
     // barato que una segunda vuelta con la lista de reservas candidatas.
     supabase.from("reclamos").select("reserva_id"),
+    alertasDelCalendario(supabase, hoy),
   ]);
 
   const config = Object.fromEntries((parametros ?? []).map((p) => [p.clave, p.valor]));
@@ -429,6 +440,8 @@ export async function calcularPanelAlertas(
     arreglos,
     danioHuesped,
     olvidos,
+    cambiosCalendario: calendario.cambios,
+    problemasCalendario: calendario.problemas,
   };
 }
 
@@ -442,7 +455,10 @@ export function contarCriticas(panel: PanelAlertas): number {
     panel.estadiaOcupada.length +
     panel.ventanaInsuficiente.length +
     panel.arreglos.length +
-    panel.danioHuesped.length
+    panel.danioHuesped.length +
+    // Una cancelación de mañana sin confirmar es alguien que va a limpiar, o
+    // a esperar a un huésped, para nada.
+    panel.cambiosCalendario.filter((c) => c.urgente).length
   );
 }
 
@@ -453,6 +469,8 @@ export function contarResto(panel: PanelAlertas): number {
     panel.sinDepto +
     panel.conflictos.length +
     panel.lateCheckout.length +
-    panel.olvidos.length
+    panel.olvidos.length +
+    panel.cambiosCalendario.filter((c) => !c.urgente).length +
+    panel.problemasCalendario.length
   );
 }

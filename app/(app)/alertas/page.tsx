@@ -2,11 +2,21 @@ import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerAlertas } from "@/lib/alertas/permisos";
 import { calcularPanelAlertas } from "@/lib/alertas/consultar";
-import { formatearFechaAR, hoyAR } from "@/lib/fechas";
+import type { FilaCambioCalendario } from "@/lib/alertas/calendario";
+import { ETIQUETA_CAMBIO_CALENDARIO, TONO_CAMBIO_CALENDARIO } from "@/lib/estados";
+import { diaARDe, formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import SinPermiso from "@/app/componentes/SinPermiso";
 import { crearReclamo } from "@/app/(app)/reclamos/acciones";
-import { marcarRevisada, resolverConflicto, revisarArreglos } from "./acciones";
+import {
+  confirmarCambioCalendario,
+  descartarCambioCalendario,
+  marcarRetenidas,
+  marcarRevisada,
+  resolverConflicto,
+  revisarArreglos,
+} from "./acciones";
+import AccionesCambio from "./AccionesCambio";
 
 const TEXTO_TIPO_LIMPIEZA: Record<string, string> = {
   normal: "Limpieza",
@@ -106,6 +116,70 @@ export default async function Alertas({
                 {a.entrada.codigo_reserva} a las {formatearHora(a.entrada.hora)}.
               </FilaSub>
             </Fila>
+          ))}
+        </Seccion>
+
+        <Seccion
+          titulo="Cambios en los calendarios de Airbnb"
+          detalle="El calendario ya no muestra la reserva, o la muestra con otras fechas o en otro departamento. No se aplica nada solo: miralo en Airbnb y confirmalo acá."
+          cantidad={panel.cambiosCalendario.length}
+          tono={panel.cambiosCalendario.some((c) => c.urgente) ? "rojo" : "ambar"}
+          ocultar={ocultar}
+        >
+          {panel.cambiosCalendario.map((c) => (
+            <FilaAcciones
+              key={c.id}
+              href={`/reservas/${c.reserva_id}/editar`}
+              titulo={
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span>
+                    {c.depto_id ? nombreDepto(c.depto_id) : "Sin departamento"} ·{" "}
+                    <span className="font-mono">{c.codigo_reserva}</span>
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${TONO_CAMBIO_CALENDARIO[c.tipo].clases}`}
+                  >
+                    {ETIQUETA_CAMBIO_CALENDARIO[c.tipo]}
+                  </span>
+                </span>
+              }
+              sub={detalleCambio(c, nombreDepto)}
+            >
+              <a
+                href={`https://www.airbnb.com/hosting/reservations/details/${c.codigo_reserva}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 items-center rounded-md border border-slate-700 px-3 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700"
+              >
+                Ver en Airbnb ↗
+              </a>
+              {c.tipo === "posible_cancelacion" && (
+                <AccionesCambio
+                  codigo={c.codigo_reserva}
+                  confirmar={confirmarCambioCalendario.bind(null, c.id)}
+                  etiquetaConfirmar="Confirmar cancelación"
+                  terminal
+                  descartar={descartarCambioCalendario.bind(null, c.id)}
+                  etiquetaDescartar="Sigue en pie"
+                />
+              )}
+              {c.tipo === "cambio_fechas" && (
+                <AccionesCambio
+                  codigo={c.codigo_reserva}
+                  confirmar={confirmarCambioCalendario.bind(null, c.id)}
+                  etiquetaConfirmar="Aplicar fechas nuevas"
+                  descartar={descartarCambioCalendario.bind(null, c.id)}
+                  etiquetaDescartar="Ignorar"
+                />
+              )}
+              {c.tipo === "cambio_depto" && (
+                <AccionesCambio
+                  codigo={c.codigo_reserva}
+                  descartar={descartarCambioCalendario.bind(null, c.id)}
+                  etiquetaDescartar="Ya lo revisé"
+                />
+              )}
+            </FilaAcciones>
           ))}
         </Seccion>
 
@@ -274,9 +348,75 @@ export default async function Alertas({
             </Fila>
           ))}
         </Seccion>
+
+        <Seccion
+          titulo="Calendarios con problemas"
+          detalle="Lo que la última sincronización no pudo leer o frenó. Mientras esté acá, las cancelaciones de esos departamentos no se detectan."
+          cantidad={panel.problemasCalendario.length}
+          tono="ambar"
+          ocultar={ocultar}
+        >
+          {panel.problemasCalendario.map((p, i) =>
+            p.tipo === "sin_sincronizar" ? (
+              <Fila key={i} href="/ical">
+                <FilaTitulo>La sincronización de calendarios no está corriendo</FilaTitulo>
+                <FilaSub>
+                  {p.ultima
+                    ? `La última completa fue el ${formatearFechaAR(diaARDe(p.ultima)!)}.`
+                    : "Todavía no hay ninguna registrada."}{" "}
+                  Tocá &quot;Sincronizar ahora&quot;.
+                </FilaSub>
+              </Fila>
+            ) : p.tipo === "fallido" ? (
+              <Fila key={i} href={`/departamentos/${p.depto_id}/editar`}>
+                <FilaTitulo>{nombreDepto(p.depto_id)}</FilaTitulo>
+                <FilaSub>No se pudo leer su calendario ({p.error}). Revisá el link en la ficha.</FilaSub>
+              </Fila>
+            ) : (
+              <FilaAcciones
+                key={i}
+                href={`/departamentos/${p.depto_id}`}
+                titulo={nombreDepto(p.depto_id)}
+                sub={
+                  p.motivo === "calendario_vacio"
+                    ? `Desaparecieron todas sus reservas futuras a la vez (${p.codigos.join(", ")}). Suele ser el link del calendario, no cancelaciones: no se marcó ninguna.`
+                    : `Desapareció más del 20% de las reservas en una sola sincronización, así que no se marcó ninguna. De este departamento: ${p.codigos.join(", ")}.`
+                }
+              >
+                <AccionesCambio
+                  codigo=""
+                  descartar={marcarRetenidas.bind(null, p.reserva_ids)}
+                  etiquetaDescartar="Marcarlas igual"
+                />
+              </FilaAcciones>
+            ),
+          )}
+        </Seccion>
       </div>
     </main>
   );
+}
+
+/** Qué vio el calendario, y a quién hay que avisarle si se confirma. */
+function detalleCambio(c: FilaCambioCalendario, nombreDepto: (id: string) => string): string {
+  const fechas = (desde: string | null, hasta: string | null) =>
+    desde && hasta ? `del ${formatearFechaAR(desde)} al ${formatearFechaAR(hasta)}` : "sin fechas";
+
+  const queVio =
+    c.tipo === "posible_cancelacion"
+      ? `Ya no está en Airbnb. Acá figura ${fechas(c.fecha_checkin, c.fecha_checkout)}.`
+      : c.tipo === "cambio_fechas"
+        ? `Airbnb la muestra ${fechas(c.calendario_checkin, c.calendario_checkout)}; acá figura ${fechas(c.fecha_checkin, c.fecha_checkout)}.`
+        : `Airbnb la muestra en el calendario de ${c.calendario_depto_id ? nombreDepto(c.calendario_depto_id) : "otro departamento"}. Se corrige desde la ficha de la reserva.`;
+
+  const huesped = c.huesped_nombre ? ` Huésped: ${c.huesped_nombre}.` : "";
+  const limpieza = c.limpieza
+    ? ` Limpieza del ${formatearFechaAR(c.limpieza.fecha)}: ${
+        c.limpieza.responsable ? `asignada a ${c.limpieza.responsable}` : "sin asignar"
+      }.`
+    : "";
+
+  return queVio + huesped + limpieza;
 }
 
 const TONO: Record<"rojo" | "ambar", string> = {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
+import MarcaCalendario, { AvisoCalendario } from "@/app/componentes/MarcaCalendario";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { puedeEditarReservas } from "@/lib/reservas/permisos";
 import {
@@ -63,6 +64,7 @@ export default async function FichaEvento({
          id, codigo_reserva, huesped_nombre, huesped_contacto, noches, adultos, ninos, bebes,
          fecha_checkin, fecha_checkout, cancelada, datos_completos, origen, raw,
          registro_hecho, aviso_seguridad_hecho, sobre_ok,
+         cambios:cambios_calendario(tipo, estado),
          depto:departamentos(
            id, codigo, nombre_interno, direccion, barrio, ambientes, capacidad, wifi_ssid, wifi_pass,
            encargado_nombre, encargado_telefono, indicaciones_acceso, requiere_registro,
@@ -399,6 +401,7 @@ export default async function FichaEvento({
               Tentativa
             </span>
           )}
+          <MarcaCalendario cambios={r.cambios} className="px-2.5 py-0.5" />
           {faltantes.length === 0 && (
             <span className="rounded-full bg-emerald-950 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
               Coordinado
@@ -421,6 +424,8 @@ export default async function FichaEvento({
           )}
         </p>
       </div>
+
+      <AvisoCalendario cambios={r.cambios} />
 
       {/* Contacto: lo primero que se necesita en la calle */}
       {telefono ? (

@@ -1,9 +1,77 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { ARREGLO_RESUELTO } from "@/lib/alertas/detectar";
 import { CLASE_ARREGLO } from "@/lib/alertas/fotos";
+import { puedeVerAlertas } from "@/lib/alertas/permisos";
+import { hoyAR } from "@/lib/fechas";
+import {
+  confirmarCambioEnBase,
+  descartarCambioEnBase,
+  marcarRetenidasEnBase,
+} from "@/lib/ical/confirmar";
+
+/** Lo que devuelven los botones de las marcas del calendario. */
+export type EstadoCambio = { error: string } | { ok: string } | null;
+
+async function personaActual(supabase: SupabaseClient<Database>): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from("personas").select("id").eq("profile_id", user.id).maybeSingle();
+  return data?.id ?? null;
+}
+
+function revalidarOperacion() {
+  revalidatePath("/alertas");
+  revalidatePath("/dia");
+  revalidatePath("/semana");
+}
+
+const SIN_PERMISO = "Solo administración, manager y coordinación resuelven las marcas del calendario.";
+
+/**
+ * Confirmar lo que sugirió el calendario: cancelar la reserva o tomarle las
+ * fechas nuevas (decisión del dueño, 13/09/2026: admin, manager y
+ * coordinación, los mismos que ven el panel).
+ */
+export async function confirmarCambioCalendario(id: string): Promise<EstadoCambio> {
+  const supabase = await crearClienteServidor();
+  if (!(await puedeVerAlertas(supabase))) return { error: SIN_PERMISO };
+
+  const resultado = await confirmarCambioEnBase(supabase, id, await personaActual(supabase), hoyAR());
+  revalidarOperacion();
+  if ("error" in resultado) return resultado;
+  return {
+    ok: ["Hecho.", ...resultado.anomalias].join(" "),
+  };
+}
+
+/** "Sigue en pie" / "Ignorar" / "Ya lo revisé": esta situación no vuelve a marcarse. */
+export async function descartarCambioCalendario(id: string): Promise<EstadoCambio> {
+  const supabase = await crearClienteServidor();
+  if (!(await puedeVerAlertas(supabase))) return { error: SIN_PERMISO };
+
+  const resultado = await descartarCambioEnBase(supabase, id, await personaActual(supabase));
+  revalidarOperacion();
+  if ("error" in resultado) return resultado;
+  return { ok: "Listo." };
+}
+
+/** Lo que frenó la desaparición masiva, marcado igual para revisar una por una. */
+export async function marcarRetenidas(reservaIds: string[]): Promise<EstadoCambio> {
+  const supabase = await crearClienteServidor();
+  if (!(await puedeVerAlertas(supabase))) return { error: SIN_PERMISO };
+
+  const resultado = await marcarRetenidasEnBase(supabase, reservaIds);
+  revalidarOperacion();
+  if ("error" in resultado) return resultado;
+  return { ok: `Se marcaron ${resultado.marcadas} como posible cancelación.` };
+}
 
 /**
  * Da por revisado un conflicto de cancelación / cambio de fecha (spec §3.6,

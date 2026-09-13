@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import type { EstadoSync } from "./acciones";
 import { clsBotonPrimario } from "@/lib/ui";
@@ -45,6 +46,22 @@ export default function BotonSincronizar({
             <Contador etiqueta="Bloqueos nuevos" valor={estado.resumen.bloqueosNuevos} />
             <Contador etiqueta="Limpiezas" valor={estado.resumen.limpiezasGeneradas} />
           </div>
+
+          {/* Lo que cambió en Airbnb: queda marcado para confirmar en Alertas. */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Contador etiqueta="¿Canceladas?" valor={estado.resumen.posiblesCancelaciones} />
+            <Contador etiqueta="¿Otras fechas?" valor={estado.resumen.cambiosFechas} />
+            <Contador etiqueta="¿Otro depto?" valor={estado.resumen.cambiosDepto} />
+            <Contador etiqueta="Volvieron a coincidir" valor={estado.resumen.resueltasSolas} />
+          </div>
+          {estado.resumen.posiblesCancelaciones +
+            estado.resumen.cambiosFechas +
+            estado.resumen.cambiosDepto >
+            0 && (
+            <Link href="/alertas" className="text-sm text-slate-300 underline hover:text-white">
+              Revisarlas en Alertas →
+            </Link>
+          )}
 
           {estado.resumen.avisos.length > 0 && (
             <div className="rounded-xl border border-amber-900 bg-amber-950/40 px-4 py-3">

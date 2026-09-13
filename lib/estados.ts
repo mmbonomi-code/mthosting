@@ -143,6 +143,30 @@ export const ETIQUETA_RECLAMO: Record<EstadoReclamo, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Cambios detectados en el calendario de Airbnb
+// ---------------------------------------------------------------------------
+
+/**
+ * Lo que el calendario sugiere y todavía nadie confirmó (lib/ical/cambios.ts).
+ * Los tres son violeta: son la excepción por definición, algo que pasó por
+ * fuera del flujo normal. La señal no cromática es el signo de pregunta de la
+ * etiqueta: dice "posible", no "es".
+ */
+export type CambioCalendario = "posible_cancelacion" | "cambio_fechas" | "cambio_depto";
+
+export const TONO_CAMBIO_CALENDARIO: Record<CambioCalendario, Tono> = {
+  posible_cancelacion: { clases: EXCEPCION },
+  cambio_fechas: { clases: EXCEPCION },
+  cambio_depto: { clases: EXCEPCION },
+};
+
+export const ETIQUETA_CAMBIO_CALENDARIO: Record<CambioCalendario, string> = {
+  posible_cancelacion: "¿Cancelada?",
+  cambio_fechas: "¿Cambió de fecha?",
+  cambio_depto: "¿Otro depto?",
+};
+
+// ---------------------------------------------------------------------------
 // Alerta de vencimiento
 // ---------------------------------------------------------------------------
 
@@ -167,7 +191,7 @@ export const FILA_VENCE = "bg-accent-soft border-l-[3px] border-l-accent";
  * existen en dos dominios con colores distintos y se pisarían.
  */
 export const CATALOGO: {
-  dominio: "reserva" | "limpieza" | "reclamo" | "alerta";
+  dominio: "reserva" | "limpieza" | "reclamo" | "calendario" | "alerta";
   estado: string;
   etiqueta: string;
   tono: Tono;
@@ -188,6 +212,12 @@ export const CATALOGO: {
     dominio: "reclamo" as const,
     estado,
     etiqueta: ETIQUETA_RECLAMO[estado as EstadoReclamo],
+    tono,
+  })),
+  ...Object.entries(TONO_CAMBIO_CALENDARIO).map(([estado, tono]) => ({
+    dominio: "calendario" as const,
+    estado,
+    etiqueta: ETIQUETA_CAMBIO_CALENDARIO[estado as CambioCalendario],
     tono,
   })),
   {

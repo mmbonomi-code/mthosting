@@ -13,6 +13,7 @@ import {
 import BotonDescartarReserva from "../../BotonDescartarReserva";
 import FormularioReserva from "../../FormularioReserva";
 import SinPermiso from "../../SinPermiso";
+import { AvisoCalendario } from "@/app/componentes/MarcaCalendario";
 
 const ORIGEN: Record<string, string> = {
   csv: "importada del archivo de Airbnb",
@@ -44,7 +45,8 @@ export default async function EditarReserva({
         `id, codigo_reserva, canal, origen, datos_completos, depto_id,
          huesped_nombre, huesped_contacto, adultos, ninos, bebes, noches,
          fecha_checkin, fecha_checkout, payout_monto, cancelada, descartada,
-         eventos:eventos_estadia(id, tipo)`,
+         eventos:eventos_estadia(id, tipo),
+         cambios:cambios_calendario(tipo, estado)`,
       )
       .eq("id", id)
       .maybeSingle(),
@@ -100,6 +102,8 @@ export default async function EditarReserva({
           )}
         </p>
       </div>
+
+      <AvisoCalendario cambios={reserva.cambios} />
 
       {creada && (
         <p className="rounded-lg bg-emerald-950/60 px-4 py-3 text-sm text-emerald-200">

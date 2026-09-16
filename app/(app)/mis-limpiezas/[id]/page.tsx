@@ -8,7 +8,10 @@ import { calcularQueLlevar } from "@/lib/limpiezas/quellevar";
 import { AYUDA_FOTO, ETIQUETA_FOTO, TIPOS_FOTO } from "@/lib/limpiezas/fotos";
 import ReportarArreglo from "../ReportarArreglo";
 import { ultimaLimpiezaDelDepto } from "@/lib/limpiezas/ultimaLimpieza";
-import { formatearHora, TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
+import { TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
+import { traerInteracciones } from "@/lib/limpiezas/interaccion-db";
+import { formatearFechaAR } from "@/lib/fechas";
+import InteraccionHuespedes from "../InteraccionHuespedes";
 import SinPermiso from "@/app/componentes/SinPermiso";
 import ItemChecklist from "../ItemChecklist";
 import SubidorFotos from "../SubidorFotos";
@@ -118,38 +121,14 @@ export default async function DetalleMiLimpieza({
 
   const [
     { count: cantidadBanos },
-    { data: eventoCheckout },
-    { data: proximaReserva },
+    interacciones,
     anterior,
     { data: checklistFilas },
     { data: tareasActivas },
     { data: fotosCrudas },
   ] = await Promise.all([
     supabase.from("banos_depto").select("id", { count: "exact", head: true }).eq("depto_id", depto.id),
-    limpieza.reserva_id
-      ? supabase
-          .from("eventos_estadia")
-          .select("hora_coordinada")
-          .eq("reserva_id", limpieza.reserva_id)
-          .eq("tipo", "checkout")
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    limpieza.prox_checkin
-      ? supabase
-          .from("reservas")
-          .select(
-            `id, fecha_checkin, eventos:eventos_estadia(
-               tipo, hora_coordinada,
-               punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(recibe_limpieza)
-             )`,
-          )
-          .eq("depto_id", depto.id)
-          .eq("cancelada", false)
-          .eq("descartada", false)
-          .eq("fecha_checkin", limpieza.prox_checkin.slice(0, 10))
-          .limit(1)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
+    traerInteracciones(supabase, [limpieza]),
     ultimaLimpiezaDelDepto(supabase, depto.id, limpieza.fecha, id),
     supabase
       .from("limpieza_checklist")
@@ -183,15 +162,13 @@ export default async function DetalleMiLimpieza({
     cantidadBanos: cantidadBanos ?? 0,
   });
 
-  const horaSalida = formatearHora(eventoCheckout?.hora_coordinada ?? limpieza.hora_checkout);
+  const interaccion = interacciones.get(limpieza.id)!;
+  // Si nadie entra ese día, igual sirve saber cuándo llega el próximo.
   const proximaEntradaFecha = limpieza.prox_checkin?.slice(0, 10) ?? null;
-  const esHoyMismo = proximaEntradaFecha === limpieza.fecha;
-  const entrada = proximaReserva?.eventos?.find((e) => e.tipo === "checkin");
-  const horaEntrada = formatearHora(entrada?.hora_coordinada ?? null);
-
-  // El huésped que llega deja las valijas con la limpieza: tienen que saberlo
-  // antes de llegar. Si quedan en el edificio o en la oficina, no se avisa.
-  const recibeValijas = esHoyMismo && (entrada?.punto?.recibe_limpieza ?? false);
+  const proximaOtroDia =
+    !interaccion.entrada && proximaEntradaFecha && proximaEntradaFecha > limpieza.fecha
+      ? proximaEntradaFecha
+      : null;
 
   const mapsUrl =
     depto.url_mapa ??
@@ -254,17 +231,12 @@ export default async function DetalleMiLimpieza({
         <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Ventana y carga de trabajo
         </h2>
-        {horaSalida && (
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Sale el huésped</span>
-            <span className="font-medium text-slate-200">{horaSalida}</span>
-          </div>
-        )}
-        {proximaEntradaFecha && (
+        <InteraccionHuespedes interaccion={interaccion} />
+        {proximaOtroDia && (
           <div className="flex justify-between text-sm">
             <span className="text-slate-400">Próxima entrada</span>
-            <span className="font-medium text-slate-200">
-              {esHoyMismo ? `${horaEntrada ?? ""} (mismo día)`.trim() : proximaEntradaFecha}
+            <span className="font-medium tabular-nums text-slate-200">
+              {formatearFechaAR(proximaOtroDia)}
             </span>
           </div>
         )}
@@ -280,18 +252,12 @@ export default async function DetalleMiLimpieza({
             {diasSin === null ? "sin limpiezas previas" : `${diasSin} días`}
           </span>
         </div>
-        {recibeValijas && (
-          <p className="rounded-lg bg-sky-950/60 px-3 py-2 text-sm text-sky-200">
-            🧳 El huésped que llega{horaEntrada ? ` a las ${horaEntrada}` : ""} deja
-            las valijas con vos.
-          </p>
-        )}
         {(limpieza.reserva?.noches ?? 0) >= 10 && (
           <p className="rounded-lg bg-amber-950/50 px-3 py-2 text-sm text-amber-300">
             ⚠ Estadía larga: puede llevar más tiempo de lo habitual.
           </p>
         )}
-        {limpieza.urgente && (
+        {interaccion.entrada && (
           <p className="rounded-lg bg-orange-950/50 px-3 py-2 text-sm font-medium text-orange-300">
             Entra alguien nuevo el mismo día. No hay margen: priorizá este depto.
           </p>

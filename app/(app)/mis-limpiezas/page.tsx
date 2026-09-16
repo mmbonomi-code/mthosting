@@ -5,6 +5,9 @@ import { hoyAR, mananaAR, sumarDias, formatearFechaAR } from "@/lib/fechas";
 import { diasSinLimpiar } from "@/lib/limpiezas/diasSinLimpiar";
 import { ultimaLimpiezaDelDepto } from "@/lib/limpiezas/ultimaLimpieza";
 import { TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
+import { traerInteracciones } from "@/lib/limpiezas/interaccion-db";
+import { claveOrden } from "@/lib/limpiezas/interaccion";
+import InteraccionHuespedes from "./InteraccionHuespedes";
 import SinPermiso from "@/app/componentes/SinPermiso";
 
 const DIAS_ATRAS = 15;
@@ -62,14 +65,20 @@ export default async function MisLimpiezas({
   const { data: limpiezas } = await supabase
     .from("limpiezas")
     .select(
-      "id, tipo, estado, urgente, prox_checkin, depto_id, monto_pactado, moneda, depto:departamentos(codigo, barrio), reserva:reservas(noches)",
+      "id, tipo, estado, fecha, prox_checkin, hora_checkout, depto_id, reserva_id, rol_reserva, depto:departamentos(codigo, barrio), reserva:reservas(noches)",
     )
     .eq("asignado_a", miId)
     .eq("fecha", fechaElegida)
     .neq("estado", "cancelada")
     .order("prox_checkin", { ascending: true, nullsFirst: false });
 
-  const lista = limpiezas ?? [];
+  const interacciones = await traerInteracciones(supabase, limpiezas ?? []);
+
+  // Primero los deptos donde entra alguien ese día, por hora de entrada: son
+  // los que no tienen margen.
+  const lista = [...(limpiezas ?? [])].sort((a, b) =>
+    claveOrden(interacciones.get(a.id)!).localeCompare(claveOrden(interacciones.get(b.id)!)),
+  );
 
   const diasSin = await Promise.all(
     lista.map((l) => ultimaLimpiezaDelDepto(supabase, l.depto_id, fechaElegida)),
@@ -145,12 +154,8 @@ export default async function MisLimpiezas({
                   <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-400">
                     {diasSin[i] ? `${diasSinLimpiar(diasSin[i]!.fecha, fechaElegida)} días sin limpiarse` : "sin limpiezas previas"}
                   </span>
-                  {l.urgente && (
-                    <span className="rounded-full bg-orange-950 px-2.5 py-0.5 text-xs font-semibold text-orange-300">
-                      Entra alguien ese día
-                    </span>
-                  )}
                 </div>
+                <InteraccionHuespedes interaccion={interacciones.get(l.id)!} />
               </Link>
             </li>
           ))}

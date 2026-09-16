@@ -126,7 +126,7 @@ export async function confirmarCambioEnBase(
  * la de la cancelada (BORGES 2, 13/09/2026). Si se cancela solo la vieja, el
  * día queda libre pero nadie le crea la limpieza a la nueva.
  */
-async function reservasVecinas(
+export async function reservasVecinas(
   supabase: Cliente,
   reserva: { id: string; depto_id: string | null; fecha_checkin: string | null; fecha_checkout: string | null },
   otrasFechas: (string | null)[],

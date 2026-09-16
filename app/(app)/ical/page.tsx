@@ -47,9 +47,10 @@ export default async function ICal() {
         </h1>
         <p className="text-sm text-slate-400">
           El calendario descubre reservas con hasta un año de anticipación y
-          las crea como tentativas: sirven para planificar la limpieza. También
-          marca las que desaparecieron de Airbnb o cambiaron de fecha o de
-          departamento, para confirmarlas en Alertas.
+          las crea como tentativas: sirven para planificar la limpieza. Si
+          Airbnb cambió las fechas de una reserva, las actualiza solo, con su
+          limpieza. Las que desaparecieron o pasaron a otro departamento quedan
+          marcadas para confirmar en Alertas.
         </p>
       </div>
 

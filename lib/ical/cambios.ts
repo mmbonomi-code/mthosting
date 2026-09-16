@@ -6,8 +6,10 @@
  * calendarios, y devuelve qué marcas crear, actualizar o cerrar. No toca la
  * base, así que cada regla tiene test.
  *
- * El calendario no dice "cancelada": la reserva desaparece. Todo lo de acá es
- * inferencia, y por eso nada se aplica solo — se marca y decide una persona.
+ * El calendario no dice "cancelada": la reserva desaparece. Eso es inferencia,
+ * y por eso no se aplica solo — se marca y decide una persona. Un cambio de
+ * fecha, en cambio, no se infiere: el calendario muestra el mismo código con
+ * otras fechas, y se aplica solo.
  *
  * Las reglas delicadas:
  *
@@ -22,6 +24,9 @@
  *    más), no se marca ninguna.
  *  - Lo frenado no se pierde: vuelve como "retenidas", para que una persona
  *    lo mire y, si corresponde, lo marque igual.
+ *  - Los cambios de fecha NO se marcan: se aplican en la misma sincronización
+ *    (decisión del dueño, 16/09/2026). Lo que se confirma a mano son las
+ *    posibles cancelaciones y los cambios de departamento.
  *  - Un descarte ("sigue en pie") tapa SU firma. Si la situación cambia, la
  *    marca vuelve. Si la reserva vuelve a coincidir con el calendario, el
  *    descarte deja de valer.
@@ -90,6 +95,13 @@ export type PlanCambios = {
   /** Descartes que dejan de valer: su situación terminó. */
   descartesVencidos: string[];
   retenidas: Retenida[];
+  /**
+   * Cambios de fecha a aplicar YA, sin pasar por Alertas (decisión del dueño,
+   * 16/09/2026): el calendario trae el mismo código de reserva con otras
+   * fechas, y eso es Airbnb diciendo cuáles son. Si había una marca pendiente
+   * de antes, viene su id para cerrarla como confirmada.
+   */
+  fechasAAplicar: (MarcaNueva & { pendiente_id: string | null })[];
 };
 
 /** Desde cuántas reservas de un depto desaparecidas juntas se frena. */
@@ -149,6 +161,7 @@ export function planificarCambios({
     resueltasSolas: [],
     descartesVencidos: [],
     retenidas: [],
+    fechasAAplicar: [],
   };
 
   // El mismo código en dos calendarios (dos anuncios sincronizados entre sí):
@@ -273,6 +286,14 @@ export function planificarCambios({
       };
 
       const pendiente = pendientes.get(clave);
+
+      // Las fechas no se preguntan: se aplican. Tampoco las frena un
+      // "Ignorar" de antes, porque el calendario es el que manda.
+      if (tipo === "cambio_fechas") {
+        plan.fechasAAplicar.push({ ...marca, pendiente_id: pendiente?.id ?? null });
+        continue;
+      }
+
       if (pendiente) {
         if (pendiente.firma !== firma) plan.actualizar.push({ id: pendiente.id, ...marca });
         continue;

@@ -121,7 +121,7 @@ export default async function Alertas({
 
         <Seccion
           titulo="Cambios en los calendarios de Airbnb"
-          detalle="El calendario ya no muestra la reserva, o la muestra con otras fechas o en otro departamento. No se aplica nada solo: miralo en Airbnb y confirmalo acá."
+          detalle="El calendario ya no muestra la reserva, o la muestra en otro departamento. No se aplica solo: miralo en Airbnb y confirmalo acá. Los cambios de fecha no pasan por acá: se aplican solos al sincronizar."
           cantidad={panel.cambiosCalendario.length}
           tono={panel.cambiosCalendario.some((c) => c.urgente) ? "rojo" : "ambar"}
           ocultar={ocultar}

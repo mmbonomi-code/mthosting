@@ -13,11 +13,14 @@
  *       reserva sin código.
  *     - Los bloqueos del calendario van a `bloqueos`, no a `reservas`.
  *
- *  2. MARCA lo que cambió en Airbnb (lib/ical/cambios.ts): posibles
- *     cancelaciones, cambios de fecha y de departamento. Solo marca — la
- *     reserva no se toca hasta que una persona confirma desde alertas. Y solo
- *     en la sincronización completa: con un calendario solo, una reserva que
- *     se mudó a otro departamento parecería cancelada.
+ *  2. COMPARA con lo que ya está (lib/ical/cambios.ts), solo en la
+ *     sincronización completa: con un calendario solo, una reserva que se
+ *     mudó a otro departamento parecería cancelada.
+ *     - Posibles cancelaciones y cambios de departamento: se MARCAN, y la
+ *       reserva no se toca hasta que una persona confirma desde Alertas.
+ *     - Cambios de fecha: se APLICAN, con su limpieza (decisión del dueño,
+ *       16/09/2026). Es el mismo código de reserva con otras fechas: no hay
+ *       nada que inferir.
  *
  * Cada corrida queda registrada en `sincronizaciones_ical`, para que lo que
  * no se pudo leer o lo que se frenó no pase en silencio de madrugada.
@@ -34,6 +37,8 @@ import {
   type VistoEnCalendario,
 } from "./cambios";
 import { generarLimpiezas } from "../limpiezas/generar";
+import { calcularNoches } from "../reservas/validar";
+import { reservasVecinas } from "./confirmar";
 import { hoyAR } from "../fechas";
 
 type Cliente = SupabaseClient<Database>;
@@ -45,6 +50,7 @@ export type ResumenSync = {
   bloqueosNuevos: number;
   limpiezasGeneradas: number;
   posiblesCancelaciones: number;
+  /** Cambios de fecha que se aplicaron solos (no pasan por Alertas). */
   cambiosFechas: number;
   cambiosDepto: number;
   /** Posibles cancelaciones que el freno de desaparición masiva no marcó. */
@@ -288,6 +294,69 @@ export async function sincronizarICal(
   return resumen;
 }
 
+/**
+ * Los cambios de fecha que trajo el calendario, aplicados: la reserva toma
+ * las fechas nuevas y sus limpiezas (y las de las reservas vecinas del
+ * departamento) se reacomodan con las reglas de siempre. Queda registrado en
+ * `cambios_calendario` como confirmado, para saber qué se movió y cuándo.
+ *
+ * Una reserva que falla no frena a las demás: se avisa y se sigue.
+ */
+export async function aplicarFechas(
+  supabase: Cliente,
+  cambios: Awaited<ReturnType<typeof planificarCambios>>["fechasAAplicar"],
+  hoy: string,
+  resumen: ResumenSync,
+): Promise<void> {
+  if (cambios.length === 0) return;
+
+  const codigos: string[] = [];
+  const ahora = new Date().toISOString();
+
+  for (const { pendiente_id, ...cambio } of cambios) {
+    const desde = cambio.calendario_checkin!;
+    const hasta = cambio.calendario_checkout!;
+
+    const { data: reserva, error } = await supabase
+      .from("reservas")
+      .update({ fecha_checkin: desde, fecha_checkout: hasta, noches: calcularNoches(desde, hasta) })
+      .eq("id", cambio.reserva_id)
+      .select("id, codigo_reserva, depto_id")
+      .single();
+    if (error || !reserva) {
+      resumen.avisos.push(`No se pudieron actualizar las fechas de una reserva (${error?.message ?? "no encontrada"}).`);
+      continue;
+    }
+
+    const registro = { ...cambio, estado: "confirmado" as const, resuelto_at: ahora };
+    const { error: errorRegistro } = pendiente_id
+      ? await supabase.from("cambios_calendario").update(registro).eq("id", pendiente_id)
+      : await supabase.from("cambios_calendario").insert(registro);
+    if (errorRegistro) {
+      resumen.avisos.push(`${reserva.codigo_reserva}: las fechas se actualizaron, pero no quedó registrado (${errorRegistro.message}).`);
+    }
+
+    resumen.cambiosFechas++;
+    resumen.avisos.push(
+      `${reserva.codigo_reserva}: Airbnb la movió del ${cambio.reserva_checkin} al ${cambio.reserva_checkout} → del ${desde} al ${hasta}. Se actualizó con su limpieza.`,
+    );
+
+    codigos.push(
+      reserva.codigo_reserva,
+      ...(await reservasVecinas(
+        supabase,
+        { id: reserva.id, depto_id: reserva.depto_id, fecha_checkin: cambio.reserva_checkin, fecha_checkout: cambio.reserva_checkout },
+        [desde, hasta],
+      )),
+    );
+  }
+
+  if (codigos.length > 0) {
+    const limpiezas = await generarLimpiezas(supabase, [...new Set(codigos)], hoy);
+    resumen.avisos.push(...limpiezas.anomalias);
+  }
+}
+
 /** Compara la base con los calendarios leídos y deja las marcas al día. */
 async function marcarCambios(
   supabase: Cliente,
@@ -371,9 +440,10 @@ async function marcarCambios(
 
   for (const m of plan.nuevas) {
     if (m.tipo === "posible_cancelacion") resumen.posiblesCancelaciones++;
-    else if (m.tipo === "cambio_fechas") resumen.cambiosFechas++;
-    else resumen.cambiosDepto++;
+    else if (m.tipo === "cambio_depto") resumen.cambiosDepto++;
   }
+
+  await aplicarFechas(supabase, plan.fechasAAplicar, hoy, resumen);
   resumen.resueltasSolas = aCerrar.length;
   resumen.retenidas = plan.retenidas.reduce((n, r) => n + r.reserva_ids.length, 0);
 

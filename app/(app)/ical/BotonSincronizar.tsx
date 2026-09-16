@@ -47,17 +47,15 @@ export default function BotonSincronizar({
             <Contador etiqueta="Limpiezas" valor={estado.resumen.limpiezasGeneradas} />
           </div>
 
-          {/* Lo que cambió en Airbnb: queda marcado para confirmar en Alertas. */}
+          {/* Lo que cambió en Airbnb. Cancelaciones y cambios de depto quedan
+              marcados para confirmar en Alertas; las fechas ya se aplicaron. */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Contador etiqueta="¿Canceladas?" valor={estado.resumen.posiblesCancelaciones} />
-            <Contador etiqueta="¿Otras fechas?" valor={estado.resumen.cambiosFechas} />
+            <Contador etiqueta="Fechas actualizadas" valor={estado.resumen.cambiosFechas} />
             <Contador etiqueta="¿Otro depto?" valor={estado.resumen.cambiosDepto} />
             <Contador etiqueta="Volvieron a coincidir" valor={estado.resumen.resueltasSolas} />
           </div>
-          {estado.resumen.posiblesCancelaciones +
-            estado.resumen.cambiosFechas +
-            estado.resumen.cambiosDepto >
-            0 && (
+          {estado.resumen.posiblesCancelaciones + estado.resumen.cambiosDepto > 0 && (
             <Link href="/alertas" className="text-sm text-slate-300 underline hover:text-white">
               Revisarlas en Alertas →
             </Link>

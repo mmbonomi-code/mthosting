@@ -97,15 +97,17 @@ describe("planificarCambios", () => {
     expect(plan.nuevas[0].calendario_depto_id).toBe("B");
   });
 
-  it("detecta el cambio de fechas y guarda las fechas nuevas", () => {
+  it("un cambio de fechas no se marca: se aplica (decisión del dueño, 16/09/2026)", () => {
     const r = reserva("HMFECHAS001", "A", "2026-10-03", "2026-10-06");
     const plan = planificarCambios({
       reservas: [r],
       vistos: [{ ...igual(r), hasta: "2026-10-05" }],
       marcas: [],
     });
-    expect(plan.nuevas).toHaveLength(1);
-    expect(plan.nuevas[0]).toMatchObject({
+    expect(plan.nuevas).toEqual([]);
+    expect(plan.fechasAAplicar).toHaveLength(1);
+    expect(plan.fechasAAplicar[0]).toMatchObject({
+      pendiente_id: null,
       tipo: "cambio_fechas",
       calendario_checkin: "2026-10-03",
       calendario_checkout: "2026-10-05",
@@ -113,14 +115,15 @@ describe("planificarCambios", () => {
     });
   });
 
-  it("otro depto Y otras fechas son dos marcas", () => {
+  it("otro depto Y otras fechas: se marca el depto y se aplican las fechas", () => {
     const r = reserva("HMDOBLE0001", "A", "2026-10-03", "2026-10-06");
     const plan = planificarCambios({
       reservas: [r],
       vistos: [{ codigo: r.codigo_reserva, depto_id: "B", desde: "2026-10-04", hasta: "2026-10-06" }],
       marcas: [],
     });
-    expect(plan.nuevas.map((m) => m.tipo).sort()).toEqual(["cambio_depto", "cambio_fechas"]);
+    expect(plan.nuevas.map((m) => m.tipo)).toEqual(["cambio_depto"]);
+    expect(plan.fechasAAplicar).toHaveLength(1);
   });
 
   it("con el mismo código en dos calendarios, prefiere el de su propio depto", () => {
@@ -148,16 +151,19 @@ describe("planificarCambios", () => {
       expect(plan.actualizar).toEqual([]);
     });
 
-    it("actualiza la pendiente si las fechas cambiaron otra vez", () => {
+    it("una marca de fechas pendiente de antes se aplica y trae su id para cerrarla", () => {
       const vieja = firmaCambio("cambio_fechas", r, { ...igual(r), hasta: "2026-10-05" });
+      const m = marca(r, "cambio_fechas", "pendiente", vieja);
       const plan = planificarCambios({
         reservas: [r],
         vistos: [{ ...igual(r), hasta: "2026-10-08" }],
-        marcas: [marca(r, "cambio_fechas", "pendiente", vieja)],
+        marcas: [m],
       });
       expect(plan.nuevas).toEqual([]);
-      expect(plan.actualizar).toHaveLength(1);
-      expect(plan.actualizar[0]).toMatchObject({ calendario_checkout: "2026-10-08" });
+      expect(plan.actualizar).toEqual([]);
+      expect(plan.fechasAAplicar).toEqual([
+        expect.objectContaining({ pendiente_id: m.id, calendario_checkout: "2026-10-08" }),
+      ]);
     });
 
     it("cierra sola la pendiente si la reserva vuelve a aparecer igual", () => {
@@ -188,7 +194,7 @@ describe("planificarCambios", () => {
         marcas: [m],
       });
       expect(plan.resueltasSolas).toEqual([m.id]);
-      expect(plan.nuevas.map((n) => n.tipo)).toEqual(["cambio_fechas"]);
+      expect(plan.fechasAAplicar.map((n) => n.reserva_id)).toEqual([r.id]);
     });
 
     it("un descarte ('sigue en pie') no deja que la misma situación vuelva a marcarse", () => {
@@ -201,14 +207,14 @@ describe("planificarCambios", () => {
       expect(plan.nuevas).toEqual([]);
     });
 
-    it("un descarte de fechas no tapa un cambio a fechas distintas", () => {
+    it("un 'Ignorar' de fechas de antes no frena la aplicación: manda el calendario", () => {
       const descartada = firmaCambio("cambio_fechas", r, { ...igual(r), hasta: "2026-10-05" });
       const plan = planificarCambios({
         reservas: [r],
-        vistos: [{ ...igual(r), hasta: "2026-10-09" }],
+        vistos: [{ ...igual(r), hasta: "2026-10-05" }],
         marcas: [marca(r, "cambio_fechas", "descartado", descartada)],
       });
-      expect(plan.nuevas.map((n) => n.calendario_checkout)).toEqual(["2026-10-09"]);
+      expect(plan.fechasAAplicar.map((n) => n.calendario_checkout)).toEqual(["2026-10-05"]);
     });
 
     it("el descarte vence cuando la reserva vuelve a coincidir, para que una segunda desaparición avise", () => {
@@ -288,7 +294,8 @@ describe("planificarCambios", () => {
         vistos: [{ ...igual(r), hasta: "2026-10-07" }, ...relleno("B", 1).map(igual)],
         marcas: [],
       });
-      expect(plan.nuevas.map((n) => n.tipo)).toEqual(["cambio_fechas"]);
+      expect(plan.fechasAAplicar).toHaveLength(1);
+      expect(plan.nuevas).toEqual([]);
     });
   });
 

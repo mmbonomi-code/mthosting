@@ -316,6 +316,55 @@ describe("cambio de fecha de la reserva", () => {
     expect(plan.anomalias.join(" ")).toContain("2026-08-15");
   });
 
+  it("con fecha a mano, urgente se mide desde el día que eligió la persona", () => {
+    // KENNEDY 1, 16/09/2026: salió el 15, la limpieza se pasó al 16 y ese
+    // día entraba otro huésped. Quedaba sin marca de urgente.
+    const sale = reserva({ id: "r1", fecha_checkin: "2026-09-12", fecha_checkout: "2026-09-15" });
+    const entra = reserva({
+      id: "r2",
+      codigo_reserva: "HMENTRA",
+      fecha_checkin: "2026-09-16",
+      fecha_checkout: "2026-09-18",
+    });
+    const plan = planificar({
+      reservas: [sale],
+      contexto: [sale, entra],
+      limpiezas: [
+        limpieza({
+          fecha: "2026-09-16",
+          estado: "asignada",
+          fecha_manual: true,
+          urgente: false,
+          prox_checkin: "2026-09-16T00:00:00",
+        }),
+      ],
+    });
+    expect(plan.limpiezasAActualizar).toEqual([{ id: "l1", urgente: true }]);
+  });
+
+  it("y al revés: si la mueven a un día sin entrada, deja de ser urgente", () => {
+    const sale = reserva({ id: "r1", fecha_checkin: "2026-09-12", fecha_checkout: "2026-09-15" });
+    const entra = reserva({
+      id: "r2",
+      codigo_reserva: "HMENTRA",
+      fecha_checkin: "2026-09-15",
+      fecha_checkout: "2026-09-18",
+    });
+    const plan = planificar({
+      reservas: [sale],
+      contexto: [sale, entra],
+      limpiezas: [
+        limpieza({
+          fecha: "2026-09-14",
+          fecha_manual: true,
+          urgente: true,
+          prox_checkin: "2026-09-15T00:00:00",
+        }),
+      ],
+    });
+    expect(plan.limpiezasAActualizar).toEqual([{ id: "l1", urgente: false }]);
+  });
+
   it("sin la marca, la limpieza sigue moviéndose con la reserva", () => {
     // Que es lo correcto cuando el que se movió es el huésped.
     const r = reserva({ fecha_checkout: "2026-08-18" });

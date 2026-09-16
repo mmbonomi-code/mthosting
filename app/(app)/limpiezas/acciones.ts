@@ -8,6 +8,7 @@ import {
   estadoAlQuitarResponsable,
   type EstadoLimpieza,
 } from "@/lib/limpiezas/asignar";
+import { ventanaDesde } from "@/lib/limpiezas/ventana-db";
 import type { Database } from "@/lib/database.types";
 
 type TipoLimpieza = Database["public"]["Enums"]["limpieza_tipo"];
@@ -238,7 +239,7 @@ export async function editarLimpieza(
   const { data: actual } = await supabase
     .from("limpiezas")
     .select(
-      "depto_id, fecha, rol_reserva, reserva:reservas(fecha_checkin, fecha_checkout)",
+      "depto_id, fecha, rol_reserva, reserva_id, reserva:reservas(fecha_checkin, fecha_checkout)",
     )
     .eq("id", limpiezaId)
     .maybeSingle();
@@ -268,6 +269,14 @@ export async function editarLimpieza(
       ? (actual.reserva as { fecha_checkin: string | null } | null)?.fecha_checkin
       : (actual?.reserva as { fecha_checkout: string | null } | null)?.fecha_checkout;
 
+  // En otro día puede entrar (o dejar de entrar) alguien: la marca de urgente
+  // se rehace desde la fecha nueva. Solo en las de salida, que son las que
+  // la llevan.
+  const ventana =
+    actual && actual.fecha !== fecha && actual.rol_reserva === "salida"
+      ? await ventanaDesde(supabase, actual.depto_id, fecha, actual.reserva_id)
+      : {};
+
   const { error } = await supabase
     .from("limpiezas")
     // La hora de salida no se edita acá: sale de lo coordinado en el
@@ -278,6 +287,7 @@ export async function editarLimpieza(
       notas: texto(fd, "notas"),
       // Una limpieza suelta, sin reserva, siempre lleva fecha puesta a mano.
       fecha_manual: natural == null ? true : fecha !== natural,
+      ...ventana,
     })
     .eq("id", limpiezaId);
   if (error) return { error: "No se pudo guardar. Probá de nuevo." };

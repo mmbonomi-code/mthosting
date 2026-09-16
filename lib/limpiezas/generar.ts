@@ -13,6 +13,7 @@ import {
   type LimpiezaExistente,
   type ReservaPlan,
 } from "./planificar";
+import { corregirVentanas } from "./ventana";
 
 const CAMPOS_LIMPIEZA =
   "id, depto_id, reserva_id, rol_reserva, fecha, estado, urgente, prox_checkin, fecha_manual, cancelada_manual, asignado_a";
@@ -207,6 +208,20 @@ export async function generarLimpiezas(
   for (const cambio of plan.limpiezasAActualizar) {
     porLimpieza.set(cambio.id, { ...porLimpieza.get(cambio.id), ...cambio });
   }
+
+  // Las limpiezas VECINAS del lote. Cuando entra una reserva nueva, la que
+  // queda con alguien entrando ese día es la limpieza del huésped anterior,
+  // que no es del lote y el plan no mira. Sin esto la marca de urgente quedaba
+  // vieja (114 limpiezas al 16/09/2026). Lo que el plan ya decidió, gana.
+  //
+  // Solo hasta la última fecha del lote: más allá, el contexto se corta y el
+  // próximo check-in podría quedar afuera.
+  const ultimaDelLote = correrDias(hasta, -VENTANA_DIAS);
+  const vecinas = delDepto.filter((l) => l.fecha <= ultimaDelLote && !porLimpieza.has(l.id));
+  for (const cambio of corregirVentanas(vecinas, contexto)) {
+    porLimpieza.set(cambio.id, cambio);
+  }
+
   const porCambio = new Map<string, string[]>();
   for (const { id, ...cambios } of porLimpieza.values()) {
     const clave = JSON.stringify(cambios);

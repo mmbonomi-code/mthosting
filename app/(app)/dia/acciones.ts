@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { decidirLateCheckout, type EstadoLimpieza } from "@/lib/eventos/reglas";
+import { ventanaDesde } from "@/lib/limpiezas/ventana-db";
 
 export type EstadoFormulario = { error: string } | { aviso: string } | null;
 
@@ -176,6 +177,13 @@ export async function alternarLateCheckout(eventoId: string, valor: boolean) {
   });
 
   if (decision.accion === "mover" && limpieza) {
+    // Al día siguiente puede entrar alguien: la marca de urgente se rehace.
+    const ventana = await ventanaDesde(
+      supabase,
+      deptoId,
+      decision.nuevaFecha,
+      evento.reserva.id,
+    );
     await supabase
       .from("limpiezas")
       // fecha_manual: true, si no la próxima vez que se actualicen reservas
@@ -185,7 +193,7 @@ export async function alternarLateCheckout(eventoId: string, valor: boolean) {
       // de JUNCAL 2 (20/08/2026): se movió al 22 por late checkout a las
       // 14:07 y una actualización de reservas la devolvió al 21 a las 17:12,
       // el mismo día.
-      .update({ fecha: decision.nuevaFecha, fecha_manual: true })
+      .update({ fecha: decision.nuevaFecha, fecha_manual: true, ...ventana })
       .eq("id", limpieza.id);
   }
 

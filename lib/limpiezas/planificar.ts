@@ -13,7 +13,7 @@
  *  - El repaso se CANCELA solo cuando deja de corresponder. Antes solo se
  *    creaba: si el motivo desaparecía —por ejemplo, después aparecía la
  *    reserva anterior que faltaba importar— quedaba pegado para siempre.
- *  - `urgente`: otra reserva entra el mismo día que sale esta.
+ *  - `urgente`: otra reserva entra el mismo día en que se limpia.
  *  - `prox_checkin`: cuándo llega el próximo huésped (la ventana disponible).
  *  - Si cambia la fecha de la reserva, la limpieza se mueve con ella —
  *    salvo que ya esté en curso, hecha o verificada: ahí decide una persona.
@@ -360,9 +360,6 @@ export function planificarLimpiezas({
       (r) => r.id !== reserva.id,
     );
 
-    /** ¿Entra otro huésped el mismo día que sale este? */
-    const urgente = otrasDelDepto.some((r) => r.fecha_checkin === fecha_checkout);
-
     /** El próximo check-in a partir de una fecha: es el fin de la ventana. */
     const proximoCheckinDesde = (fecha: string): string | null => {
       const candidatos = otrasDelDepto
@@ -375,15 +372,39 @@ export function planificarLimpiezas({
     /**
      * Crea la limpieza si no existe; si existe, la mueve o la corrige.
      * Nunca toca una limpieza en curso, hecha o verificada.
+     *
+     * `ventana` recibe el día en que se limpia DE VERDAD y devuelve si entra
+     * alguien ese día y cuándo llega el próximo. Es una función y no dos
+     * valores porque ese día no siempre es el de la reserva: si la fecha la
+     * puso una persona, la ventana se mide desde ahí. Antes se medía siempre
+     * desde el check-out, y KENNEDY 1 (movida del 15 al 16/09/2026, con un
+     * check-in el 16) quedó sin marca de urgente.
      */
     const asegurarLimpieza = (
       rol: RolReserva,
       fecha: string,
       tipo: "normal" | "repaso",
-      urgenteLimpieza: boolean,
-      proxCheckin: string | null,
+      ventana: (fechaLimpieza: string) => { urgente: boolean; prox: string | null },
     ) => {
       const existente = limpiezaPorReservaRol.get(`${reserva.id}|${rol}`);
+      const { urgente: urgenteLimpieza, prox: proxCheckin } = ventana(
+        existente?.fecha_manual ? existente.fecha : fecha,
+      );
+
+      /** Deja urgente y prox_checkin al día. Devuelve si cambió algo. */
+      const corregirVentana = (cambios: LimpiezaCambio): boolean => {
+        let cambio = false;
+        if (existente!.urgente !== urgenteLimpieza) {
+          cambios.urgente = urgenteLimpieza;
+          cambio = true;
+        }
+        const proxTimestamp = comoTimestamp(proxCheckin);
+        if ((existente!.prox_checkin ?? null) !== proxTimestamp) {
+          cambios.prox_checkin = proxTimestamp;
+          cambio = true;
+        }
+        return cambio;
+      };
 
       if (!existente) {
         // Un departamento no puede tener dos limpiezas el mismo día. Si el
@@ -428,6 +449,9 @@ export function planificarLimpiezas({
           plan.anomalias.push(
             `${reserva.codigo_reserva}: la limpieza está puesta a mano el ${existente.fecha} y por la reserva le tocaría el ${fecha}. No se movió: si corresponde, cambiala vos.`,
           );
+          // La fecha no se toca, pero la ventana sí: se mide desde el día
+          // que eligió la persona.
+          if (corregirVentana(cambios)) plan.limpiezasAActualizar.push(cambios);
           return;
         }
         if (INTOCABLES.has(existente.estado)) {
@@ -473,28 +497,17 @@ export function planificarLimpiezas({
         }
       }
 
-      if (existente.urgente !== urgenteLimpieza) {
-        cambios.urgente = urgenteLimpieza;
-        hayCambios = true;
-      }
-
-      const proxTimestamp = comoTimestamp(proxCheckin);
-      if ((existente.prox_checkin ?? null) !== proxTimestamp) {
-        cambios.prox_checkin = proxTimestamp;
-        hayCambios = true;
-      }
+      if (corregirVentana(cambios)) hayCambios = true;
 
       if (hayCambios) plan.limpiezasAActualizar.push(cambios);
     };
 
     // 1. Limpieza de salida: una por cada check-out.
-    asegurarLimpieza(
-      "salida",
-      fecha_checkout,
-      "normal",
-      urgente,
-      proximoCheckinDesde(fecha_checkout),
-    );
+    //    Urgente: entra otro huésped el mismo día en que se limpia.
+    asegurarLimpieza("salida", fecha_checkout, "normal", (dia) => {
+      const prox = proximoCheckinDesde(dia);
+      return { urgente: prox === dia, prox };
+    });
 
     // 2. Repaso: solo si el huésped entra sin que haya habido NINGUNA salida
     //    antes. Es el caso de la primera reserva de un departamento.
@@ -510,7 +523,10 @@ export function planificarLimpiezas({
     const ultimoCheckout = checkoutsPrevios[checkoutsPrevios.length - 1] ?? null;
 
     if (ultimoCheckout === null) {
-      asegurarLimpieza("entrada", fecha_checkin, "repaso", false, fecha_checkin);
+      asegurarLimpieza("entrada", fecha_checkin, "repaso", () => ({
+        urgente: false,
+        prox: fecha_checkin,
+      }));
     } else {
       // Hay una salida anterior que ya cubre la limpieza. Si quedó un repaso
       // de cuando sí correspondía, se cancela: hasta ahora el repaso solo se

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerAlertas } from "@/lib/alertas/permisos";
-import { calcularPanelAlertas } from "@/lib/alertas/consultar";
+import { calcularPanelAlertas, contarCriticas, contarResto } from "@/lib/alertas/consultar";
 import type { FilaCambioCalendario } from "@/lib/alertas/calendario";
 import { ETIQUETA_CAMBIO_CALENDARIO, TONO_CAMBIO_CALENDARIO } from "@/lib/estados";
 import { diaARDe, formatearFechaAR, hoyAR } from "@/lib/fechas";
@@ -35,10 +35,12 @@ const TEXTO_TIPO_LIMPIEZA: Record<string, string> = {
 export default async function Alertas({
   searchParams,
 }: {
-  searchParams: Promise<{ ocultarVacias?: string }>;
+  searchParams: Promise<{ verTodas?: string }>;
 }) {
-  const { ocultarVacias } = await searchParams;
-  const ocultar = ocultarVacias === "1";
+  const { verTodas } = await searchParams;
+  // Por defecto se ven solo las que tienen algo (decisión del dueño,
+  // 17/09/2026): las que están en cero son ruido para el uso diario.
+  const ocultar = verTodas !== "1";
   const hoy = hoyAR();
 
   const supabase = await crearClienteServidor();
@@ -74,12 +76,16 @@ export default async function Alertas({
           </p>
         </div>
         <Link
-          href={ocultar ? "/alertas" : "/alertas?ocultarVacias=1"}
-          className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-slate-800"
+          href={ocultar ? "/alertas?verTodas=1" : "/alertas"}
+          className="flex h-11 items-center rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition-colors hover:bg-slate-800 sm:h-9"
         >
           {ocultar ? "Mostrar las que están en cero" : "Ocultar las que están en cero"}
         </Link>
       </div>
+
+      {ocultar && contarCriticas(panel) + contarResto(panel) === 0 && (
+        <p className="py-12 text-center text-slate-500">No hay alertas. Todo en cero.</p>
+      )}
 
       <div className="flex flex-col gap-4">
         <Seccion

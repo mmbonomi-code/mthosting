@@ -1232,6 +1232,7 @@ export type Database = {
       }
       limpieza_checklist: {
         Row: {
+          activo: boolean
           created_at: string
           hecho: boolean
           id: string
@@ -1242,6 +1243,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activo?: boolean
           created_at?: string
           hecho?: boolean
           id?: string
@@ -1252,6 +1254,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activo?: boolean
           created_at?: string
           hecho?: boolean
           id?: string

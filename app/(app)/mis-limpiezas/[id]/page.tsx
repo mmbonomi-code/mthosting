@@ -41,7 +41,8 @@ async function asegurarChecklist(
   const { count } = await supabase
     .from("limpieza_checklist")
     .select("id", { count: "exact", head: true })
-    .eq("limpieza_id", limpiezaId);
+    .eq("limpieza_id", limpiezaId)
+    .eq("activo", true);
   if (count && count > 0) return;
 
   const [{ data: items }, { data: periodicas }] = await Promise.all([
@@ -64,7 +65,14 @@ async function asegurarChecklist(
       tarea_periodica_id: p.id,
     })),
   ];
-  if (filas.length > 0) await supabase.from("limpieza_checklist").insert(filas);
+  if (filas.length === 0) return;
+
+  // Si la pantalla se carga dos veces casi a la vez (pasa en el celular), las
+  // dos llegan acá. La base no deja repetir un ítem, así que la segunda choca
+  // y no inserta nada: el checklist ya lo creó la primera. Antes quedaba
+  // entero dos veces (12 limpiezas al 18/09/2026).
+  const { error } = await supabase.from("limpieza_checklist").insert(filas);
+  if (error && error.code !== "23505") throw new Error(error.message);
 }
 
 /** Hace cuántos días se hizo esta tarea periódica en este depto, la última vez. */
@@ -80,6 +88,7 @@ async function diasDesdePeriodica(
     .select("limpieza:limpiezas!inner(fecha, depto_id)")
     .eq("tarea_periodica_id", tareaId)
     .eq("hecho", true)
+    .eq("activo", true)
     .eq("limpieza.depto_id", deptoId)
     .neq("limpieza_id", limpiezaId)
     .order("fecha", { referencedTable: "limpiezas", ascending: false })
@@ -134,6 +143,7 @@ export default async function DetalleMiLimpieza({
       .from("limpieza_checklist")
       .select("id, seccion, item, hecho, tarea_periodica_id")
       .eq("limpieza_id", id)
+      .eq("activo", true)
       .order("seccion")
       .order("item"),
     supabase

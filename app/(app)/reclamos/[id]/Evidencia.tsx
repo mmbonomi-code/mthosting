@@ -48,10 +48,10 @@ export default function Evidencia({
         {fotos.map((f) => (
           <div
             key={f.id}
-            className="relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-800"
+            className="relative aspect-square overflow-hidden rounded-lg border border-borde-control bg-elevada"
           >
             {f.esPdf || !f.url ? (
-              <span className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-slate-400">
+              <span className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-tinta-tenue">
                 <span className="text-2xl">📄</span>
                 <span className="line-clamp-2 break-all">{f.nombre}</span>
               </span>
@@ -76,7 +76,7 @@ export default function Evidencia({
             )}
 
             {f.origen === "limpieza" && (
-              <span className="absolute left-1 top-1 rounded bg-slate-950/70 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-200">
+              <span className="absolute left-1 top-1 rounded bg-fondo-hundido/70 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-tinta-media">
                 Limpieza
               </span>
             )}
@@ -86,7 +86,7 @@ export default function Evidencia({
                 <button
                   type="submit"
                   title="Sacar de la evidencia"
-                  className="flex size-6 items-center justify-center rounded-full bg-slate-950/70 text-sm text-slate-200 transition-colors hover:bg-red-900"
+                  className="flex size-6 items-center justify-center rounded-full bg-fondo-hundido/70 text-sm text-tinta-media transition-colors hover:bg-error-borde"
                 >
                   ×
                 </button>
@@ -112,8 +112,8 @@ export default function Evidencia({
             disabled={subiendo}
             className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-xs transition-colors ${
               arrastrando
-                ? "border-slate-300 bg-slate-800 text-white"
-                : "border-slate-600 text-slate-400 hover:bg-slate-800/60"
+                ? "border-borde-activo bg-elevada text-tinta"
+                : "border-borde-fuerte text-tinta-tenue hover:bg-superficie-alt"
             } disabled:opacity-60`}
           >
             <span className="text-xl">+</span>
@@ -132,12 +132,12 @@ export default function Evidencia({
       />
 
       {mensaje && "error" in mensaje && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
           {mensaje.error}
         </p>
       )}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-tinta-etiqueta">
         Fotos o presupuestos en PDF, hasta 15 MB cada uno. Se pueden arrastrar varios
         juntos. Las que cargó la limpieza en ese check-out vienen adjuntas: podés sacar
         las que no sirvan.

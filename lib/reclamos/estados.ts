@@ -14,15 +14,8 @@
 
 import type { EstadoReclamo } from "./plazos";
 
-export const ETIQUETA_ESTADO: Record<EstadoReclamo, string> = {
-  borrador: "Borrador",
-  por_presentar: "Por presentar",
-  presentado: "Presentado",
-  escalado: "Escalado a AirCover",
-  cobrado: "Cobrado",
-  rechazado: "Rechazado",
-  descartado: "Descartado",
-};
+/** El nombre de cada estado vive con su color, en lib/estados.ts. */
+export { ETIQUETA_RECLAMO as ETIQUETA_ESTADO } from "@/lib/estados";
 
 /** Los que ya terminaron: no se tocan salvo que administración los reabra. */
 export const ESTADOS_FINALES: ReadonlySet<EstadoReclamo> = new Set([

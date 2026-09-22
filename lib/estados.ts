@@ -144,7 +144,7 @@ export const ETIQUETA_RECLAMO: Record<EstadoReclamo, string> = {
   borrador: "Borrador",
   por_presentar: "Por presentar",
   presentado: "Presentado",
-  escalado: "Escalado",
+  escalado: "Escalado a AirCover",
   cobrado: "Cobrado",
   rechazado: "Rechazado",
   descartado: "Descartado",

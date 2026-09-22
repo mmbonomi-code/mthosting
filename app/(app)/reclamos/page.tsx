@@ -1,3 +1,4 @@
+import { clsBoton } from "@/lib/ui";
 import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
@@ -75,12 +76,12 @@ function Kpi({
       href={href}
       className={`flex flex-col rounded-xl border px-3 py-2.5 transition-colors ${
         activo
-          ? "border-slate-400 bg-slate-800"
-          : "border-slate-800 bg-slate-800/40 hover:bg-slate-800/70"
+          ? "border-borde-activo bg-elevada"
+          : "border-borde bg-superficie hover:bg-elevada/70"
       }`}
     >
       <span className={`text-2xl font-semibold tabular-nums ${color}`}>{valor}</span>
-      <span className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</span>
+      <span className="text-xs uppercase tracking-wide text-tinta-etiqueta">{etiqueta}</span>
     </Link>
   );
 }
@@ -158,8 +159,8 @@ export default async function Reclamos({
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-64 flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Reclamos</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="text-2xl font-semibold tracking-tight text-tinta">Reclamos</h1>
+          <p className="text-sm text-tinta-tenue">
             Daños a reclamar a Airbnb. {DIAS_PARA_PRESENTAR} días desde el check-out
             para presentar en el Centro de resoluciones —uno menos que los{" "}
             {DIAS_REALES_AIRBNB} de Airbnb, para tener margen— y 30 para escalar a
@@ -170,13 +171,13 @@ export default async function Reclamos({
       </div>
 
       {kpis.urgentes > 0 && (
-        <p className="rounded-xl bg-red-950/60 px-4 py-3 text-sm text-red-200">
+        <p className="rounded-xl bg-error-soft/60 px-4 py-3 text-sm text-error-text-fuerte">
           <strong>
             {kpis.urgentes} reclamo{kpis.urgentes === 1 ? "" : "s"}{" "}
             {kpis.urgentes === 1 ? "vence" : "vencen"} en los próximos {DIAS_DE_AVISO}{" "}
             días o ya {kpis.urgentes === 1 ? "venció" : "vencieron"}.
           </strong>{" "}
-          <span className="text-red-300">
+          <span className="text-error-text">
             Presentalos antes de que se cumplan los plazos del check-out.
           </span>
         </p>
@@ -188,28 +189,28 @@ export default async function Reclamos({
           etiqueta={`Vencen en ${DIAS_DE_AVISO} días`}
           activo={foco === "urgente"}
           href={conFoco("urgente")}
-          color={kpis.urgentes > 0 ? "text-red-300" : "text-slate-300"}
+          color={kpis.urgentes > 0 ? "text-error-text" : "text-tinta-suave"}
         />
         <Kpi
           valor={String(kpis.sin_presentar)}
           etiqueta="Sin presentar"
           activo={foco === "sin_presentar"}
           href={conFoco("sin_presentar")}
-          color="text-amber-300"
+          color="text-aviso-text"
         />
         <Kpi
           valor={String(kpis.esperando)}
           etiqueta="Esperando Airbnb"
           activo={foco === "esperando"}
           href={conFoco("esperando")}
-          color="text-slate-200"
+          color="text-tinta-media"
         />
         <Kpi
           valor={formatearMonto(kpis.cobrado_mes)}
           etiqueta="Cobrado (mes)"
           activo={foco === "cobrado"}
           href={conFoco("cobrado")}
-          color="text-emerald-300"
+          color="text-exito-text"
         />
       </div>
 
@@ -222,8 +223,8 @@ export default async function Reclamos({
       />
 
       {visibles.length === 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-300">
+        <div className="rounded-xl border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-suave">
             {todos.length === 0
               ? "Todavía no hay reclamos cargados."
               : "No hay reclamos con estos filtros. Probá ampliar el estado o el departamento."}
@@ -234,24 +235,24 @@ export default async function Reclamos({
           {visibles.map((r) => (
             <li key={r.id}>
               <div
-                className={`flex flex-wrap items-start gap-x-3 gap-y-1 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 transition-colors hover:border-y-slate-600 hover:border-r-slate-600 ${
+                className={`flex flex-wrap items-start gap-x-3 gap-y-1 rounded-xl border-y border-r border-y-borde border-r-borde border-l-4 bg-superficie transition-colors hover:border-y-borde-fuerte hover:border-r-borde-fuerte ${
                   BORDE_SEMAFORO[r.semaforo]
                 }`}
               >
                 <Link href={`/reclamos/${r.id}`} className="min-w-0 flex-1 px-4 py-3">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-slate-100">
+                    <span className="font-medium text-tinta">
                       {r.depto_codigo ?? "Sin departamento"}
                     </span>
                     <span
-                      className={`rounded-full bg-slate-900/70 px-2 py-0.5 text-xs ${
+                      className={`rounded-full bg-fondo/70 px-2 py-0.5 text-xs ${
                         TEXTO_SEMAFORO[r.semaforo]
                       }`}
                     >
                       {textoDePlazo(r.dias)}
                     </span>
                   </span>
-                  <span className="mt-0.5 block truncate text-sm text-slate-400">
+                  <span className="mt-0.5 block truncate text-sm text-tinta-tenue">
                     {ETIQUETA_CATEGORIA[r.categoria] ?? r.categoria} ·{" "}
                     {r.huesped_nombre ?? "Sin nombre"} ·{" "}
                     <span className="font-mono">{r.codigo_reserva}</span>
@@ -260,10 +261,10 @@ export default async function Reclamos({
                 </Link>
                 <div className="flex shrink-0 items-center gap-2 px-4 py-3 text-right">
                   <span>
-                    <span className="block font-semibold tabular-nums text-slate-100">
+                    <span className="block font-semibold tabular-nums text-tinta">
                       {formatearMonto(r.monto_reclamado, r.moneda)}
                     </span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="block text-xs text-tinta-etiqueta">
                       {ETIQUETA_ESTADO[r.estado]}
                       {r.estado === "cobrado" &&
                         r.monto_cobrado !== null &&
@@ -277,7 +278,7 @@ export default async function Reclamos({
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Abrir el caso en Airbnb"
-                      className="rounded-lg border border-slate-700 px-2 py-1 text-sm text-slate-300 hover:bg-slate-800"
+                      className={clsBoton("secundario", "chico")}
                     >
                       ↗
                     </a>
@@ -290,7 +291,7 @@ export default async function Reclamos({
       )}
 
       {todos.length >= TOPE && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-tinta-etiqueta">
           Se muestran los {TOPE} reclamos más recientes.
         </p>
       )}

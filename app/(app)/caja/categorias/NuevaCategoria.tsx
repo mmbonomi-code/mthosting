@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { clsEntrada } from "@/lib/ui";
+import { clsEntrada, clsBoton } from "@/lib/ui";
 import type { EstadoFormulario } from "@/lib/caja/tipos";
 
 export default function NuevaCategoria({
@@ -32,13 +32,13 @@ export default function NuevaCategoria({
         <button
           type="submit"
           disabled={pendiente}
-          className="rounded-lg bg-white px-4 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+          className={clsBoton("primario", "chico")}
         >
           {pendiente ? "…" : "Agregar"}
         </button>
       </div>
       {estado && "error" in estado && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
           {estado.error}
         </p>
       )}

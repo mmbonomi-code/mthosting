@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { clsEntrada } from "@/lib/ui";
+import { clsEntrada, clsBoton } from "@/lib/ui";
 import { nombreDelMes, sumarMeses } from "@/lib/fechas";
 
 /**
@@ -85,11 +85,11 @@ export default function FiltrosCaja({
         <Link
           href={url({ mes: sumarMeses(mes, -1), desde: "", hasta: "", cobrar: "" })}
           aria-label="Mes anterior"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+          className={`${clsBoton("secundario")} w-11 shrink-0`}
         >
           ←
         </Link>
-        <span className="flex h-11 flex-1 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 px-3 text-base capitalize text-white">
+        <span className="flex h-11 flex-1 items-center justify-center rounded-lg border border-borde-control bg-elevada px-3 text-base capitalize text-tinta">
           {soloPorCobrar
             ? "Toda la historia"
             : esRangoLibre
@@ -99,7 +99,7 @@ export default function FiltrosCaja({
         <Link
           href={url({ mes: sumarMeses(mes, 1), desde: "", hasta: "", cobrar: "" })}
           aria-label="Mes siguiente"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+          className={`${clsBoton("secundario")} w-11 shrink-0`}
         >
           →
         </Link>
@@ -107,7 +107,7 @@ export default function FiltrosCaja({
 
       {abierto ? (
         <form
-          className="flex flex-wrap items-end gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-3"
+          className="flex flex-wrap items-end gap-2 rounded-xl border border-borde bg-superficie p-3"
           onSubmit={(e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
@@ -123,7 +123,7 @@ export default function FiltrosCaja({
           }}
         >
           <label className="flex flex-col gap-1">
-            <span className="text-xs uppercase tracking-wide text-slate-500">Desde</span>
+            <span className="text-xs uppercase tracking-wide text-tinta-etiqueta">Desde</span>
             <input
               type="date"
               name="desde"
@@ -133,7 +133,7 @@ export default function FiltrosCaja({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs uppercase tracking-wide text-slate-500">Hasta</span>
+            <span className="text-xs uppercase tracking-wide text-tinta-etiqueta">Hasta</span>
             <input
               type="date"
               name="hasta"
@@ -144,14 +144,14 @@ export default function FiltrosCaja({
           </label>
           <button
             type="submit"
-            className="h-11 rounded-lg bg-white px-4 text-sm font-semibold text-slate-900 hover:bg-slate-200"
+            className={clsBoton("primario")}
           >
             Ver
           </button>
           {esRangoLibre ? (
             <Link
               href="/caja"
-              className="flex h-11 items-center rounded-lg border border-slate-700 px-4 text-sm text-slate-300 hover:bg-slate-800"
+              className={clsBoton("secundario")}
             >
               Volver al mes
             </Link>
@@ -159,7 +159,7 @@ export default function FiltrosCaja({
             <button
               type="button"
               onClick={() => setAbierto(false)}
-              className="h-11 rounded-lg px-3 text-sm text-slate-400 hover:bg-slate-800"
+              className="h-11 rounded-lg px-3 text-sm text-tinta-tenue hover:bg-elevada"
             >
               Cerrar
             </button>
@@ -169,7 +169,7 @@ export default function FiltrosCaja({
         <button
           type="button"
           onClick={() => setAbierto(true)}
-          className="self-start text-sm text-slate-400 underline decoration-slate-700 underline-offset-4 hover:text-white"
+          className="self-start text-sm text-tinta-tenue underline decoration-tinta-apagada underline-offset-4 hover:text-tinta"
         >
           Elegir un rango de fechas
         </button>
@@ -224,8 +224,8 @@ export default function FiltrosCaja({
           href={url({ cobrar: soloPorCobrar ? "" : "1" })}
           className={`flex items-center rounded-lg border px-3 py-2 text-sm transition-colors ${
             soloPorCobrar
-              ? "border-amber-500 bg-amber-950/40 text-amber-200"
-              : "border-slate-700 text-slate-300 hover:bg-slate-800"
+              ? "border-aviso bg-aviso-soft/40 text-aviso-text-fuerte"
+              : "border-borde-control text-tinta-suave hover:bg-elevada"
           }`}
         >
           Por cobrar
@@ -234,13 +234,13 @@ export default function FiltrosCaja({
         {/* Exporta el período que se está mirando, con el saldo acumulado. */}
         <a
           href={urlExportar("xlsx")}
-          className="flex items-center rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800"
+          className={clsBoton("secundario", "chico")}
         >
           Exportar Excel
         </a>
         <a
           href={urlExportar("csv")}
-          className="flex items-center rounded-lg px-2 py-2 text-sm text-slate-500 transition-colors hover:text-slate-300"
+          className="flex items-center rounded-lg px-2 py-2 text-sm text-tinta-etiqueta transition-colors hover:text-tinta-suave"
         >
           CSV
         </a>

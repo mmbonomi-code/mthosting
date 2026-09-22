@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { clsEntrada, clsEtiqueta } from "@/lib/ui";
+import { clsEntrada, clsEtiqueta, clsBoton } from "@/lib/ui";
 import { formatearFechaAR } from "@/lib/fechas";
 import type { EstadoFormulario } from "@/lib/caja/tipos";
 
@@ -43,12 +43,12 @@ export default function FormularioCotizacion({
   return (
     <div className="flex flex-col gap-3">
       {pendientes.length > 0 && (
-        <section className="rounded-xl border border-amber-900/60 bg-amber-950/30 p-4">
-          <h2 className="text-sm font-medium text-amber-200">
+        <section className="rounded-xl border border-aviso-borde/60 bg-aviso-soft/30 p-4">
+          <h2 className="text-sm font-medium text-aviso-text-fuerte">
             {pendientes.length} día{pendientes.length === 1 ? "" : "s"} con movimientos
             sin cotización
           </h2>
-          <p className="mt-0.5 text-xs text-amber-400/80">
+          <p className="mt-0.5 text-xs text-aviso-text/80">
             Tocá una fecha para cargarla abajo. Al guardar se completan solos todos los
             movimientos de ese día que la estaban esperando.
           </p>
@@ -63,19 +63,19 @@ export default function FormularioCotizacion({
                   }}
                   className={`rounded-lg border px-2.5 py-1.5 text-xs tabular-nums transition-colors ${
                     campos.fecha === p.fecha
-                      ? "border-amber-400 bg-amber-900/60 text-amber-100"
-                      : "border-amber-900/60 text-amber-300 hover:bg-amber-950/50"
+                      ? "border-aviso bg-aviso-borde/60 text-aviso-text-fuerte"
+                      : "border-aviso-borde/60 text-aviso-text hover:bg-aviso-soft/50"
                   }`}
                 >
                   {formatearFechaAR(p.fecha)}
-                  <span className="ml-1 text-amber-400/80">
+                  <span className="ml-1 text-aviso-text/80">
                     · {p.cantidad} mov.{p.cantidad === 1 ? "" : "s"}
                   </span>
                 </button>
               </li>
             ))}
             {pendientes.length > 60 && (
-              <li className="px-1 py-1.5 text-xs text-amber-400/80">
+              <li className="px-1 py-1.5 text-xs text-aviso-text/80">
                 y {pendientes.length - 60} más
               </li>
             )}
@@ -85,7 +85,7 @@ export default function FormularioCotizacion({
 
       <form
         action={enviar}
-        className="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-800/60 p-4"
+        className="flex flex-col gap-3 rounded-xl border border-borde-control bg-superficie-alt p-4"
       >
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5">
@@ -116,17 +116,17 @@ export default function FormularioCotizacion({
         </div>
 
         {estado && "error" in estado && (
-          <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+          <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
             {estado.error}
           </p>
         )}
         {estado && "ok" in estado && (
-          <p className="rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+          <p className="rounded-lg bg-exito-soft px-3 py-2 text-sm text-exito-text">
             ✓ {estado.ok}
           </p>
         )}
         {estado && "aviso" in estado && (
-          <p role="alert" className="rounded-lg bg-amber-950 px-3 py-2 text-sm text-amber-200">
+          <p role="alert" className="rounded-lg bg-aviso-soft px-3 py-2 text-sm text-aviso-text-fuerte">
             {estado.aviso}
           </p>
         )}
@@ -135,7 +135,7 @@ export default function FormularioCotizacion({
           <button
             type="submit"
             disabled={pendiente}
-            className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+            className={clsBoton("primario", "chico")}
           >
             {pendiente ? "Guardando…" : "Guardar"}
           </button>
@@ -150,7 +150,7 @@ export default function FormularioCotizacion({
               name="confirmar"
               value={estado.confirmando}
               disabled={pendiente}
-              className="rounded-lg border border-amber-700 px-4 py-2 text-sm font-medium text-amber-200 hover:bg-amber-950/60 disabled:opacity-60"
+              className="rounded-lg border border-aviso-borde px-4 py-2 text-sm font-medium text-aviso-text-fuerte hover:bg-aviso-soft/60 disabled:opacity-60"
             >
               Guardar igual
             </button>

@@ -41,10 +41,10 @@ export default function Comprobantes({
         {archivos.map((a) => (
           <div
             key={a.id}
-            className="relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-800"
+            className="relative aspect-square overflow-hidden rounded-lg border border-borde-control bg-elevada"
           >
             {a.esPdf || !a.url ? (
-              <span className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-slate-400">
+              <span className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-tinta-tenue">
                 <span className="text-2xl">📄</span>
                 <span className="line-clamp-2 break-all">{a.nombre}</span>
               </span>
@@ -70,7 +70,7 @@ export default function Comprobantes({
               <button
                 type="submit"
                 title="Sacar el comprobante"
-                className="flex size-6 items-center justify-center rounded-full bg-slate-950/70 text-sm text-slate-200 transition-colors hover:bg-red-900"
+                className="flex size-6 items-center justify-center rounded-full bg-fondo-hundido/70 text-sm text-tinta-media transition-colors hover:bg-error-borde"
               >
                 ×
               </button>
@@ -94,8 +94,8 @@ export default function Comprobantes({
           disabled={subiendo}
           className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-xs transition-colors ${
             arrastrando
-              ? "border-slate-300 bg-slate-800 text-white"
-              : "border-slate-600 text-slate-400 hover:bg-slate-800/60"
+              ? "border-borde-activo bg-elevada text-tinta"
+              : "border-borde-fuerte text-tinta-tenue hover:bg-superficie-alt"
           } disabled:opacity-60`}
         >
           <span className="text-xl">+</span>
@@ -113,7 +113,7 @@ export default function Comprobantes({
       />
 
       {mensaje && "error" in mensaje && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
           {mensaje.error}
         </p>
       )}

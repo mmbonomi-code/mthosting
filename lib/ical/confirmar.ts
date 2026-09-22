@@ -20,6 +20,7 @@ import { generarLimpiezas } from "@/lib/limpiezas/generar";
 import { calcularNoches } from "@/lib/reservas/validar";
 import { sumarDias } from "@/lib/fechas";
 import { firmaCambio } from "./cambios";
+import { moverEquipamientoConReserva } from "@/lib/reporte/moverEquipamiento";
 
 type Cliente = SupabaseClient<Database>;
 
@@ -51,6 +52,8 @@ export async function confirmarCambioEnBase(
   if (!marca?.reserva) return { error: "No se encontró la marca." };
   if (marca.estado !== "pendiente") return { error: "Esta marca ya estaba resuelta." };
   const reserva = marca.reserva;
+  /** Lo que no se pudo mover de la cuna o silla de la reserva. */
+  let avisosEquipo: string[] = [];
 
   if (marca.tipo === "cambio_depto") {
     return { error: "El cambio de departamento se hace desde la ficha de la reserva." };
@@ -77,6 +80,12 @@ export async function confirmarCambioEnBase(
       })
       .eq("id", reserva.id);
     if (error) return { error: `No se pudieron cambiar las fechas: ${error.message}` };
+    avisosEquipo = await moverEquipamientoConReserva(
+      supabase,
+      reserva,
+      { checkin: reserva.fecha_checkin, checkout: reserva.fecha_checkout },
+      { checkin, checkout },
+    );
   }
 
   const { error: errorMarca } = await supabase
@@ -106,7 +115,7 @@ export async function confirmarCambioEnBase(
       // Solo las cancelaciones de ahora avisan si la estadía estaba en curso.
       marca.tipo === "posible_cancelacion" ? new Set([reserva.codigo_reserva]) : new Set(),
     );
-    return { ok: true, anomalias: resumen.anomalias };
+    return { ok: true, anomalias: [...avisosEquipo, ...resumen.anomalias] };
   } catch (e) {
     // La reserva YA quedó cambiada: no se miente diciendo que no pasó nada.
     return {

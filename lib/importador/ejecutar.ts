@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../database.types";
 import { consolidarLote, decidirUpsert, type ReservaExistente } from "./lote";
 import { generarLimpiezas } from "../limpiezas/generar";
+import { moverEquipamientoConReserva, type Estadia } from "../reporte/moverEquipamiento";
 import { hoyAR } from "../fechas";
 
 type Cliente = SupabaseClient<Database>;
@@ -104,6 +105,8 @@ export async function ejecutarImportacion(
   // Para eso cada fila lleva el juego COMPLETO de campos gestionados, con el
   // valor nuevo si cambió o el ya guardado si no.
   const paraActualizar: FilaUpsert[] = [];
+  /** Reservas que cambian de fechas: su cuna o silla se va con ellas. */
+  const cambiosDeFecha: { id: string; codigo_reserva: string; antes: Estadia; despues: Estadia }[] = [];
 
   for (const fila of filas) {
     const existente = existentes.get(fila.codigo_reserva) ?? null;
@@ -128,6 +131,18 @@ export async function ejecutarImportacion(
       const quedaSinDepto =
         existente!.depto_id === null && decision.cambios.depto_id === undefined;
       if (quedaSinDepto) resumen.sin_asignar++;
+
+      if (decision.cambios.fecha_checkin || decision.cambios.fecha_checkout) {
+        cambiosDeFecha.push({
+          id: existente!.id,
+          codigo_reserva: fila.codigo_reserva,
+          antes: { checkin: existente!.fecha_checkin, checkout: existente!.fecha_checkout },
+          despues: {
+            checkin: decision.cambios.fecha_checkin ?? existente!.fecha_checkin,
+            checkout: decision.cambios.fecha_checkout ?? existente!.fecha_checkout,
+          },
+        });
+      }
 
       // raw e import_id se actualizan SIEMPRE, aun sin cambios de datos.
       paraActualizar.push({
@@ -169,6 +184,10 @@ export async function ejecutarImportacion(
       .from("reservas")
       .upsert(paraActualizar.slice(i, i + 500), { onConflict: "codigo_reserva" });
     if (error) throw new Error(`No se pudieron actualizar las reservas: ${error.message}`);
+  }
+
+  for (const c of cambiosDeFecha) {
+    resumen.anomalias.push(...(await moverEquipamientoConReserva(supabase, c, c.antes, c.despues)));
   }
 
   // Con las reservas ya guardadas, se generan sus eventos y sus limpiezas.

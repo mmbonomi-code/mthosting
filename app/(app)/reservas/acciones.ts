@@ -12,6 +12,7 @@ import {
   type OrigenManual,
 } from "@/lib/reservas/validar";
 import { generarLimpiezas } from "@/lib/limpiezas/generar";
+import { moverEquipamientoConReserva } from "@/lib/reporte/moverEquipamiento";
 import {
   descartarReservaEnBase,
   recuperarReservaEnBase,
@@ -209,10 +210,21 @@ export async function editarReserva(
 
   // Lo que avisa el planificador (por ejemplo, que la limpieza quedó sin
   // responsable al cambiar de edificio) se muestra al guardar.
-  let anomalias: string[] = [];
+  const anomalias: string[] = [];
+  if (cambiaronFechas) {
+    // La cuna o silla de la reserva se va con ella.
+    anomalias.push(
+      ...(await moverEquipamientoConReserva(
+        supabase,
+        actual,
+        { checkin: actual.fecha_checkin, checkout: actual.fecha_checkout },
+        { checkin: datos.fecha_checkin, checkout: datos.fecha_checkout },
+      )),
+    );
+  }
   if (cambiaronFechas || cambioDepto) {
     try {
-      ({ anomalias } = await generarLimpiezas(supabase, [actual.codigo_reserva], hoyAR()));
+      anomalias.push(...(await generarLimpiezas(supabase, [actual.codigo_reserva], hoyAR())).anomalias);
     } catch (e) {
       return {
         error: `Los datos se guardaron pero la limpieza no se pudo reacomodar: ${

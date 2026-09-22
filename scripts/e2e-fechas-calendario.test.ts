@@ -27,7 +27,7 @@ describe.skipIf(!url || !clave)("cambio de fechas del calendario (base dev)", ()
 
   afterAll(async () => {
     if (!reservaId) return;
-    for (const tabla of ["cambios_calendario", "limpiezas", "eventos_estadia"] as const) {
+    for (const tabla of ["cambios_calendario", "limpiezas", "eventos_estadia", "equipamiento_bebe"] as const) {
       const { error } = await s.from(tabla).delete().eq("reserva_id", reservaId);
       expect(error, `no se pudieron borrar ${tabla} de la prueba`).toBeNull();
     }
@@ -35,7 +35,7 @@ describe.skipIf(!url || !clave)("cambio de fechas del calendario (base dev)", ()
     expect(error, "no se pudo borrar la reserva de la prueba").toBeNull();
   });
 
-  it("la reserva toma las fechas del calendario, con su limpieza, y queda registrado", async () => {
+  it("la reserva toma las fechas del calendario, con su limpieza y su cuna, y queda registrado", async () => {
     const { data: previa } = await s.from("reservas").select("id").eq("codigo_reserva", CODIGO).maybeSingle();
     expect(previa, `ya existe ${CODIGO}: quedó sucia una corrida anterior`).toBeNull();
 
@@ -57,6 +57,13 @@ describe.skipIf(!url || !clave)("cambio de fechas del calendario (base dev)", ()
     expect(error).toBeNull();
     reservaId = creada!.id;
     await generarLimpiezas(s, [CODIGO], HOY);
+
+    // Una cuna para toda la estadía y una silla pedida a partir del 12 (a mano).
+    const { error: errorEquipo } = await s.from("equipamiento_bebe").insert([
+      { tipo: "cuna", reserva_id: reservaId, depto_id: depto!.id, fecha_desde: "2030-07-10", fecha_hasta: "2030-07-13" },
+      { tipo: "silla", reserva_id: reservaId, depto_id: depto!.id, fecha_desde: "2030-07-12", fecha_hasta: "2030-07-13" },
+    ]);
+    expect(errorEquipo).toBeNull();
 
     // Una marca vieja de "Aplicar fechas nuevas" que nadie tocó: se cierra.
     await s.from("cambios_calendario").insert({
@@ -99,6 +106,18 @@ describe.skipIf(!url || !clave)("cambio de fechas del calendario (base dev)", ()
       .eq("rol_reserva", "salida")
       .single();
     expect(salida).toEqual({ fecha: "2030-07-15", estado: "pendiente" });
+
+    // La cuna se va entera con la reserva; la silla conserva el inicio puesto a
+    // mano y mueve el retiro.
+    const { data: equipos } = await s
+      .from("equipamiento_bebe")
+      .select("tipo, fecha_desde, fecha_hasta")
+      .eq("reserva_id", reservaId)
+      .order("tipo");
+    expect(equipos).toEqual([
+      { tipo: "cuna", fecha_desde: "2030-07-11", fecha_hasta: "2030-07-15" },
+      { tipo: "silla", fecha_desde: "2030-07-12", fecha_hasta: "2030-07-15" },
+    ]);
 
     // Una sola marca, la vieja, ahora confirmada con las fechas aplicadas.
     const { data: registro } = await s

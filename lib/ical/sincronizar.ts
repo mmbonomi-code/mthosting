@@ -39,6 +39,7 @@ import {
 import { generarLimpiezas } from "../limpiezas/generar";
 import { calcularNoches } from "../reservas/validar";
 import { reservasVecinas } from "./confirmar";
+import { moverEquipamientoConReserva } from "../reporte/moverEquipamiento";
 import { hoyAR } from "../fechas";
 
 type Cliente = SupabaseClient<Database>;
@@ -335,6 +336,16 @@ export async function aplicarFechas(
     if (errorRegistro) {
       resumen.avisos.push(`${reserva.codigo_reserva}: las fechas se actualizaron, pero no quedó registrado (${errorRegistro.message}).`);
     }
+
+    // La cuna o silla de la reserva se va con ella.
+    resumen.avisos.push(
+      ...(await moverEquipamientoConReserva(
+        supabase,
+        reserva,
+        { checkin: cambio.reserva_checkin, checkout: cambio.reserva_checkout },
+        { checkin: desde, checkout: hasta },
+      )),
+    );
 
     resumen.cambiosFechas++;
     resumen.avisos.push(

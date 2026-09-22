@@ -64,6 +64,14 @@ construir.
 
 ## Identidad visual
 
+> **Estado (22/09/2026, decisión del dueño):** la migración al modo claro
+> está POSTERGADA. Todas las pantallas de adentro de la app (la de ingreso
+> no) usan el tema oscuro viejo (`slate`),
+> incluida Económico, que se había hecho en claro y se volvió al oscuro para
+> que la plataforma se vea pareja. Mientras dure, una pantalla nueva o
+> modificada sigue el oscuro de las pantallas vecinas. Lo de abajo es el
+> destino cuando se retome la migración, no lo que hay hoy.
+
 La fuente de verdad es `docs/IDENTIDAD-VISUAL.md`. **Leerlo antes de construir
 cualquier pantalla.** No hay variantes ni alternativas: lo que dice ese
 documento es final, y si contradice a cualquier otra cosa, gana él.

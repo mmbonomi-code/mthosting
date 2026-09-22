@@ -19,6 +19,12 @@
      Mientras los pasos 2 a 5 no estén, la app sigue en el tema oscuro viejo.
      Eso es transitorio y esperable, no es que la identidad esté mal aplicada.
 
+     22/09/2026 — Migración POSTERGADA (decisión del dueño). Los pasos 2 y 3
+     se hicieron (tokens en app/globals.css, mapa en lib/estados.ts), pero
+     la única pantalla construida en claro, Económico, volvió al oscuro para
+     que la plataforma se vea pareja. Adentro de la app no queda ninguna
+     pantalla en claro; solo la de ingreso.
+
      Dos cosas que el handoff da por hechas y que este proyecto todavía no
      tiene, para no leerlas como si existieran:
        - El menú lateral de 240px de §8.1: hoy la navegación es una barra

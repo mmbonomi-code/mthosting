@@ -74,10 +74,10 @@ export default async function CuentasPayout() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-tinta">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-100">
           Cuentas de payout
         </h1>
-        <p className="text-sm text-tinta-suave">
+        <p className="text-sm text-slate-400">
           Adónde va cada pago. Lo que entra a una cuenta de MTHosting puede ser
           ingreso propio; lo que va a una cuenta del propietario, no. Nada se
           clasifica solo.
@@ -85,7 +85,7 @@ export default async function CuentasPayout() {
       </div>
 
       {sinClasificar > 0 && (
-        <p className="rounded-md border border-borde border-l-[3px] border-l-accent bg-accent-soft px-4 py-3 text-sm font-medium text-accent-soft-text">
+        <p className="rounded-md border border-slate-800 border-l-[3px] border-l-amber-600 bg-amber-950/40 px-4 py-3 text-sm font-medium text-amber-300">
           Hay {sinClasificar} cuenta{sinClasificar === 1 ? "" : "s"} sin decidir. Mientras
           tanto no suma{sinClasificar === 1 ? "" : "n"} a lo percibido, así que los
           números van a quedar cortos hasta que las tildes.
@@ -93,8 +93,8 @@ export default async function CuentasPayout() {
       )}
 
       {(ordenadas).length === 0 ? (
-        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center shadow-sm">
-          <p className="text-tinta-suave">
+        <div className="rounded-md border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
+          <p className="text-slate-400">
             Todavía no se importó ningún pago, así que no hay cuentas detectadas.
           </p>
         </div>
@@ -106,22 +106,22 @@ export default async function CuentasPayout() {
             return (
               <li
                 key={c.id}
-                className={`flex flex-col gap-3 rounded-md border bg-superficie p-4 shadow-sm ${
+                className={`flex flex-col gap-3 rounded-md border bg-slate-800/40 p-4 ${
                   c.clasificacion === "sin_clasificar"
-                    ? "border-borde border-l-[3px] border-l-accent"
-                    : "border-borde"
+                    ? "border-slate-800 border-l-[3px] border-l-amber-600"
+                    : "border-slate-800"
                 }`}
               >
                 <div>
-                  <p className="font-semibold text-tinta">
+                  <p className="font-semibold text-slate-100">
                     {c.titular ?? "Sin titular"}
                     {c.numero && (
-                      <span className="ml-2 font-mono font-normal text-tinta-suave">
+                      <span className="ml-2 font-mono font-normal text-slate-400">
                         ····{c.numero}
                       </span>
                     )}
                   </p>
-                  <p className="text-sm tabular-nums text-tinta-suave">
+                  <p className="text-sm tabular-nums text-slate-400">
                     {[c.tipo, c.moneda].filter(Boolean).join(" · ")}
                     {uso && (
                       <>
@@ -142,11 +142,11 @@ export default async function CuentasPayout() {
                   {/* Una misma cuenta aparece escrita de varias formas: se
                       muestran todas para poder reconocerla. */}
                   {nombres.length > 1 && (
-                    <p className="mt-1 text-xs text-tinta-tenue">
+                    <p className="mt-1 text-xs text-slate-500">
                       Aparece como: {nombres.join(" · ")}
                     </p>
                   )}
-                  {c.notas && <p className="mt-1 text-xs text-tinta-tenue">{c.notas}</p>}
+                  {c.notas && <p className="mt-1 text-xs text-slate-500">{c.notas}</p>}
                 </div>
                 <ClasificarCuenta cuentaId={c.id} actual={c.clasificacion} />
               </li>

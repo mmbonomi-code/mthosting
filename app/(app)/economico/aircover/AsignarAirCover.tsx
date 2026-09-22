@@ -6,9 +6,9 @@ import { asignarAirCover } from "../acciones";
 type Destino = "mthosting" | "propietario" | "sin_asignar";
 
 const OPCIONES: { valor: Destino; texto: string; activo: string }[] = [
-  { valor: "mthosting", texto: "De MTHosting", activo: "border-primary bg-primary-soft text-primary-soft-text" },
-  { valor: "propietario", texto: "Del propietario", activo: "border-dato bg-dato-soft text-dato-text" },
-  { valor: "sin_asignar", texto: "Sin decidir", activo: "border-accent bg-accent-soft text-accent-soft-text" },
+  { valor: "mthosting", texto: "De MTHosting", activo: "border-emerald-600 bg-emerald-950 text-emerald-300" },
+  { valor: "propietario", texto: "Del propietario", activo: "border-sky-700 bg-sky-950 text-sky-300" },
+  { valor: "sin_asignar", texto: "Sin decidir", activo: "border-amber-600 bg-amber-950/40 text-amber-300" },
 ];
 
 export default function AsignarAirCover({
@@ -48,14 +48,14 @@ export default function AsignarAirCover({
             className={`min-h-9 rounded-md border px-3 text-xs font-medium transition-colors disabled:opacity-50 ${
               valor === o.valor
                 ? o.activo
-                : "border-borde-control bg-superficie text-tinta-suave hover:bg-superficie-hover"
+                : "border-slate-700 bg-slate-800/40 text-slate-400 hover:bg-slate-800"
             }`}
           >
             {o.texto}
           </button>
         ))}
       </div>
-      {error && <p className="text-xs text-error-text">{error}</p>}
+      {error && <p className="text-xs text-red-300">{error}</p>}
     </div>
   );
 }

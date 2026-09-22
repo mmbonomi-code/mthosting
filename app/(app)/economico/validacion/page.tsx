@@ -18,8 +18,6 @@ import {
   type FilaDeGrupo,
 } from "@/lib/economico/validar";
 import { traerTodo } from "@/lib/economico/consultar";
-import Badge from "@/app/componentes/Badge";
-import { TONO_LIMPIEZA, TONO_RESERVA } from "@/lib/estados";
 
 /**
  * Conciliación (spec §6.6). Va ANTES que el dashboard a propósito: un total
@@ -143,13 +141,13 @@ export default async function Validacion({
   if (crudas.length === 0) {
     return (
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-tinta">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-100">
           Validación
         </h1>
-        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center shadow-sm">
-          <p className="text-tinta-suave">
+        <div className="rounded-md border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
+          <p className="text-slate-400">
             Todavía no hay movimientos cargados.{" "}
-            <Link href="/economico/importar" className="font-medium text-primary underline">
+            <Link href="/economico/importar" className="font-medium text-emerald-300 underline">
               Importar los cobros de Airbnb
             </Link>
           </p>
@@ -161,10 +159,10 @@ export default async function Validacion({
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-tinta">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-100">
           Validación
         </h1>
-        <p className="text-sm tabular-nums text-tinta-suave">
+        <p className="text-sm tabular-nums text-slate-400">
           {crudas.length.toLocaleString("es-AR")} movimientos · {resumenGrupos.total} grupos
           de payout · {porDepto.size} departamentos
         </p>
@@ -172,25 +170,25 @@ export default async function Validacion({
 
       {/* ---- Semáforo ---- */}
       <section
-        className={`rounded-md border border-l-[3px] p-4 shadow-sm ${
+        className={`rounded-md border border-l-[3px] p-4 ${
           todoBien
-            ? "border-borde border-l-primary bg-superficie"
-            : "border-borde border-l-accent bg-accent-soft"
+            ? "border-slate-800 border-l-emerald-600 bg-slate-800/40"
+            : "border-slate-800 border-l-amber-600 bg-amber-950/40"
         }`}
       >
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-tinta-suave">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">
           Chequeos automáticos
         </h2>
         <ul className="flex flex-col gap-2">
           {semaforo.map((c) => (
             <li key={c.nombre} className="flex flex-wrap items-baseline gap-x-2 text-sm">
-              <span aria-hidden className={c.ok ? "text-exito" : "text-accent"}>
+              <span aria-hidden className={c.ok ? "text-emerald-400" : "text-amber-300"}>
                 {c.ok ? "✓" : "✗"}
               </span>
-              <span className={c.ok ? "text-tinta" : "font-semibold text-tinta"}>
+              <span className={c.ok ? "text-slate-100" : "font-semibold text-slate-100"}>
                 {c.nombre}
               </span>
-              <span className="text-tinta-suave">— {c.detalle}</span>
+              <span className="text-slate-400">— {c.detalle}</span>
             </li>
           ))}
         </ul>
@@ -199,10 +197,10 @@ export default async function Validacion({
       {/* ---- Grupos que no cierran ---- */}
       {resumenGrupos.no_cierra + resumenGrupos.sin_payout + resumenGrupos.sin_detalle > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-tinta">Grupos para mirar</h2>
-          <div className="overflow-x-auto rounded-md border border-borde bg-superficie shadow-sm">
+          <h2 className="font-semibold text-slate-100">Grupos para mirar</h2>
+          <div className="overflow-x-auto rounded-md border border-slate-800 bg-slate-800/40">
             <table className="w-full text-sm tabular-nums">
-              <thead className="bg-superficie-alt text-left text-[13px] font-semibold text-warm-700">
+              <thead className="bg-slate-800/60 text-left text-[13px] font-semibold text-slate-300">
                 <tr>
                   <th className="px-3 py-2">Archivo</th>
                   <th className="px-3 py-2">Grupo</th>
@@ -217,23 +215,23 @@ export default async function Validacion({
                   .filter((g) => g.estado !== "cierra" && g.estado !== "otra_moneda")
                   .slice(0, 100)
                   .map((g) => (
-                    <tr key={g.clave} className="h-fila border-t border-borde">
+                    <tr key={g.clave} className="h-fila border-t border-slate-800">
                       <td className="truncate px-3 py-2 font-mono text-xs">{g.archivo}</td>
                       <td className="px-3 py-2">{g.numero}</td>
                       <td className="px-3 py-2">
-                        <Badge tono={TONO_RESERVA.cancelada}>
+                        <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs font-medium text-red-300">
                           {g.estado === "no_cierra"
                             ? "no cierra"
                             : g.estado === "sin_payout"
                               ? "sin payout"
                               : "sin detalle"}
-                        </Badge>
+                        </span>
                       </td>
                       <td className="px-3 py-2 text-right">
                         {g.cobrado === null ? "—" : usd(g.cobrado)}
                       </td>
                       <td className="px-3 py-2 text-right">{usd(g.sumaDetalle)}</td>
-                      <td className="px-3 py-2 text-right font-semibold text-accent">
+                      <td className="px-3 py-2 text-right font-semibold text-amber-300">
                         {g.diferencia === null ? "—" : usd(g.diferencia)}
                       </td>
                     </tr>
@@ -247,22 +245,22 @@ export default async function Validacion({
       {/* ---- Tipos de cambio deducidos ---- */}
       {resumenGrupos.otra_moneda > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="font-semibold text-tinta">
+          <h2 className="font-semibold text-slate-100">
             Tipos de cambio deducidos
-            <span className="ml-2 text-sm font-normal text-tinta-suave">
+            <span className="ml-2 text-sm font-normal text-slate-400">
               {resumenGrupos.otra_moneda} grupos con el payout en otra moneda
             </span>
           </h2>
-          <p className="text-sm text-tinta-suave">
+          <p className="text-sm text-slate-400">
             No se toma de ninguna tabla: sale de dividir lo cobrado por la suma del
             detalle, así que es el que aplicó Airbnb en esa operación. Sirve sobre todo
             para detectar grupos mal armados: uno muy fuera de línea con los demás
             delata que al payout le emparejaron filas que no son suyas.
           </p>
           {tcRaros.length > 0 ? (
-            <div className="overflow-x-auto rounded-md border border-borde border-l-[3px] border-l-accent bg-accent-soft shadow-sm">
+            <div className="overflow-x-auto rounded-md border border-slate-800 border-l-[3px] border-l-amber-600 bg-amber-950/40">
               <table className="w-full text-sm tabular-nums">
-                <thead className="text-left text-[13px] font-semibold text-accent-soft-text">
+                <thead className="text-left text-[13px] font-semibold text-amber-300">
                   <tr>
                     <th className="px-3 py-2">Archivo</th>
                     <th className="px-3 py-2">Grupo</th>
@@ -273,7 +271,7 @@ export default async function Validacion({
                 </thead>
                 <tbody>
                   {tcRaros.slice(0, 50).map((g) => (
-                    <tr key={g.clave} className="h-fila border-t border-borde">
+                    <tr key={g.clave} className="h-fila border-t border-slate-800">
                       <td className="truncate px-3 py-2 font-mono text-xs">{g.archivo}</td>
                       <td className="px-3 py-2">{g.numero}</td>
                       <td className="px-3 py-2 text-right">
@@ -282,7 +280,7 @@ export default async function Validacion({
                       <td className="px-3 py-2 text-right">
                         {g.monedaDetalle} {usd(g.sumaDetalle)}
                       </td>
-                      <td className="px-3 py-2 text-right font-semibold text-accent">
+                      <td className="px-3 py-2 text-right font-semibold text-amber-300">
                         {usd(g.tcDeducido ?? 0)}
                       </td>
                     </tr>
@@ -291,7 +289,7 @@ export default async function Validacion({
               </table>
             </div>
           ) : (
-            <p className="rounded-md border border-borde bg-superficie px-4 py-3 text-sm text-tinta-suave shadow-sm">
+            <p className="rounded-md border border-slate-800 bg-slate-800/40 px-4 py-3 text-sm text-slate-400">
               Todos en línea entre sí. Ninguno sugiere un grupo mal armado.
             </p>
           )}
@@ -300,16 +298,16 @@ export default async function Validacion({
 
       {/* ---- Los números por departamento ---- */}
       <section className="flex flex-col gap-2">
-        <h2 className="font-semibold text-tinta">Por departamento</h2>
-        <p className="text-sm text-tinta-suave">
+        <h2 className="font-semibold text-slate-100">Por departamento</h2>
+        <p className="text-sm text-slate-400">
           La <strong>ganancia</strong> es lo que corresponde a MTHosting: define la
           rentabilidad. El <strong>percibido</strong> es todo lo que entró, por
           coanfitrión o por payout a cuenta propia. La <strong>diferencia</strong> es el
           saldo con el propietario: positiva, hay que girarle; negativa, deben.
         </p>
-        <div className="overflow-x-auto rounded-md border border-borde bg-superficie shadow-sm">
+        <div className="overflow-x-auto rounded-md border border-slate-800 bg-slate-800/40">
           <table className="w-full text-sm tabular-nums">
-            <thead className="bg-superficie-alt text-left text-[13px] font-semibold text-warm-700">
+            <thead className="bg-slate-800/60 text-left text-[13px] font-semibold text-slate-300">
               <tr>
                 <th className="px-3 py-2">Departamento</th>
                 <th className="px-3 py-2 text-right">Ganancia</th>
@@ -328,7 +326,7 @@ export default async function Validacion({
                   const t = totalizar(celdasDelDepto);
                   const dif = saldoPropietario(t);
                   return (
-                    <tr key={id} className="h-fila border-t border-borde">
+                    <tr key={id} className="h-fila border-t border-slate-800">
                       <td className="px-3 py-2 font-mono font-semibold">
                         {codigoDepto.get(id) ?? "—"}
                       </td>
@@ -337,21 +335,21 @@ export default async function Validacion({
                       <td
                         className={`px-3 py-2 text-right font-semibold ${
                           Math.abs(dif) < 0.005
-                            ? "text-tinta-tenue"
+                            ? "text-slate-500"
                             : dif > 0
-                              ? "text-accent"
-                              : "text-dato"
+                              ? "text-amber-300"
+                              : "text-sky-300"
                         }`}
                       >
                         {usd(dif)}
                       </td>
-                      <td className="px-3 py-2 text-right text-tinta-tenue">
+                      <td className="px-3 py-2 text-right text-slate-500">
                         {t.aircover === 0 ? "—" : usd(t.aircover)}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <Link
                           href={`/economico/validacion?depto=${id}`}
-                          className="text-sm font-medium text-primary underline"
+                          className="text-sm font-medium text-emerald-300 underline"
                         >
                           ver el detalle
                         </Link>
@@ -368,23 +366,23 @@ export default async function Validacion({
       {elegido && (
         <section className="flex flex-col gap-2">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-semibold text-tinta">
+            <h2 className="font-semibold text-slate-100">
               {codigoDepto.get(elegido)}
-              <span className="ml-2 text-sm font-normal tabular-nums text-tinta-suave">
+              <span className="ml-2 text-sm font-normal tabular-nums text-slate-400">
                 {detalle.length} movimientos
               </span>
             </h2>
-            <Link href="/economico/validacion" className="text-sm text-tinta-suave underline">
+            <Link href="/economico/validacion" className="text-sm text-slate-400 underline">
               cerrar
             </Link>
           </div>
-          <p className="text-sm text-tinta-suave">
+          <p className="text-sm text-slate-400">
             Cada fila dice de qué archivo y de qué línea salió. Es lo que permite abrir
             el CSV en Excel y mirar el número con los ojos.
           </p>
-          <div className="overflow-x-auto rounded-md border border-borde bg-superficie shadow-sm">
+          <div className="overflow-x-auto rounded-md border border-slate-800 bg-slate-800/40">
             <table className="w-full text-sm tabular-nums">
-              <thead className="bg-superficie-alt text-left text-[13px] font-semibold text-warm-700">
+              <thead className="bg-slate-800/60 text-left text-[13px] font-semibold text-slate-300">
                 <tr>
                   <th className="px-3 py-2">Fecha</th>
                   <th className="px-3 py-2">Qué es</th>
@@ -397,36 +395,36 @@ export default async function Validacion({
               </thead>
               <tbody>
                 {detalle.slice(0, 400).map((m, i) => (
-                  <tr key={`${m.archivo}-${m.linea}-${i}`} className="h-fila border-t border-borde">
+                  <tr key={`${m.archivo}-${m.linea}-${i}`} className="h-fila border-t border-slate-800">
                     <td className="whitespace-nowrap px-3 py-2">
                       {formatearFechaAR(m.fecha)}
                     </td>
                     <td className="px-3 py-2">
-                      <Badge
-                        tono={
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           m.categoria === "aircover"
-                            ? TONO_RESERVA.tentativa
+                            ? "bg-violet-950 text-violet-300"
                             : m.categoria === "coanfitrion"
-                              ? TONO_LIMPIEZA.hecha
-                              : TONO_LIMPIEZA.pendiente
-                        }
+                              ? "bg-emerald-950 text-emerald-300"
+                              : "bg-slate-700 text-slate-200"
+                        }`}
                       >
                         {m.categoria}
-                      </Badge>
+                      </span>
                     </td>
                     <td className="px-3 py-2 font-mono text-xs">
                       {m.codigo_confirmacion ?? "—"}
                     </td>
-                    <td className="max-w-40 truncate px-3 py-2 text-tinta-suave">
+                    <td className="max-w-40 truncate px-3 py-2 text-slate-400">
                       {m.huesped ?? "—"}
                     </td>
                     <td className="px-3 py-2 text-right">
                       {m.moneda} {usd(Number(m.monto ?? m.cobrado ?? 0))}
                     </td>
-                    <td className="px-3 py-2 text-right text-tinta-tenue">
+                    <td className="px-3 py-2 text-right text-slate-500">
                       {m.tarifa_limpieza ? usd(Number(m.tarifa_limpieza)) : "—"}
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs text-tinta-tenue">
+                    <td className="px-3 py-2 font-mono text-xs text-slate-500">
                       {m.archivo}:{m.linea}
                     </td>
                   </tr>
@@ -435,7 +433,7 @@ export default async function Validacion({
             </table>
           </div>
           {detalle.length > 400 && (
-            <p className="text-xs text-tinta-tenue">
+            <p className="text-xs text-slate-500">
               Se muestran los primeros 400 de {detalle.length}.
             </p>
           )}
@@ -444,7 +442,7 @@ export default async function Validacion({
 
       {/* ---- Descartes ---- */}
       <section className="flex flex-col gap-2">
-        <h2 className="font-semibold text-tinta">Qué quedó afuera</h2>
+        <h2 className="font-semibold text-slate-100">Qué quedó afuera</h2>
         <div className="grid gap-2 sm:grid-cols-3">
           <Descarte
             valor={anunciosSinMapear}
@@ -474,20 +472,20 @@ function Descarte({
 }) {
   const contenido = (
     <div
-      className={`rounded-md border p-4 shadow-sm ${
-        valor === 0 ? "border-borde bg-superficie" : "border-borde border-l-[3px] border-l-accent bg-accent-soft"
+      className={`rounded-md border p-4 ${
+        valor === 0 ? "border-slate-800 bg-slate-800/40" : "border-slate-800 border-l-[3px] border-l-amber-600 bg-amber-950/40"
       }`}
     >
       <p
         className={`text-2xl font-semibold tabular-nums ${
-          valor === 0 ? "text-tinta-tenue" : "text-accent-soft-text"
+          valor === 0 ? "text-slate-500" : "text-amber-300"
         }`}
       >
         {valor}
       </p>
-      <p className="text-sm text-tinta-suave">{que}</p>
+      <p className="text-sm text-slate-400">{que}</p>
       {valor > 0 && href && (
-        <p className="mt-1 text-xs font-medium text-primary underline">resolver →</p>
+        <p className="mt-1 text-xs font-medium text-emerald-300 underline">resolver →</p>
       )}
     </div>
   );

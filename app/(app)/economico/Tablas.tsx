@@ -73,8 +73,8 @@ function Th({
               : { campo, asc: campo === "codigo" || campo === "mes" },
           )
         }
-        className={`inline-flex min-h-9 items-center gap-1 font-semibold transition-colors hover:text-tinta ${
-          activo ? "text-tinta" : "text-warm-700"
+        className={`inline-flex min-h-9 items-center gap-1 font-semibold transition-colors hover:text-white ${
+          activo ? "text-slate-100" : "text-slate-300"
         }`}
       >
         {children}
@@ -205,13 +205,13 @@ export default function Tablas({
   };
 
   const CONTROL =
-    "h-11 rounded-md border border-borde-control bg-superficie px-3 text-sm text-tinta outline-none focus:border-primary";
+    "h-11 rounded-md border border-slate-700 bg-slate-800/40 px-3 text-sm text-slate-100 outline-none focus:border-slate-400";
 
   return (
     <>
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-tinta-tenue">
+          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Mes
           </span>
           <select
@@ -229,7 +229,7 @@ export default function Tablas({
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-tinta-tenue">
+          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Departamento
           </span>
           <select
@@ -249,14 +249,14 @@ export default function Tablas({
         </label>
 
         {programados.length > 0 && (
-          <label className="flex h-11 cursor-pointer items-center gap-2 self-end rounded-md border border-borde-control bg-superficie px-3">
+          <label className="flex h-11 cursor-pointer items-center gap-2 self-end rounded-md border border-slate-700 bg-slate-800/40 px-3">
             <input
               type="checkbox"
               checked={conProximos}
               onChange={(e) => setConProximos(e.target.checked)}
               className="size-4 accent-primary"
             />
-            <span className="text-sm text-tinta">Sumar próximos cobros</span>
+            <span className="text-sm text-slate-100">Sumar próximos cobros</span>
           </label>
         )}
 
@@ -267,7 +267,7 @@ export default function Tablas({
               setMesElegido("");
               setDeptoElegido("");
             }}
-            className="h-11 rounded-md px-3 text-sm text-tinta-suave underline"
+            className="h-11 rounded-md px-3 text-sm text-slate-400 underline"
           >
             limpiar filtros
           </button>
@@ -277,31 +277,31 @@ export default function Tablas({
       {/* ---- Evolución mensual ---- */}
       <section className="flex flex-col gap-3">
         <div>
-          <h2 className="font-semibold text-tinta">Ganancia mes a mes</h2>
-          <p className="text-sm text-tinta-suave">
+          <h2 className="font-semibold text-slate-100">Ganancia mes a mes</h2>
+          <p className="text-sm text-slate-400">
             La barra separa de qué está hecha:{" "}
-            <span className="font-medium text-primary">comisión</span> sobre el alquiler y{" "}
-            <span className="font-medium text-accent">limpieza</span>, que va entera a
+            <span className="font-medium text-emerald-300">comisión</span> sobre el alquiler y{" "}
+            <span className="font-medium text-amber-300">limpieza</span>, que va entera a
             MTHosting y no comisiona. Tocá cualquier encabezado para ordenar.
             {conProximos && (
               <>
                 {" "}
                 Lo que está{" "}
-                <span className="font-medium text-dato-text">por cobrarse</span> se suma
+                <span className="font-medium text-sky-300">por cobrarse</span> se suma
                 aparte: es una previsión de Airbnb, no plata que ya entró.
               </>
             )}
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-md border border-borde bg-superficie shadow-sm">
+        <div className="overflow-x-auto rounded-md border border-slate-800 bg-slate-800/40">
           <table className="w-full text-sm tabular-nums">
-            <thead className="bg-superficie-alt text-[13px]">
+            <thead className="bg-slate-800/60 text-[13px]">
               <tr>
                 <Th campo="mes" orden={ordenMes} setOrden={setOrdenMes}>
                   Mes
                 </Th>
-                <th className="w-2/5 px-3 py-2 text-left text-[13px] font-semibold text-warm-700">
+                <th className="w-2/5 px-3 py-2 text-left text-[13px] font-semibold text-slate-300">
                   Composición
                 </th>
                 <Th campo="comision" orden={ordenMes} setOrden={setOrdenMes} alDerecha>
@@ -330,13 +330,13 @@ export default function Tablas({
                 const pctComision = conTodo === 0 ? 0 : (f.comision / conTodo) * 100;
                 const pctLimpieza = conTodo === 0 ? 0 : (f.limpieza / conTodo) * 100;
                 return (
-                  <tr key={f.clave} className="h-fila border-t border-borde">
+                  <tr key={f.clave} className="h-fila border-t border-slate-800">
                     <td className="whitespace-nowrap px-3 py-2 font-medium">{f.etiqueta}</td>
                     <td className="px-3 py-2">
                       {/* El ancho es la ganancia contra el mejor mes; el corte,
                           la composición. No es decoración. */}
                       <span
-                        className="flex h-3 overflow-hidden rounded-full bg-superficie-alt"
+                        className="flex h-3 overflow-hidden rounded-full bg-slate-800/60"
                         style={{
                           width: `${Math.max(((g + f.porCobrar) / maxGanancia) * 100, 2)}%`,
                         }}
@@ -344,27 +344,27 @@ export default function Tablas({
                           f.porCobrar ? ` · por cobrar ${usd(f.porCobrar)}` : ""
                         }`}
                       >
-                        <span className="bg-primary" style={{ width: `${pctComision}%` }} />
-                        <span className="bg-accent" style={{ width: `${pctLimpieza}%` }} />
+                        <span className="bg-emerald-600" style={{ width: `${pctComision}%` }} />
+                        <span className="bg-amber-600" style={{ width: `${pctLimpieza}%` }} />
                         {/* Lo que falta cobrar va en azul: es una previsión,
                             no plata hecha, y tiene que distinguirse. */}
-                        <span className="flex-1 bg-dato-soft" />
+                        <span className="flex-1 bg-sky-950" />
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right">{usd(f.comision)}</td>
                     <td className="px-3 py-2 text-right">{usd(f.limpieza)}</td>
                     {conProximos && (
-                      <td className="px-3 py-2 text-right text-dato-text">
+                      <td className="px-3 py-2 text-right text-sky-300">
                         {f.porCobrar === 0 ? "—" : usd(f.porCobrar)}
                       </td>
                     )}
                     <td className="px-3 py-2 text-right font-semibold">
                       {usd(g + f.porCobrar)}
                     </td>
-                    <td className="px-3 py-2 text-right text-tinta-suave">
+                    <td className="px-3 py-2 text-right text-slate-400">
                       {f.reservas}
                       {conProximos && f.reservasPorCobrar > 0 && (
-                        <span className="text-dato-text"> +{f.reservasPorCobrar}</span>
+                        <span className="text-sky-300"> +{f.reservasPorCobrar}</span>
                       )}
                     </td>
                   </tr>
@@ -372,14 +372,14 @@ export default function Tablas({
               })}
             </tbody>
             <tfoot>
-              <tr className="h-fila border-t-2 border-borde-fuerte bg-superficie-alt font-semibold">
+              <tr className="h-fila border-t-2 border-slate-700 bg-slate-800/60 font-semibold">
                 <td className="px-3 py-2" colSpan={2}>
                   Total
                 </td>
                 <td className="px-3 py-2 text-right">{usd(totalMes.comision)}</td>
                 <td className="px-3 py-2 text-right">{usd(totalMes.limpieza)}</td>
                 {conProximos && (
-                  <td className="px-3 py-2 text-right text-dato-text">
+                  <td className="px-3 py-2 text-right text-sky-300">
                     {usd(totalMes.porCobrar)}
                   </td>
                 )}
@@ -396,23 +396,23 @@ export default function Tablas({
       {/* ---- Por departamento ---- */}
       <section className="flex flex-col gap-3">
         <div>
-          <h2 className="font-semibold text-tinta">
+          <h2 className="font-semibold text-slate-100">
             Por departamento
             {mesElegido && (
-              <span className="ml-2 text-sm font-normal text-tinta-suave">
+              <span className="ml-2 text-sm font-normal text-slate-400">
                 {nombreMes(mesElegido)}
               </span>
             )}
           </h2>
-          <p className="text-sm text-tinta-suave">
+          <p className="text-sm text-slate-400">
             Arranca ordenado por ganancia, que es lo que mide la rentabilidad. Lo percibido
             no sirve para comparar: un departamento donde se cobró de más para recuperar
             una deuda aparecería primero sin ser el mejor.
           </p>
         </div>
-        <div className="overflow-x-auto rounded-md border border-borde bg-superficie shadow-sm">
+        <div className="overflow-x-auto rounded-md border border-slate-800 bg-slate-800/40">
           <table className="w-full text-sm tabular-nums">
-            <thead className="bg-superficie-alt text-[13px]">
+            <thead className="bg-slate-800/60 text-[13px]">
               <tr>
                 <Th campo="codigo" orden={ordenDepto} setOrden={setOrdenDepto}>
                   Departamento
@@ -443,8 +443,8 @@ export default function Tablas({
               {filasDepto.map((d) => (
                 <tr
                   key={d.clave}
-                  className={`h-fila border-t border-borde ${
-                    d.clave === deptoElegido ? "bg-superficie-elegida" : ""
+                  className={`h-fila border-t border-slate-800 ${
+                    d.clave === deptoElegido ? "bg-slate-700" : ""
                   }`}
                 >
                   <td className="px-3 py-2">
@@ -453,7 +453,7 @@ export default function Tablas({
                       onClick={() =>
                         setDeptoElegido(d.clave === deptoElegido ? "" : d.clave)
                       }
-                      className="font-mono font-semibold text-primary underline"
+                      className="font-mono font-semibold text-emerald-300 underline"
                     >
                       {d.codigo}
                     </button>
@@ -461,15 +461,15 @@ export default function Tablas({
                   <td className="px-3 py-2 text-right">{usd(d.comision)}</td>
                   <td className="px-3 py-2 text-right">{usd(d.limpieza)}</td>
                   {conProximos && (
-                    <td className="px-3 py-2 text-right text-dato-text">
+                    <td className="px-3 py-2 text-right text-sky-300">
                       {d.porCobrar === 0 ? "—" : usd(d.porCobrar)}
                     </td>
                   )}
                   <td className="px-3 py-2 text-right font-semibold">
                     {usd(ganancia(d) + d.porCobrar)}
                   </td>
-                  <td className="px-3 py-2 text-right text-tinta-suave">{d.reservas}</td>
-                  <td className="px-3 py-2 text-right text-tinta-suave">
+                  <td className="px-3 py-2 text-right text-slate-400">{d.reservas}</td>
+                  <td className="px-3 py-2 text-right text-slate-400">
                     {usd(d.percibido)}
                   </td>
                 </tr>

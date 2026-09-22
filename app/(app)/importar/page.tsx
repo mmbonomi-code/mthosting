@@ -19,27 +19,27 @@ export default async function PaginaImportar() {
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Importar reservas
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-tenue">
           Pensada para usarse desde una computadora.
         </p>
       </div>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium text-white">Excel de tentativas</h2>
+        <h2 className="text-lg font-medium text-tinta">Excel de tentativas</h2>
         <FormularioExcelTentativas />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium text-white">Archivo de reservas de Airbnb (CSV)</h2>
+        <h2 className="text-lg font-medium text-tinta">Archivo de reservas de Airbnb (CSV)</h2>
         <FormularioImportar />
       </section>
 
       {(historial ?? []).length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-lg font-medium text-white">Últimas importaciones</h2>
+          <h2 className="text-lg font-medium text-tinta">Últimas importaciones</h2>
           <ul className="flex flex-col gap-2">
             {(historial ?? []).map((imp) => {
               const archivos = Array.isArray(imp.archivos) ? imp.archivos.length : 0;
@@ -54,22 +54,22 @@ export default async function PaginaImportar() {
               return (
                 <li
                   key={imp.id}
-                  className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 text-sm"
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-borde bg-superficie px-4 py-3 text-sm"
                 >
-                  <span className="text-slate-300">{fecha}</span>
-                  <span className="text-slate-500">
+                  <span className="text-tinta-suave">{fecha}</span>
+                  <span className="text-tinta-etiqueta">
                     {imp.tipo === "excel_tentativas"
                       ? "Excel de tentativas"
                       : `${archivos} ${archivos === 1 ? "archivo" : "archivos"} CSV`}{" "}
                     · {imp.filas_total ?? 0} reservas
                   </span>
-                  <span className="text-slate-400">
+                  <span className="text-tinta-tenue">
                     {imp.tipo === "excel_tentativas"
                       ? `${imp.actualizadas ?? 0} con datos actualizados · ${imp.canceladas_detectadas ?? 0} canceladas · ${imp.sin_cambios ?? 0} sin cambios`
                       : `${imp.nuevas ?? 0} nuevas · ${imp.actualizadas ?? 0} actualizadas · ${imp.sin_cambios ?? 0} sin cambios`}
                   </span>
                   {(imp.sin_asignar ?? 0) > 0 && (
-                    <span className="rounded-full bg-amber-950 px-2.5 py-0.5 text-xs font-medium text-amber-300">
+                    <span className="rounded-full bg-aviso-soft px-2.5 py-0.5 text-xs font-medium text-aviso-text">
                       {imp.sin_asignar} sin departamento
                     </span>
                   )}

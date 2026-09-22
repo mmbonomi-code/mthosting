@@ -7,6 +7,7 @@
    Todo color de la interfaz sale de acá. Una pantalla nunca escribe
    `slate-800` ni `emerald-300`: escribe `superficie` o `exito-text`, y si
    hace falta un color que no está, se agrega a esta lista, no a la pantalla.
+   lib/identidad.test.ts lo controla.
 
    Los valores salen de la paleta de Tailwind (los mismos que la app usaba a
    mano), copiados en oklch para que el sistema no dependa de ella. El
@@ -19,6 +20,10 @@
    =========================================================================== */
 
 @theme {
+  /* Sin la paleta de fábrica de Tailwind: `bg-slate-800` o `text-white` no
+     generan nada. Los únicos colores que existen son los de esta lista. */
+  --color-*: initial;
+
   /* ---- Marca ----
      Verde bosque aclarado para leerse sobre oscuro: el mismo tono del
      isotipo (#14532D), subido de luz. Botón principal, enlaces y foco. */

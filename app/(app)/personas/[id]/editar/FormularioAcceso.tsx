@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import type { EstadoFormulario } from "../../acciones";
-import { clsEntrada, clsEtiqueta } from "@/lib/ui";
+import { clsEntrada, clsEtiqueta, clsBoton } from "@/lib/ui";
 
 export default function FormularioAcceso({
   accion,
@@ -42,13 +42,13 @@ export default function FormularioAcceso({
         </label>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-tinta-etiqueta">
         Pasale estos datos a la persona. Con ellos entra a la app desde su
         celular.
       </p>
 
       {estado?.error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
           {estado.error}
         </p>
       )}
@@ -57,7 +57,7 @@ export default function FormularioAcceso({
         <button
           type="submit"
           disabled={pendiente}
-          className="h-11 rounded-lg bg-white px-5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
+          className={clsBoton("primario")}
         >
           {pendiente ? "Creando…" : "Crear usuario"}
         </button>

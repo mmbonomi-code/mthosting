@@ -23,8 +23,8 @@ export default async function ChecklistLimpieza() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Checklist de limpieza</h1>
-        <p className="text-sm text-slate-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">Checklist de limpieza</h1>
+        <p className="text-sm text-tinta-tenue">
           Lo que ve la persona que limpia en el celular: el checklist fijo (se hace siempre) y las
           tareas periódicas (no todas las veces, según hace cuánto se hicieron).
         </p>
@@ -32,9 +32,9 @@ export default async function ChecklistLimpieza() {
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium text-white">
+          <h2 className="text-lg font-medium text-tinta">
             Checklist fijo
-            <span className="ml-2 text-sm font-normal text-slate-500">{(items ?? []).length}</span>
+            <span className="ml-2 text-sm font-normal text-tinta-etiqueta">{(items ?? []).length}</span>
           </h2>
           <Link href="/checklist-limpieza/item/nuevo" className={clsBotonPrimario}>
             + Ítem
@@ -43,14 +43,14 @@ export default async function ChecklistLimpieza() {
 
         {[...porSeccion.entries()].map(([seccion, filas]) => (
           <div key={seccion} className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-tinta-etiqueta">
               {seccion}
             </h3>
             <ul className="flex flex-col gap-2">
               {filas.map((f, i) => (
                 <li
                   key={f.id}
-                  className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 px-3 py-2"
+                  className="flex items-center gap-2 rounded-xl border border-borde bg-superficie px-3 py-2"
                 >
                   <FlechasOrden
                     accionArriba={moverItemChecklist.bind(null, f.id, "arriba")}
@@ -62,9 +62,9 @@ export default async function ChecklistLimpieza() {
                     href={`/checklist-limpieza/item/${f.id}/editar`}
                     className="flex min-w-0 flex-1 items-center gap-3 py-1"
                   >
-                    <span className="min-w-0 flex-1 truncate text-slate-200">{f.item}</span>
+                    <span className="min-w-0 flex-1 truncate text-tinta-media">{f.item}</span>
                     {!f.activo && (
-                      <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+                      <span className="rounded-full bg-elevada-hover px-2.5 py-0.5 text-xs font-medium text-tinta-suave">
                         Inactivo
                       </span>
                     )}
@@ -75,21 +75,21 @@ export default async function ChecklistLimpieza() {
           </div>
         ))}
         {(items ?? []).length === 0 && (
-          <p className="py-6 text-center text-slate-500">Todavía no hay ítems cargados.</p>
+          <p className="py-6 text-center text-tinta-etiqueta">Todavía no hay ítems cargados.</p>
         )}
       </section>
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium text-white">
+          <h2 className="text-lg font-medium text-tinta">
             Tareas periódicas
-            <span className="ml-2 text-sm font-normal text-slate-500">{tareas.length}</span>
+            <span className="ml-2 text-sm font-normal text-tinta-etiqueta">{tareas.length}</span>
           </h2>
           <Link href="/checklist-limpieza/periodica/nuevo" className={clsBotonPrimario}>
             + Tarea
           </Link>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-tinta-etiqueta">
           No se hacen en cada limpieza: aparecen marcadas cuando pasaron más días que la frecuencia
           desde la última vez que se hicieron en ese departamento.
         </p>
@@ -98,7 +98,7 @@ export default async function ChecklistLimpieza() {
           {tareas.map((t, i) => (
             <li
               key={t.id}
-              className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 px-3 py-2"
+              className="flex items-center gap-2 rounded-xl border border-borde bg-superficie px-3 py-2"
             >
               <FlechasOrden
                 accionArriba={moverTareaPeriodica.bind(null, t.id, "arriba")}
@@ -110,10 +110,10 @@ export default async function ChecklistLimpieza() {
                 href={`/checklist-limpieza/periodica/${t.id}/editar`}
                 className="flex min-w-0 flex-1 items-center gap-3 py-1"
               >
-                <span className="min-w-0 flex-1 truncate text-slate-200">{t.item}</span>
-                <span className="shrink-0 text-sm text-slate-500">cada {t.frecuencia_dias} días</span>
+                <span className="min-w-0 flex-1 truncate text-tinta-media">{t.item}</span>
+                <span className="shrink-0 text-sm text-tinta-etiqueta">cada {t.frecuencia_dias} días</span>
                 {!t.activo && (
-                  <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+                  <span className="rounded-full bg-elevada-hover px-2.5 py-0.5 text-xs font-medium text-tinta-suave">
                     Inactivo
                   </span>
                 )}
@@ -122,7 +122,7 @@ export default async function ChecklistLimpieza() {
           ))}
         </ul>
         {tareas.length === 0 && (
-          <p className="py-6 text-center text-slate-500">Todavía no hay tareas periódicas cargadas.</p>
+          <p className="py-6 text-center text-tinta-etiqueta">Todavía no hay tareas periódicas cargadas.</p>
         )}
       </section>
     </main>
@@ -147,7 +147,7 @@ function FlechasOrden({
           type="submit"
           disabled={esPrimero}
           aria-label="Subir"
-          className="flex h-6 w-7 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent"
+          className="flex h-6 w-7 items-center justify-center rounded text-tinta-tenue transition-colors hover:bg-elevada-hover hover:text-tinta disabled:opacity-25 disabled:hover:bg-transparent"
         >
           ▲
         </button>
@@ -157,7 +157,7 @@ function FlechasOrden({
           type="submit"
           disabled={esUltimo}
           aria-label="Bajar"
-          className="flex h-6 w-7 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent"
+          className="flex h-6 w-7 items-center justify-center rounded text-tinta-tenue transition-colors hover:bg-elevada-hover hover:text-tinta disabled:opacity-25 disabled:hover:bg-transparent"
         >
           ▼
         </button>

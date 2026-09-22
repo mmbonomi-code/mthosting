@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
-import { clsAreaTexto, clsEntrada, clsEtiqueta } from "@/lib/ui";
+import { clsAreaTexto, clsEntrada, clsEtiqueta, clsBoton } from "@/lib/ui";
 import { formatearFechaAR } from "@/lib/fechas";
 import { ETIQUETA_TIPO, TIPOS } from "@/lib/reporte/equipamiento";
 import type { EstadoFormulario } from "@/lib/reporte/tipos";
@@ -55,7 +55,7 @@ export default function NuevoEquipamiento({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="self-start rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200"
+        className={`${clsBoton("primario")} self-start`}
       >
         + Anotar cuna, silla o bañadera
       </button>
@@ -66,7 +66,7 @@ export default function NuevoEquipamiento({
     <form
       ref={formRef}
       action={enviar}
-      className="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-800/60 p-4"
+      className="flex flex-col gap-3 rounded-xl border border-borde-control bg-superficie-alt p-4"
     >
       <fieldset className="flex flex-col gap-1.5">
         <legend className={clsEtiqueta}>Qué se pidió</legend>
@@ -74,14 +74,14 @@ export default function NuevoEquipamiento({
           {TIPOS.map((t, i) => (
             <label
               key={t}
-              className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+              className={`${clsBoton("secundario", "chico")} cursor-pointer`}
             >
               <input
                 type="radio"
                 name="tipo"
                 value={t}
                 defaultChecked={i === 0}
-                className="size-4 accent-white"
+                className="size-4 accent-primary"
               />
               {ETIQUETA_TIPO[t]}
             </label>
@@ -89,14 +89,14 @@ export default function NuevoEquipamiento({
         </div>
       </fieldset>
 
-      <div className="flex gap-2 border-t border-slate-700 pt-3">
+      <div className="flex gap-2 border-t border-borde-control pt-3">
         <button
           type="button"
           onClick={() => setModo("reserva")}
           className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
             modo === "reserva"
-              ? "bg-slate-700 text-white"
-              : "text-slate-400 hover:bg-slate-800"
+              ? "bg-elevada-hover text-tinta"
+              : "text-tinta-tenue hover:bg-elevada"
           }`}
         >
           Para una reserva
@@ -109,8 +109,8 @@ export default function NuevoEquipamiento({
           }}
           className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
             modo === "suelto"
-              ? "bg-slate-700 text-white"
-              : "text-slate-400 hover:bg-slate-800"
+              ? "bg-elevada-hover text-tinta"
+              : "text-tinta-tenue hover:bg-elevada"
           }`}
         >
           Suelto
@@ -119,13 +119,13 @@ export default function NuevoEquipamiento({
 
       {modo === "reserva" ? (
         elegida ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-900/60 px-3 py-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-fondo/60 px-3 py-2.5">
             <span>
-              <span className="block text-sm text-slate-100">
+              <span className="block text-sm text-tinta">
                 {elegida.huesped_nombre ?? "Sin nombre"}{" "}
-                <span className="font-mono text-slate-400">{elegida.codigo_reserva}</span>
+                <span className="font-mono text-tinta-tenue">{elegida.codigo_reserva}</span>
               </span>
-              <span className="block text-xs text-slate-500">
+              <span className="block text-xs text-tinta-etiqueta">
                 {elegida.depto ?? "Sin departamento"}
                 {elegida.fecha_checkin && elegida.fecha_checkout && (
                   <>
@@ -139,7 +139,7 @@ export default function NuevoEquipamiento({
             <button
               type="button"
               onClick={limpiar}
-              className="text-xs text-slate-400 underline decoration-slate-600 underline-offset-4 hover:text-white"
+              className="text-xs text-tinta-tenue underline decoration-tinta-apagada underline-offset-4 hover:text-tinta"
             >
               Cambiar
             </button>
@@ -158,28 +158,28 @@ export default function NuevoEquipamiento({
               />
             </label>
             {q.trim().length >= 2 && (
-              <ul className="flex flex-col overflow-hidden rounded-lg border border-slate-700">
+              <ul className="flex flex-col overflow-hidden rounded-lg border border-borde-control">
                 {buscando ? (
-                  <li className="px-3 py-2 text-sm text-slate-500">Buscando…</li>
+                  <li className="px-3 py-2 text-sm text-tinta-etiqueta">Buscando…</li>
                 ) : resultados.length === 0 ? (
-                  <li className="px-3 py-2 text-sm text-slate-500">
+                  <li className="px-3 py-2 text-sm text-tinta-etiqueta">
                     Ninguna reserva coincide.
                   </li>
                 ) : (
                   resultados.map((r) => (
-                    <li key={r.id} className="border-b border-slate-800 last:border-0">
+                    <li key={r.id} className="border-b border-borde last:border-0">
                       <button
                         type="button"
                         onClick={() => setElegida(r)}
-                        className="w-full px-3 py-2 text-left transition-colors hover:bg-slate-800"
+                        className="w-full px-3 py-2 text-left transition-colors hover:bg-elevada"
                       >
-                        <span className="block text-sm text-slate-100">
+                        <span className="block text-sm text-tinta">
                           {r.huesped_nombre ?? "Sin nombre"}{" "}
-                          <span className="font-mono text-slate-400">
+                          <span className="font-mono text-tinta-tenue">
                             {r.codigo_reserva}
                           </span>
                         </span>
-                        <span className="block text-xs text-slate-500">
+                        <span className="block text-xs text-tinta-etiqueta">
                           {r.depto ?? "Sin departamento"}
                           {r.fecha_checkin && ` · entra ${formatearFechaAR(r.fecha_checkin)}`}
                         </span>
@@ -228,7 +228,7 @@ export default function NuevoEquipamiento({
         </label>
       </div>
       {modo === "reserva" && elegida && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-tinta-etiqueta">
           Si las dejás vacías se usan las fechas de la estadía.
         </p>
       )}
@@ -239,12 +239,12 @@ export default function NuevoEquipamiento({
       </label>
 
       {estado && "error" in estado && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
           {estado.error}
         </p>
       )}
       {estado && "ok" in estado && (
-        <p className="rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+        <p className="rounded-lg bg-exito-soft px-3 py-2 text-sm text-exito-text">
           ✓ {estado.ok}
         </p>
       )}
@@ -253,14 +253,14 @@ export default function NuevoEquipamiento({
         <button
           type="submit"
           disabled={pendiente}
-          className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
+          className={clsBoton("primario", "chico")}
         >
           {pendiente ? "Guardando…" : "Guardar"}
         </button>
         <button
           type="button"
           onClick={() => setAbierto(false)}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+          className={clsBoton("secundario", "chico")}
         >
           Cerrar
         </button>

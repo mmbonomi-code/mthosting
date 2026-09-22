@@ -89,18 +89,18 @@ export default function FormularioPuntoAcceso({
             type="checkbox"
             name="sirve_checkin"
             defaultChecked={valores.sirve_checkin ?? true}
-            className="size-5 accent-white"
+            className="size-5 accent-primary"
           />
-          <span className="text-base text-slate-200">Check-in (entrada)</span>
+          <span className="text-base text-tinta-media">Check-in (entrada)</span>
         </label>
         <label className="flex items-center gap-3 py-1">
           <input
             type="checkbox"
             name="sirve_checkout"
             defaultChecked={valores.sirve_checkout ?? true}
-            className="size-5 accent-white"
+            className="size-5 accent-primary"
           />
-          <span className="text-base text-slate-200">Check-out (salida)</span>
+          <span className="text-base text-tinta-media">Check-out (salida)</span>
         </label>
       </fieldset>
 
@@ -109,11 +109,11 @@ export default function FormularioPuntoAcceso({
           type="checkbox"
           name="recibe_limpieza"
           defaultChecked={valores.recibe_limpieza ?? false}
-          className="mt-0.5 size-5 accent-white"
+          className="mt-0.5 size-5 accent-primary"
         />
-        <span className="text-base text-slate-200">
+        <span className="text-base text-tinta-media">
           Acá las valijas las recibe la limpieza
-          <span className="block text-sm text-slate-400">
+          <span className="block text-sm text-tinta-tenue">
             Se les avisa en su pantalla. Si las valijas quedan en un lugar del
             edificio o en la oficina, dejalo sin tildar: a la limpieza no le
             cambia nada.
@@ -126,15 +126,15 @@ export default function FormularioPuntoAcceso({
           type="checkbox"
           name="activo"
           defaultChecked={valores.activo ?? true}
-          className="size-5 accent-white"
+          className="size-5 accent-primary"
         />
-        <span className="text-base text-slate-200">Activo</span>
+        <span className="text-base text-tinta-media">Activo</span>
       </label>
 
       {estado?.error && (
         <p
           role="alert"
-          className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300 sm:col-span-2"
+          className="rounded-lg bg-error-soft px-4 py-3 text-sm text-error-text sm:col-span-2"
         >
           {estado.error}
         </p>

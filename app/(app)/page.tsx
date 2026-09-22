@@ -1,3 +1,4 @@
+import { clsBoton } from "@/lib/ui";
 import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { crearPrimerAdmin } from "./acciones";
@@ -51,7 +52,7 @@ export default async function Inicio() {
           />
           <button
             type="submit"
-            className="h-12 rounded-lg bg-primary text-base font-semibold text-tinta-inversa transition-colors hover:bg-primary-hover"
+            className={clsBoton("primario", "grande")}
           >
             Crear mi ficha de admin
           </button>

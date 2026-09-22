@@ -344,8 +344,8 @@ export default function Tablas({
                           f.porCobrar ? ` · por cobrar ${usd(f.porCobrar)}` : ""
                         }`}
                       >
-                        <span className="bg-exito-intenso" style={{ width: `${pctComision}%` }} />
-                        <span className="bg-aviso-intenso" style={{ width: `${pctLimpieza}%` }} />
+                        <span className="bg-exito" style={{ width: `${pctComision}%` }} />
+                        <span className="bg-aviso" style={{ width: `${pctLimpieza}%` }} />
                         {/* Lo que falta cobrar va en azul: es una previsión,
                             no plata hecha, y tiene que distinguirse. */}
                         <span className="flex-1 bg-dato-soft" />

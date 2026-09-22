@@ -44,7 +44,7 @@ export default function FormularioPeriodica({
           placeholder="15"
           className={`${clsEntrada} sm:w-32`}
         />
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-tinta-etiqueta">
           A partir de cuántos días sin hacerla se le avisa a quien limpia.
         </span>
       </label>
@@ -54,13 +54,13 @@ export default function FormularioPeriodica({
           type="checkbox"
           name="activo"
           defaultChecked={valores.activo ?? true}
-          className="size-5 accent-white"
+          className="size-5 accent-primary"
         />
-        <span className="text-base text-slate-200">Activa</span>
+        <span className="text-base text-tinta-media">Activa</span>
       </label>
 
       {estado?.error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-4 py-3 text-sm text-error-text">
           {estado.error}
         </p>
       )}

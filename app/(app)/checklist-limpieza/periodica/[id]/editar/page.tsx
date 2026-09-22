@@ -21,7 +21,7 @@ export default async function EditarTareaPeriodica({
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-white">{tarea.item}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-tinta">{tarea.item}</h1>
       <FormularioPeriodica accion={actualizarTareaPeriodica.bind(null, id)} valores={tarea} />
     </main>
   );

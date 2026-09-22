@@ -39,7 +39,7 @@ export default function FormularioItem({
             <option key={s} value={s} />
           ))}
         </datalist>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-tinta-etiqueta">
           Una existente lo suma a esa sección. Una nueva crea la sección.
         </span>
       </label>
@@ -60,13 +60,13 @@ export default function FormularioItem({
           type="checkbox"
           name="activo"
           defaultChecked={valores.activo ?? true}
-          className="size-5 accent-white"
+          className="size-5 accent-primary"
         />
-        <span className="text-base text-slate-200">Activo</span>
+        <span className="text-base text-tinta-media">Activo</span>
       </label>
 
       {estado?.error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-4 py-3 text-sm text-error-text">
           {estado.error}
         </p>
       )}

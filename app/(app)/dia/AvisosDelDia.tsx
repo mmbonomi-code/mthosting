@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { formatearFechaAR } from "@/lib/fechas";
 import { vigenteEl, type Nota, type Seccion } from "@/lib/reporte/notas";
 import {
+  avisoDelDia,
   ETIQUETA_TIPO,
-  seEntregaEl,
-  seRetiraEl,
   type Equipamiento,
   type EstadoEquipamiento,
   type TipoEquipamiento,
@@ -41,8 +39,9 @@ export default async function AvisosDelDia({ fecha }: { fecha: string }) {
       )
       .eq("activo", true)
       .neq("estado", "retirado")
-      .lte("fecha_desde", fecha)
-      .gte("fecha_hasta", fecha)
+      // Solo el día que llega y el día que se va: es cuando logística tiene
+      // que hacer algo (decisión del dueño, 22/09/2026).
+      .or(`fecha_desde.eq.${fecha},fecha_hasta.eq.${fecha}`)
       .limit(200),
   ]);
 
@@ -89,21 +88,25 @@ export default async function AvisosDelDia({ fecha }: { fecha: string }) {
     reserva: { id: string; codigo_reserva: string; huesped_nombre: string | null } | null;
   };
 
-  const equipos: Equipamiento[] = (
+  const equipos: (Equipamiento & { aviso: NonNullable<ReturnType<typeof avisoDelDia>> })[] = (
     (equiposCrudos ?? []) as unknown as CrudaEquipo[]
-  ).map((e) => ({
-    id: e.id,
-    tipo: e.tipo as TipoEquipamiento,
-    reserva_id: e.reserva?.id ?? null,
-    codigo_reserva: e.reserva?.codigo_reserva ?? null,
-    huesped_nombre: e.reserva?.huesped_nombre ?? null,
-    depto_id: e.depto?.id ?? null,
-    depto_codigo: e.depto?.codigo ?? null,
-    fecha_desde: e.fecha_desde,
-    fecha_hasta: e.fecha_hasta,
-    estado: e.estado as EstadoEquipamiento,
-    notas: e.notas,
-  }));
+  ).flatMap((cruda) => {
+    const e: Equipamiento = {
+      id: cruda.id,
+      tipo: cruda.tipo as TipoEquipamiento,
+      reserva_id: cruda.reserva?.id ?? null,
+      codigo_reserva: cruda.reserva?.codigo_reserva ?? null,
+      huesped_nombre: cruda.reserva?.huesped_nombre ?? null,
+      depto_id: cruda.depto?.id ?? null,
+      depto_codigo: cruda.depto?.codigo ?? null,
+      fecha_desde: cruda.fecha_desde,
+      fecha_hasta: cruda.fecha_hasta,
+      estado: cruda.estado as EstadoEquipamiento,
+      notas: cruda.notas,
+    };
+    const aviso = avisoDelDia(e, fecha);
+    return aviso ? [{ ...e, aviso }] : [];
+  });
 
   if (vigentes.length === 0 && equipos.length === 0) return null;
 
@@ -145,14 +148,12 @@ export default async function AvisosDelDia({ fecha }: { fecha: string }) {
                 <span className="text-slate-500"> para {e.huesped_nombre}</span>
               )}
             </span>
-            {seEntregaEl(e, fecha) ? (
-              <span className="ml-1 text-xs text-amber-300">— hay que llevarla hoy</span>
-            ) : seRetiraEl(e, fecha) ? (
-              <span className="ml-1 text-xs text-amber-300">— hay que retirarla hoy</span>
+            {e.aviso === "llevar" ? (
+              <span className="ml-1 text-xs text-amber-300">— logística la tiene que llevar hoy</span>
+            ) : e.aviso === "retirar" ? (
+              <span className="ml-1 text-xs text-amber-300">— logística la tiene que retirar hoy</span>
             ) : (
-              <span className="ml-1 text-xs text-slate-500">
-                — hasta el {formatearFechaAR(e.fecha_hasta)}
-              </span>
+              <span className="ml-1 text-xs text-emerald-300">— ya entregada ✓</span>
             )}
           </li>
         ))}

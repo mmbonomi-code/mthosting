@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  avisoDelDia,
   describir,
   enUsoEl,
   filtrarEquipamiento,
@@ -63,6 +64,45 @@ describe("seEntregaEl y seRetiraEl", () => {
     const unDia = equipo({ fecha_desde: "2026-08-15", fecha_hasta: "2026-08-15" });
     expect(seEntregaEl(unDia, "2026-08-15")).toBe(true);
     expect(seRetiraEl(unDia, "2026-08-15")).toBe(true);
+  });
+});
+
+describe("avisoDelDia: solo el día de check-in y el de check-out", () => {
+  it("el día que llega hay que llevarla", () => {
+    expect(avisoDelDia(equipo(), "2026-08-15")).toBe("llevar");
+  });
+
+  it("si ya se dejó, ese día figura como entregada", () => {
+    expect(avisoDelDia(equipo({ estado: "entregado" }), "2026-08-15")).toBe("entregada");
+  });
+
+  it("los días del medio no aparece", () => {
+    for (const dia of ["2026-08-16", "2026-08-19", "2026-08-22"]) {
+      expect(avisoDelDia(equipo(), dia)).toBeNull();
+      expect(avisoDelDia(equipo({ estado: "entregado" }), dia)).toBeNull();
+    }
+  });
+
+  it("el día que se va hay que retirarla", () => {
+    expect(avisoDelDia(equipo({ estado: "entregado" }), "2026-08-23")).toBe("retirar");
+    // Aunque nadie la haya marcado entregada: si está, hay que ir a buscarla.
+    expect(avisoDelDia(equipo(), "2026-08-23")).toBe("retirar");
+  });
+
+  it("ya retirada no aparece más", () => {
+    expect(avisoDelDia(equipo({ estado: "retirado" }), "2026-08-23")).toBeNull();
+    expect(avisoDelDia(equipo({ estado: "retirado" }), "2026-08-15")).toBeNull();
+  });
+
+  it("fuera del tramo no aparece", () => {
+    expect(avisoDelDia(equipo(), "2026-08-14")).toBeNull();
+    expect(avisoDelDia(equipo(), "2026-08-24")).toBeNull();
+  });
+
+  it("un pedido de un solo día: primero se lleva, después se retira", () => {
+    const unDia = equipo({ fecha_desde: "2026-08-15", fecha_hasta: "2026-08-15" });
+    expect(avisoDelDia(unDia, "2026-08-15")).toBe("llevar");
+    expect(avisoDelDia({ ...unDia, estado: "entregado" }, "2026-08-15")).toBe("retirar");
   });
 });
 

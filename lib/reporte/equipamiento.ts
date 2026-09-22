@@ -54,6 +54,29 @@ export function seRetiraEl(e: Equipamiento, dia: string): boolean {
 }
 
 /**
+ * Qué tiene que hacer logística con este equipo ese día, para el Día.
+ *
+ * Solo aparece el día que llega (check-in) y el día que se va (check-out):
+ * los días del medio no piden nada y llenaban la lista (decisión del dueño,
+ * 22/09/2026).
+ *
+ *  - "llevar": arranca ese día y todavía no se entregó.
+ *  - "entregada": arranca ese día y ya se dejó. Se sigue viendo, para que se
+ *    sepa que está resuelto.
+ *  - "retirar": termina ese día y no se retiró. En un pedido de un solo día,
+ *    primero se lleva: hasta que no se entregue, no hay nada que retirar.
+ */
+export type AvisoEquipamiento = "llevar" | "entregada" | "retirar";
+
+export function avisoDelDia(e: Equipamiento, dia: string): AvisoEquipamiento | null {
+  if (e.estado === "retirado") return null;
+  if (e.fecha_desde === dia && e.estado === "pedido") return "llevar";
+  if (e.fecha_hasta === dia) return "retirar";
+  if (e.fecha_desde === dia) return "entregada";
+  return null;
+}
+
+/**
  * Lo pendiente de hoy en adelante, del más próximo al más lejano. Lo ya
  * retirado no aparece: es historia.
  */

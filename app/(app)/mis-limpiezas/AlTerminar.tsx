@@ -4,7 +4,7 @@ import { useActionState, useTransition } from "react";
 import { comprimirImagen } from "@/lib/limpiezas/comprimir";
 import { usePendientes } from "./PendientesProvider";
 import type { EstadoFormulario } from "./tipos";
-import { clsAreaTexto, clsEntrada, clsEtiqueta } from "@/lib/ui";
+import { clsAreaTexto, clsEntrada, clsEtiqueta, clsBoton } from "@/lib/ui";
 
 /**
  * El cierre de la limpieza: dejar la observación para la próxima, cargar el
@@ -52,13 +52,13 @@ export default function AlTerminar({
   );
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-      <h2 className="font-medium text-white">Al terminar</h2>
+    <section className="flex flex-col gap-4 rounded-xl border border-borde-control bg-superficie p-4">
+      <h2 className="font-medium text-tinta">Al terminar</h2>
 
       <label className="flex flex-col gap-1.5">
         <span className={clsEtiqueta}>
           Observación para la próxima limpieza
-          <span className="mt-0.5 block text-xs font-normal normal-case tracking-normal text-slate-500">
+          <span className="mt-0.5 block text-xs font-normal normal-case tracking-normal text-tinta-etiqueta">
             Le queda a quien limpie este depto la próxima vez: qué faltó llevar, qué encontró raro.
           </span>
         </span>
@@ -84,7 +84,7 @@ export default function AlTerminar({
       <div className="flex flex-col gap-2">
         <span className={clsEtiqueta}>Viático (si gastaste en algo)</span>
         <div className="flex items-center gap-2">
-          <span className="text-slate-400">{monedaMonto}</span>
+          <span className="text-tinta-tenue">{monedaMonto}</span>
           <input
             type="text"
             inputMode="decimal"
@@ -103,7 +103,7 @@ export default function AlTerminar({
               });
             }}
           />
-          <label className="flex h-11 cursor-pointer items-center rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition-colors hover:bg-slate-700">
+          <label className="flex h-11 cursor-pointer items-center rounded-lg border border-borde-control px-3 text-sm text-tinta-suave transition-colors hover:bg-elevada-hover">
             {pendienteComprobante ? "Subiendo…" : "📷 Comprobante"}
             <input
               type="file"
@@ -124,10 +124,10 @@ export default function AlTerminar({
           </label>
         </div>
         {estadoComprobante && "ok" in estadoComprobante && (
-          <span className="text-sm text-emerald-400">✓ {estadoComprobante.ok}</span>
+          <span className="text-sm text-exito-text">✓ {estadoComprobante.ok}</span>
         )}
         {estadoComprobante && "error" in estadoComprobante && (
-          <span className="text-sm text-red-400">{estadoComprobante.error}</span>
+          <span className="text-sm text-error-text">{estadoComprobante.error}</span>
         )}
       </div>
 
@@ -135,17 +135,17 @@ export default function AlTerminar({
         <button
           type="submit"
           disabled={pendienteFinal}
-          className="h-12 rounded-lg bg-white px-5 text-base font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
+          className={clsBoton("primario", "grande")}
         >
           {pendienteFinal ? "Guardando…" : "Marcar como terminada"}
         </button>
         {!puedeFinalizar && (
-          <p className="text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-tinta-etiqueta">
             Hace falta al menos una foto del departamento terminado.
           </p>
         )}
         {estadoFinal && "error" in estadoFinal && (
-          <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-center text-sm text-red-300">
+          <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-center text-sm text-error-text">
             {estadoFinal.error}
           </p>
         )}

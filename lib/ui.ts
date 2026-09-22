@@ -29,8 +29,9 @@ const VARIANTE: Record<VarianteBoton, string> = {
 };
 
 const TAMANO: Record<TamanoBoton, string> = {
-  // Acciones dentro de una fila o de una tarjeta, solo en escritorio.
-  chico: "h-9 px-3 text-sm",
+  // Acciones dentro de una fila o de una tarjeta: compacto en escritorio,
+  // pero en el celular no baja de 44px.
+  chico: "h-11 px-3 text-sm sm:h-9",
   // En el celular nada tocable baja de 44px.
   normal: "h-11 px-5 text-sm",
   // La acción principal de una pantalla de celular.

@@ -9,21 +9,20 @@ import { traerInteracciones } from "@/lib/limpiezas/interaccion-db";
 import { claveOrden } from "@/lib/limpiezas/interaccion";
 import InteraccionHuespedes from "./InteraccionHuespedes";
 import SinPermiso from "@/app/componentes/SinPermiso";
+import Badge from "@/app/componentes/Badge";
+import { TONO_LIMPIEZA, type EstadoLimpieza } from "@/lib/estados";
 
 const DIAS_ATRAS = 15;
 
+// Las palabras del personal de limpieza, no las de la oficina. El color sí
+// es el de todas las limpiezas (lib/estados.ts).
 const ETIQUETA_ESTADO: Record<string, string> = {
   asignada: "Asignada",
   en_curso: "En curso",
   hecha: "Terminada",
   verificada: "Terminada",
 };
-const TONO_ESTADO: Record<string, string> = {
-  asignada: "bg-sky-950 text-sky-300",
-  en_curso: "bg-amber-950 text-amber-300",
-  hecha: "bg-emerald-950 text-emerald-300",
-  verificada: "bg-emerald-950 text-emerald-300",
-};
+
 
 export default async function MisLimpiezas({
   searchParams,
@@ -91,21 +90,21 @@ export default async function MisLimpiezas({
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Mis limpiezas</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">Mis limpiezas</h1>
         <div className="mt-2 flex items-center justify-between gap-2">
           <Link
             href={`/mis-limpiezas?fecha=${sumarDias(fechaElegida, -1)}`}
             aria-label="Día anterior"
-            className={`flex h-11 w-11 items-center justify-center rounded-lg border border-slate-700 text-slate-300 transition-colors hover:bg-slate-800 ${esMinimo ? "pointer-events-none opacity-25" : ""}`}
+            className={`flex h-11 w-11 items-center justify-center rounded-lg border border-borde-control text-tinta-suave transition-colors hover:bg-elevada ${esMinimo ? "pointer-events-none opacity-25" : ""}`}
           >
             ←
           </Link>
           <div className="text-center">
-            <p className="text-lg font-medium text-white">
+            <p className="text-lg font-medium text-tinta">
               {esHoy ? "Hoy" : esManana ? "Mañana" : formatearFechaAR(fechaElegida)}
             </p>
             {!esHoy && (
-              <Link href="/mis-limpiezas" className="text-xs text-slate-500 hover:text-slate-300">
+              <Link href="/mis-limpiezas" className="text-xs text-tinta-etiqueta hover:text-tinta-suave">
                 Volver a hoy
               </Link>
             )}
@@ -113,7 +112,7 @@ export default async function MisLimpiezas({
           <Link
             href={`/mis-limpiezas?fecha=${sumarDias(fechaElegida, 1)}`}
             aria-label="Día siguiente"
-            className={`flex h-11 w-11 items-center justify-center rounded-lg border border-slate-700 text-slate-300 transition-colors hover:bg-slate-800 ${esManana ? "pointer-events-none opacity-25" : ""}`}
+            className={`flex h-11 w-11 items-center justify-center rounded-lg border border-borde-control text-tinta-suave transition-colors hover:bg-elevada ${esManana ? "pointer-events-none opacity-25" : ""}`}
           >
             →
           </Link>
@@ -121,7 +120,7 @@ export default async function MisLimpiezas({
       </div>
 
       {lista.length === 0 ? (
-        <p className="py-12 text-center text-slate-500">
+        <p className="py-12 text-center text-tinta-etiqueta">
           {esHoy
             ? "No tenés limpiezas para hoy."
             : esManana
@@ -134,24 +133,24 @@ export default async function MisLimpiezas({
             <li key={l.id}>
               <Link
                 href={`/mis-limpiezas/${l.id}`}
-                className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-4 transition-colors hover:bg-slate-800/70"
+                className="flex flex-col gap-2 rounded-xl border border-borde bg-superficie p-4 transition-colors hover:bg-elevada/70"
               >
                 <div>
-                  <p className="text-base font-semibold text-white">{l.depto?.codigo}</p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-base font-semibold text-tinta">{l.depto?.codigo}</p>
+                  <p className="text-sm text-tinta-tenue">
                     {l.depto?.barrio} · {TIPOS_LIMPIEZA[l.tipo] ?? l.tipo}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${TONO_ESTADO[l.estado] ?? "bg-slate-800 text-slate-300"}`}>
+                  <Badge tono={TONO_LIMPIEZA[l.estado as EstadoLimpieza] ?? TONO_LIMPIEZA.pendiente}>
                     {ETIQUETA_ESTADO[l.estado] ?? l.estado}
-                  </span>
+                  </Badge>
                   {(l.reserva?.noches ?? 0) >= 10 && (
-                    <span className="rounded-full bg-amber-950 px-2.5 py-0.5 text-xs font-medium text-amber-300">
+                    <span className="rounded-full bg-aviso-soft px-2.5 py-0.5 text-xs font-medium text-aviso-text">
                       {l.reserva!.noches} noches
                     </span>
                   )}
-                  <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-400">
+                  <span className="rounded-full bg-elevada px-2.5 py-0.5 text-xs font-medium text-tinta-tenue">
                     {diasSin[i] ? `${diasSinLimpiar(diasSin[i]!.fecha, fechaElegida)} días sin limpiarse` : "sin limpiezas previas"}
                   </span>
                 </div>

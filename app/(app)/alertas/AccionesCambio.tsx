@@ -1,14 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { clsBoton } from "@/lib/ui";
 import type { EstadoCambio } from "./acciones";
 
 type Accion = () => Promise<EstadoCambio>;
 
-const clsBoton =
-  "h-11 rounded-md border border-slate-700 px-3 text-xs sm:h-9 font-medium text-slate-300 transition-colors hover:bg-slate-700 disabled:opacity-60";
-const clsBotonFuerte =
-  "h-11 rounded-md bg-red-500 px-3 text-xs sm:h-9 font-medium text-red-950 transition-colors hover:bg-red-400 disabled:opacity-60";
+const clsComun = clsBoton("secundario", "chico");
+const clsFuerte = clsBoton("peligro", "chico");
 
 /**
  * Los botones de una marca del calendario.
@@ -57,11 +56,11 @@ export default function AccionesCambio({
     <div className="flex flex-col items-start gap-1.5 sm:max-w-xs sm:items-end">
       {preguntando ? (
         <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
-          <span className="text-xs text-red-200">
+          <span className="text-xs text-error-text-fuerte">
             ¿Cancelar <span className="font-mono">{codigo}</span>? No se deshace.
           </span>
           <form action={enviarConfirmar}>
-            <button type="submit" disabled={ocupado} className={clsBotonFuerte}>
+            <button type="submit" disabled={ocupado} className={clsFuerte}>
               {confirmando ? "Cancelando…" : "Sí, cancelarla"}
             </button>
           </form>
@@ -69,7 +68,7 @@ export default function AccionesCambio({
             type="button"
             onClick={() => setPreguntando(false)}
             disabled={ocupado}
-            className={clsBoton}
+            className={clsComun}
           >
             No
           </button>
@@ -82,30 +81,30 @@ export default function AccionesCambio({
                 type="button"
                 onClick={() => setPreguntando(true)}
                 disabled={ocupado}
-                className={clsBotonFuerte}
+                className={clsFuerte}
               >
                 {etiquetaConfirmar}
               </button>
             ) : (
               <form action={enviarConfirmar}>
-                <button type="submit" disabled={ocupado} className={clsBotonFuerte}>
+                <button type="submit" disabled={ocupado} className={clsFuerte}>
                   {confirmando ? "Aplicando…" : etiquetaConfirmar}
                 </button>
               </form>
             ))}
           <form action={enviarDescartar}>
-            <button type="submit" disabled={ocupado} className={clsBoton}>
+            <button type="submit" disabled={ocupado} className={clsComun}>
               {descartando ? "Guardando…" : etiquetaDescartar}
             </button>
           </form>
         </div>
       )}
       {error && (
-        <p role="alert" className="text-xs text-red-300 sm:text-right">
+        <p role="alert" className="text-xs text-error-text sm:text-right">
           {error}
         </p>
       )}
-      {ok && <p className="text-xs text-emerald-300 sm:text-right">{ok}</p>}
+      {ok && <p className="text-xs text-exito-text sm:text-right">{ok}</p>}
     </div>
   );
 }

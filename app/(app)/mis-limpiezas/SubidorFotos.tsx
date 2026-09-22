@@ -75,10 +75,10 @@ export default function SubidorFotos({
   return (
     <div className="flex flex-col gap-2">
       <div>
-        <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <span className="text-xs font-medium uppercase tracking-wide text-tinta-etiqueta">
           {etiqueta}
         </span>
-        {ayuda && <p className="text-xs text-slate-500">{ayuda}</p>}
+        {ayuda && <p className="text-xs text-tinta-etiqueta">{ayuda}</p>}
       </div>
       <div className="grid grid-cols-3 gap-2">
         {fotos.map((f) =>
@@ -88,7 +88,7 @@ export default function SubidorFotos({
               href={f.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-800"
+              className="aspect-square overflow-hidden rounded-lg border border-borde-control bg-elevada"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={f.url} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -99,7 +99,7 @@ export default function SubidorFotos({
         {enEspera.map((f) => (
           <div
             key={f.id}
-            className="relative aspect-square overflow-hidden rounded-lg border border-amber-800 bg-slate-800"
+            className="relative aspect-square overflow-hidden rounded-lg border border-aviso-borde bg-elevada"
           >
             {urls.get(f.id) && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -110,7 +110,7 @@ export default function SubidorFotos({
                 loading="lazy"
               />
             )}
-            <span className="absolute inset-x-0 bottom-0 bg-amber-950/90 px-1 py-0.5 text-center text-[10px] font-medium text-amber-200">
+            <span className="absolute inset-x-0 bottom-0 bg-aviso-soft/90 px-1 py-0.5 text-center text-[10px] font-medium text-aviso-text-fuerte">
               guardada, falta subir
             </span>
           </div>
@@ -120,7 +120,7 @@ export default function SubidorFotos({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={subiendo}
-          className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-600 text-slate-400 transition-colors hover:bg-slate-800/60 disabled:opacity-60"
+          className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-borde-fuerte text-tinta-tenue transition-colors hover:bg-superficie-alt disabled:opacity-60"
         >
           <span className="text-xl">📷</span>
           <span className="text-xs">{subiendo ? "Guardando…" : "Agregar"}</span>

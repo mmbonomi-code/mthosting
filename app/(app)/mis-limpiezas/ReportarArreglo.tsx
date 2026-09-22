@@ -35,14 +35,14 @@ export default function ReportarArreglo({
         <button
           type="submit"
           disabled={pendiente}
-          className="h-10 shrink-0 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-60"
+          className="h-10 shrink-0 rounded-lg border border-borde-control px-4 text-sm font-medium text-tinta-media transition-colors hover:bg-elevada-hover disabled:opacity-60"
         >
           {pendiente ? "Reportando…" : "Reportar"}
         </button>
         {estado && "ok" in estado && (
-          <span className="text-sm text-emerald-400">✓ {estado.ok}</span>
+          <span className="text-sm text-exito-text">✓ {estado.ok}</span>
         )}
-        {estado && "error" in estado && <span className="text-sm text-red-400">{estado.error}</span>}
+        {estado && "error" in estado && <span className="text-sm text-error-text">{estado.error}</span>}
       </div>
     </form>
   );

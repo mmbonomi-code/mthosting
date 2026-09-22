@@ -187,8 +187,8 @@ export default function PendientesProvider({ children }: { children: React.React
           role="status"
           className={`sticky top-0 z-10 rounded-lg px-3 py-2 text-sm font-medium ${
             cantidad > 0
-              ? "bg-amber-950/80 text-amber-200"
-              : "bg-slate-800 text-slate-300"
+              ? "bg-aviso-soft/80 text-aviso-text-fuerte"
+              : "bg-elevada text-tinta-suave"
           }`}
         >
           {cantidad > 0

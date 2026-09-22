@@ -30,8 +30,8 @@ export default function ItemChecklist({
 
   return (
     <label
-      className={`flex min-h-11 items-center gap-3 border-t border-slate-800 py-2.5 first:border-t-0 ${
-        hecho ? "text-slate-500 line-through" : "text-slate-200"
+      className={`flex min-h-11 items-center gap-3 border-t border-borde py-2.5 first:border-t-0 ${
+        hecho ? "text-tinta-etiqueta line-through" : "text-tinta-media"
       }`}
     >
       <input
@@ -44,12 +44,12 @@ export default function ItemChecklist({
             await registrar({ clase: "checklist", limpiezaId, filaId, hecho: valor });
           });
         }}
-        className="size-5 shrink-0 accent-white"
+        className="size-5 shrink-0 accent-primary"
       />
       <span className="min-w-0 flex-1">
         <span className="block">{etiqueta}</span>
         {chip && !hecho && (
-          <span className="mt-0.5 inline-block rounded-full bg-amber-950/60 px-2 py-0.5 text-xs font-medium text-amber-300">
+          <span className="mt-0.5 inline-block rounded-full bg-aviso-soft/60 px-2 py-0.5 text-xs font-medium text-aviso-text">
             {chip}
           </span>
         )}

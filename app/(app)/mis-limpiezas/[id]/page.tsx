@@ -1,3 +1,4 @@
+import { clsBoton } from "@/lib/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
@@ -211,96 +212,96 @@ export default async function DetalleMiLimpieza({
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <PendientesProvider>
-      <Link href="/mis-limpiezas" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/mis-limpiezas" className="text-sm text-tinta-tenue hover:text-tinta">
         ← Todas mis limpiezas
       </Link>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">{depto.codigo}</h1>
-        <p className="text-sm text-slate-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">{depto.codigo}</h1>
+        <p className="text-sm text-tinta-tenue">
           {depto.barrio} · {TIPOS_LIMPIEZA[limpieza.tipo] ?? limpieza.tipo}
         </p>
       </div>
 
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Cómo llegar</h2>
-        <p className="text-slate-200">{depto.direccion ?? "Sin dirección cargada"}</p>
+      <section className="flex flex-col gap-3 rounded-xl border border-borde-control bg-superficie p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-tinta-etiqueta">Cómo llegar</h2>
+        <p className="text-tinta-media">{depto.direccion ?? "Sin dirección cargada"}</p>
         {mapsUrl && (
           <a
             href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-11 items-center justify-center rounded-lg border border-slate-600 text-slate-200 transition-colors hover:bg-slate-700"
+            className="flex h-11 items-center justify-center rounded-lg border border-borde-fuerte text-tinta-media transition-colors hover:bg-elevada-hover"
           >
             📍 Abrir en Google Maps
           </a>
         )}
       </section>
 
-      <section className="flex flex-col gap-2 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <section className="flex flex-col gap-2 rounded-xl border border-borde-control bg-superficie p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-tinta-etiqueta">
           Ventana y carga de trabajo
         </h2>
         <InteraccionHuespedes interaccion={interaccion} />
         {proximaOtroDia && (
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Próxima entrada</span>
-            <span className="font-medium tabular-nums text-slate-200">
+            <span className="text-tinta-tenue">Próxima entrada</span>
+            <span className="font-medium tabular-nums text-tinta-media">
               {formatearFechaAR(proximaOtroDia)}
             </span>
           </div>
         )}
         {limpieza.reserva?.noches != null && (
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Duró la estadía</span>
-            <span className="font-medium text-slate-200">{limpieza.reserva.noches} noches</span>
+            <span className="text-tinta-tenue">Duró la estadía</span>
+            <span className="font-medium text-tinta-media">{limpieza.reserva.noches} noches</span>
           </div>
         )}
         <div className="flex justify-between text-sm">
-          <span className="text-slate-400">Días sin limpiarse</span>
-          <span className="font-medium text-slate-200">
+          <span className="text-tinta-tenue">Días sin limpiarse</span>
+          <span className="font-medium text-tinta-media">
             {diasSin === null ? "sin limpiezas previas" : `${diasSin} días`}
           </span>
         </div>
         {(limpieza.reserva?.noches ?? 0) >= 10 && (
-          <p className="rounded-lg bg-amber-950/50 px-3 py-2 text-sm text-amber-300">
+          <p className="rounded-lg bg-aviso-soft/50 px-3 py-2 text-sm text-aviso-text">
             ⚠ Estadía larga: puede llevar más tiempo de lo habitual.
           </p>
         )}
         {interaccion.entrada && (
-          <p className="rounded-lg bg-orange-950/50 px-3 py-2 text-sm font-medium text-orange-300">
+          <p className="rounded-lg bg-ahora-soft/50 px-3 py-2 text-sm font-medium text-ahora-text">
             Entra alguien nuevo el mismo día. No hay margen: priorizá este depto.
           </p>
         )}
       </section>
 
       {queLlevar.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Qué llevar</h2>
+        <section className="flex flex-col gap-2 rounded-xl border border-borde-control bg-superficie p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-tinta-etiqueta">Qué llevar</h2>
           <ul className="flex flex-col">
             {queLlevar.map((q) => (
-              <li key={q.item} className="flex justify-between border-t border-slate-800 py-2 first:border-t-0">
-                <span className="text-slate-200">{q.item}</span>
-                <span className="font-semibold text-white">{q.cantidad}</span>
+              <li key={q.item} className="flex justify-between border-t border-borde py-2 first:border-t-0">
+                <span className="text-tinta-media">{q.item}</span>
+                <span className="font-semibold text-tinta">{q.cantidad}</span>
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <section className="flex flex-col gap-3 rounded-xl border border-borde-control bg-superficie p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-tinta-etiqueta">
           De la limpieza anterior
         </h2>
         {anterior ? (
-          <p className="text-sm text-slate-400">Última vez: {anterior.fecha}</p>
+          <p className="text-sm text-tinta-tenue">Última vez: {anterior.fecha}</p>
         ) : (
-          <p className="text-sm text-slate-500">No hay una limpieza anterior de este depto.</p>
+          <p className="text-sm text-tinta-etiqueta">No hay una limpieza anterior de este depto.</p>
         )}
         {periodicasVencidas.length > 0 && (
           <div className="flex flex-col gap-1.5">
             {periodicasVencidas.map((t) => (
-              <p key={t.id} className="rounded-lg bg-sky-950/50 px-3 py-2 text-sm text-sky-300">
+              <p key={t.id} className="rounded-lg bg-dato-soft/50 px-3 py-2 text-sm text-dato-text">
                 <strong>{t.item}:</strong>{" "}
                 {t.dias === null ? "nunca se hizo" : `hace ${t.dias} días (cada ${t.frecuencia_dias})`} —
                 dale una pasada.
@@ -309,23 +310,23 @@ export default async function DetalleMiLimpieza({
           </div>
         )}
         {anterior?.observacion_proxima && (
-          <p className="rounded-lg bg-slate-900/60 px-3 py-2 text-sm italic text-slate-300">
+          <p className="rounded-lg bg-fondo/60 px-3 py-2 text-sm italic text-tinta-suave">
             &quot;{anterior.observacion_proxima}&quot;
           </p>
         )}
       </section>
 
-      <section className="flex flex-col gap-2 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+      <section className="flex flex-col gap-2 rounded-xl border border-borde-control bg-superficie p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Checklist</h2>
-          <span className="text-xs text-slate-500">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-tinta-etiqueta">Checklist</h2>
+          <span className="text-xs text-tinta-etiqueta">
             {hechos}/{(checklistFilas ?? []).length}
           </span>
         </div>
 
         {filasPeriodicas.length > 0 && (
           <div className="flex flex-col">
-            <p className="pt-1 text-sm font-medium text-slate-300">Periódicas</p>
+            <p className="pt-1 text-sm font-medium text-tinta-suave">Periódicas</p>
             {filasPeriodicas.map((f) => {
               const tarea = tareasConDias.find((t) => t.id === f.tarea_periodica_id);
               const chip = tarea
@@ -349,7 +350,7 @@ export default async function DetalleMiLimpieza({
 
         {[...porSeccion.entries()].map(([seccion, filas]) => (
           <div key={seccion} className="flex flex-col">
-            <p className="pt-2 text-sm font-medium text-slate-300">{seccion}</p>
+            <p className="pt-2 text-sm font-medium text-tinta-suave">{seccion}</p>
             {filas.map((f) => (
               <ItemChecklist
                 key={f.id}
@@ -367,7 +368,7 @@ export default async function DetalleMiLimpieza({
         <form action={iniciarLimpieza.bind(null, id)}>
           <button
             type="submit"
-            className="h-12 w-full rounded-lg bg-white text-base font-semibold text-slate-900 transition-colors hover:bg-slate-200"
+            className={`${clsBoton("primario", "grande")} w-full`}
           >
             Iniciar limpieza
           </button>
@@ -416,7 +417,7 @@ export default async function DetalleMiLimpieza({
               />
             ) : null,
           )}
-          <p className="rounded-lg bg-emerald-950/60 px-4 py-3 text-center text-sm font-medium text-emerald-300">
+          <p className="rounded-lg bg-exito-soft/60 px-4 py-3 text-center text-sm font-medium text-exito-text">
             ✓ Esta limpieza ya está terminada.
             {limpieza.monto_pactado != null &&
               ` Cobrás ${monedaMonto} ${limpieza.monto_pactado.toLocaleString("es-AR")}.`}

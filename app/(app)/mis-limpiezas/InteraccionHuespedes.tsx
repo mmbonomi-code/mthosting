@@ -14,34 +14,34 @@ export default function InteraccionHuespedes({ interaccion }: { interaccion: Int
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-2 gap-2 text-sm tabular-nums">
         {salida ? (
-          <div className="rounded-lg bg-slate-900/60 px-3 py-1.5">
-            <p className="text-xs text-slate-400">
+          <div className="rounded-lg bg-fondo/60 px-3 py-1.5">
+            <p className="text-xs text-tinta-tenue">
               {salida.otroDia ? `Salió el ${formatearFechaAR(salida.otroDia).slice(0, 5)}` : "Sale"}
             </p>
-            <p className="font-medium text-slate-200">{salida.hora}</p>
+            <p className="font-medium text-tinta-media">{salida.hora}</p>
           </div>
         ) : (
           <div />
         )}
         {entrada && (
-          <div className="rounded-lg bg-orange-950 px-3 py-1.5">
-            <p className="text-xs text-orange-300">Entra ese día</p>
-            <p className="font-semibold text-orange-200">{entrada.hora}</p>
+          <div className="rounded-lg bg-ahora-soft px-3 py-1.5">
+            <p className="text-xs text-ahora-text">Entra ese día</p>
+            <p className="font-semibold text-ahora-text-fuerte">{entrada.hora}</p>
           </div>
         )}
       </div>
       {salida?.dejaLlaves && (
-        <p className="rounded-lg bg-sky-950/60 px-3 py-2 text-sm text-sky-200">
+        <p className="rounded-lg bg-dato-soft/60 px-3 py-2 text-sm text-dato-text-fuerte">
           🔑 El huésped que sale te deja las llaves.
         </p>
       )}
       {entrada?.aviso === "valijas" && (
-        <p className="rounded-lg bg-sky-950/60 px-3 py-2 text-sm text-sky-200">
+        <p className="rounded-lg bg-dato-soft/60 px-3 py-2 text-sm text-dato-text-fuerte">
           🧳 El huésped que entra deja las valijas en el depto con vos.
         </p>
       )}
       {entrada?.aviso === "en_persona" && (
-        <p className="rounded-lg bg-sky-950/60 px-3 py-2 text-sm text-sky-200">
+        <p className="rounded-lg bg-dato-soft/60 px-3 py-2 text-sm text-dato-text-fuerte">
           🙋 Recibís en persona al huésped que entra.
         </p>
       )}

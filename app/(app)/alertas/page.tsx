@@ -1,3 +1,4 @@
+import { clsBoton } from "@/lib/ui";
 import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerAlertas } from "@/lib/alertas/permisos";
@@ -7,6 +8,7 @@ import { ETIQUETA_CAMBIO_CALENDARIO, TONO_CAMBIO_CALENDARIO } from "@/lib/estado
 import { diaARDe, formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import SinPermiso from "@/app/componentes/SinPermiso";
+import Badge from "@/app/componentes/Badge";
 import { crearReclamo } from "@/app/(app)/reclamos/acciones";
 import {
   confirmarCambioCalendario,
@@ -69,22 +71,22 @@ export default async function Alertas({
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Alertas</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-semibold tracking-tight text-tinta">Alertas</h1>
+          <p className="text-sm text-tinta-etiqueta">
             Del {formatearFechaAR(panel.desde)} al {formatearFechaAR(panel.hasta)}, más lo que
             esté en marcha ahora mismo.
           </p>
         </div>
         <Link
           href={ocultar ? "/alertas?verTodas=1" : "/alertas"}
-          className="flex h-11 items-center rounded-lg border border-slate-700 px-3 text-sm text-slate-300 transition-colors hover:bg-slate-800 sm:h-9"
+          className={`${clsBoton("secundario")} sm:h-9`}
         >
           {ocultar ? "Mostrar las que están en cero" : "Ocultar las que están en cero"}
         </Link>
       </div>
 
       {ocultar && contarCriticas(panel) + contarResto(panel) === 0 && (
-        <p className="py-12 text-center text-slate-500">No hay alertas. Todo en cero.</p>
+        <p className="py-12 text-center text-tinta-etiqueta">No hay alertas. Todo en cero.</p>
       )}
 
       <div className="flex flex-col gap-4">
@@ -142,11 +144,9 @@ export default async function Alertas({
                     {c.depto_id ? nombreDepto(c.depto_id) : "Sin departamento"} ·{" "}
                     <span className="font-mono">{c.codigo_reserva}</span>
                   </span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${TONO_CAMBIO_CALENDARIO[c.tipo].clases}`}
-                  >
+                  <Badge tono={TONO_CAMBIO_CALENDARIO[c.tipo]}>
                     {ETIQUETA_CAMBIO_CALENDARIO[c.tipo]}
-                  </span>
+                  </Badge>
                 </span>
               }
               sub={detalleCambio(c, nombreDepto)}
@@ -155,7 +155,7 @@ export default async function Alertas({
                 href={`https://www.airbnb.com/hosting/reservations/details/${c.codigo_reserva}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-11 items-center rounded-md border border-slate-700 px-3 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700 sm:h-9"
+                className="flex h-11 items-center rounded-md border border-borde-control px-3 text-xs font-medium text-tinta-suave transition-colors hover:bg-elevada-hover sm:h-9"
               >
                 Ver en Airbnb ↗
               </a>
@@ -428,18 +428,18 @@ function detalleCambio(c: FilaCambioCalendario, nombreDepto: (id: string) => str
 }
 
 const TONO: Record<"rojo" | "ambar", string> = {
-  rojo: "border-l-4 border-l-red-600 bg-red-950/30",
-  ambar: "border-l-4 border-l-amber-600 bg-amber-950/20",
+  rojo: "border-l-4 border-l-error bg-error-soft/30",
+  ambar: "border-l-4 border-l-aviso bg-aviso-soft/20",
 };
 
 const TONO_TITULO: Record<"rojo" | "ambar", string> = {
-  rojo: "text-red-200",
-  ambar: "text-amber-200",
+  rojo: "text-error-text-fuerte",
+  ambar: "text-aviso-text-fuerte",
 };
 
 const TONO_CANTIDAD: Record<"rojo" | "ambar", string> = {
-  rojo: "bg-red-500 text-red-950",
-  ambar: "bg-amber-500 text-amber-950",
+  rojo: "bg-error text-tinta-inversa",
+  ambar: "bg-aviso text-tinta-inversa",
 };
 
 function Seccion({
@@ -464,7 +464,7 @@ function Seccion({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className={`font-medium ${TONO_TITULO[tono]}`}>{titulo}</h2>
-          <p className="text-xs text-slate-400">{detalle}</p>
+          <p className="text-xs text-tinta-tenue">{detalle}</p>
         </div>
         <span
           className={`shrink-0 rounded-full px-2.5 py-0.5 text-sm font-semibold tabular-nums ${TONO_CANTIDAD[tono]}`}
@@ -481,7 +481,7 @@ function Fila({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
       href={href}
-      className="flex flex-col gap-0.5 rounded-lg bg-slate-900/40 px-3 py-2 transition-colors hover:bg-slate-900/70"
+      className="flex flex-col gap-0.5 rounded-lg bg-fondo/40 px-3 py-2 transition-colors hover:bg-fondo/70"
     >
       {children}
     </Link>
@@ -489,11 +489,11 @@ function Fila({ href, children }: { href: string; children: React.ReactNode }) {
 }
 
 function FilaTitulo({ children }: { children: React.ReactNode }) {
-  return <span className="text-sm font-medium text-slate-100">{children}</span>;
+  return <span className="text-sm font-medium text-tinta">{children}</span>;
 }
 
 function FilaSub({ children }: { children: React.ReactNode }) {
-  return <span className="text-xs text-slate-400">{children}</span>;
+  return <span className="text-xs text-tinta-tenue">{children}</span>;
 }
 
 /**
@@ -530,7 +530,7 @@ function FilaAcciones({
   return (
     // En el celular los botones van abajo del texto: al costado lo aplastaban
     // a una palabra por renglón.
-    <div className="flex flex-col gap-x-2 rounded-lg bg-slate-900/40 transition-colors hover:bg-slate-900/70 sm:flex-row sm:items-start">
+    <div className="flex flex-col gap-x-2 rounded-lg bg-fondo/40 transition-colors hover:bg-fondo/70 sm:flex-row sm:items-start">
       <Link href={href} className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2">
         <FilaTitulo>{titulo}</FilaTitulo>
         <FilaSub>{sub}</FilaSub>
@@ -554,8 +554,8 @@ function BotonAlerta({
       type="submit"
       className={`h-9 rounded-md px-3 text-xs font-medium transition-colors ${
         destacado
-          ? "bg-red-500 text-red-950 hover:bg-red-400"
-          : "border border-slate-700 text-slate-300 hover:bg-slate-700"
+          ? "bg-error text-tinta-inversa hover:bg-error"
+          : "border border-borde-control text-tinta-suave hover:bg-elevada-hover"
       }`}
     >
       {children}

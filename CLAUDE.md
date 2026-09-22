@@ -64,42 +64,44 @@ construir.
 
 ## Identidad visual
 
-> **Estado (22/09/2026, decisión del dueño):** la migración al modo claro
-> está POSTERGADA. Todas las pantallas de adentro de la app (la de ingreso
-> no) usan el tema oscuro viejo (`slate`),
-> incluida Económico, que se había hecho en claro y se volvió al oscuro para
-> que la plataforma se vea pareja. Mientras dure, una pantalla nueva o
-> modificada sigue el oscuro de las pantallas vecinas. Lo de abajo es el
-> destino cuando se retome la migración, no lo que hay hoy.
-
 La fuente de verdad es `docs/IDENTIDAD-VISUAL.md`. **Leerlo antes de construir
-cualquier pantalla.** No hay variantes ni alternativas: lo que dice ese
-documento es final, y si contradice a cualquier otra cosa, gana él.
+cualquier pantalla.**
+
+**Tema oscuro único** (decisión del dueño, 22/09/2026), pantalla de ingreso
+incluida. El modo claro del handoff quedó como antecedente en
+`docs/identidad/HANDOFF-MODO-CLARO.md` y no se aplica.
 
 Lo que no se discute:
 
-- **Modo claro únicamente.** Fondo `#FAF9F7`, superficie `#FFFFFF`, texto
-  `#1A1815`. No hay modo oscuro y no se improvisa uno.
-- **Ningún color escrito a mano.** Todo sale de los tokens. Si hace falta un
-  color que no está, se agrega al sistema, no a la pantalla.
-- El ámbar `#E8A33D` vive **solo adentro del isotipo**. Nunca en la interfaz:
-  el único acento es `#C2410C`.
-- **Los estados salen de un mapa único** `estado → {bg, text, borde?, punto?}`,
-  no de condicionales sueltos por pantalla. La lógica de color es transversal:
-  gris inerte · azul esperando a otro · naranja pasando ahora · verde cerrado
-  bien · rojo cerrado mal · violeta excepción.
-- Señal **no cromática** obligatoria en "tentativa" (borde punteado) y en
-  "vence pronto" (punto), para no depender solo del color.
-- Tipografía IBM Plex Sans y Mono, con `tabular-nums` en todo lo que sea
+- **Ningún color escrito a mano.** Todo sale de los tokens de
+  `app/globals.css` (`fondo`, `superficie`, `borde`, `tinta-*`, `primary`,
+  `exito/aviso/error/dato/ahora/excepcion` con `-soft`, `-text`, etc.).
+  - La paleta de fábrica de Tailwind está apagada: `bg-slate-800` o
+    `text-white` no pintan nada.
+  - `lib/identidad.test.ts` falla si aparece una clase así, o si se usa un
+    token que no existe.
+  - Si hace falta un color que no está, se agrega a `globals.css`, no a la
+    pantalla.
+- **Botones, campos, tarjetas y pastillas** salen de `lib/ui.ts`
+  (`clsBoton`, `clsEntrada`, `clsTarjeta`, `clsPastilla`…) o de
+  `app/componentes/` (`Boton`, `Badge`, `Tarjeta`, `Tabla`). No se copian
+  clases de otra pantalla.
+- **Los estados salen de un mapa único** en `lib/estados.ts`, no de
+  condicionales sueltos por pantalla. La lógica de color es transversal:
+  gris inerte · azul esperando a otro · naranja pasando ahora · ámbar hay que
+  ocuparse · verde cerrado bien · rojo cerrado mal · violeta excepción.
+- **Señal no cromática obligatoria:** en "tentativa" (violeta con borde
+  punteado) y en "vence pronto" (punto).
+- **Acento de marca:** verde `primary` (`#5FBF87`). Es el bosque del isotipo
+  aclarado para el oscuro.
+  - El ámbar `#E8A33D` vive **solo adentro del isotipo**.
+  - El terracota no se usa.
+- **Tipografía:** IBM Plex Sans y Mono, con `tabular-nums` en todo lo que sea
   columna de números o de fechas.
-- Fila de tabla 40px. En el celular, ningún elemento tocable por debajo de
-  44px de alto.
-- El anillo de foco es verde, 2px con 2px de separación. Nunca el azul del
-  navegador.
-
-Los archivos del handoff están en `docs/identidad/` tal como llegaron.
-Sirven de referencia; ojo que `tailwind.config.ts` está escrito para la
-versión 3 y el proyecto usa la 4, donde el tema vive en el CSS.
+- **Medidas:** fila de tabla de 40px. En el celular, ningún elemento tocable
+  por debajo de 44px de alto.
+- **Foco:** anillo verde (`primary`) de 2px con 2px de separación. Nunca el
+  azul del navegador.
 
 ## Diseño responsive
 

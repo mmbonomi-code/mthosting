@@ -49,8 +49,11 @@ export default async function ListaDepartamentos({
   const supabase = await crearClienteServidor();
   const puedeCrear = puedeEntrar(await rolDelUsuario(supabase), "/departamentos/nuevo");
 
+  // Desde la vista sin columnas comerciales: la lee cualquier rol que abra
+  // esta pantalla, incluido el personal de limpieza, que ve todos los
+  // departamentos (la tabla, por RLS, solo le daría los que tuvo asignados).
   let consulta = supabase
-    .from("departamentos")
+    .from("departamentos_ficha")
     .select(
       "id, codigo, nombre_interno, direccion, barrio, ambientes, capacidad, total_camas, estado, activo",
       { count: "exact" },

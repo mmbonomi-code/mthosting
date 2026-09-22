@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { rolDelUsuario } from "@/lib/permisos";
+import { puedeEntrar } from "@/lib/secciones";
 import type { Database } from "@/lib/database.types";
 
 type Ambientes = Database["public"]["Enums"]["ambientes_tipo"];
@@ -12,6 +14,21 @@ type Canal = Database["public"]["Enums"]["canal_tipo"];
 type AcuerdoPago = Database["public"]["Enums"]["acuerdo_pago"];
 
 export type EstadoFormulario = { error: string } | null;
+
+type Cliente = Awaited<ReturnType<typeof crearClienteServidor>>;
+
+const SIN_PERMISO: EstadoFormulario = {
+  error: "No tenés permiso para modificar departamentos.",
+};
+
+/**
+ * ¿Puede crear o modificar la ficha? La misma regla que abre la pantalla de
+ * edición (lib/secciones.ts). Gobernanta y limpieza consultan, no editan: sin
+ * esto, una acción llamada a mano pasaría aunque la pantalla no la ofrezca.
+ */
+async function puedeEditar(supabase: Cliente): Promise<boolean> {
+  return puedeEntrar(await rolDelUsuario(supabase), "/departamentos/x/editar");
+}
 
 /** Campo de texto del formulario: recortado, y vacío se guarda como null. */
 function texto(fd: FormData, campo: string): string | null {
@@ -133,6 +150,7 @@ export async function crearDepartamento(
   }
 
   const supabase = await crearClienteServidor();
+  if (!(await puedeEditar(supabase))) return SIN_PERMISO;
   const { data, error } = await supabase
     .from("departamentos")
     .insert(datos)
@@ -164,6 +182,7 @@ export async function actualizarDepartamento(
   }
 
   const supabase = await crearClienteServidor();
+  if (!(await puedeEditar(supabase))) return SIN_PERMISO;
   const { error } = await supabase
     .from("departamentos")
     .update(datos)
@@ -198,6 +217,7 @@ export async function agregarAlias(
   }
 
   const supabase = await crearClienteServidor();
+  if (!(await puedeEditar(supabase))) return SIN_PERMISO;
   const { error } = await supabase.from("listing_alias").insert({
     depto_id: deptoId,
     canal,
@@ -225,6 +245,7 @@ export async function alternarAlias(
   activo: boolean,
 ) {
   const supabase = await crearClienteServidor();
+  if (!(await puedeEditar(supabase))) return;
   await supabase
     .from("listing_alias")
     .update({ activo })
@@ -246,6 +267,7 @@ export async function guardarEquipamiento(
   fd: FormData,
 ): Promise<EstadoFormulario> {
   const supabase = await crearClienteServidor();
+  if (!(await puedeEditar(supabase))) return SIN_PERMISO;
 
   const { data: items } = await supabase.from("item_catalogo").select("id");
   if (!items) return { error: "No se pudo leer el catálogo de ítems." };

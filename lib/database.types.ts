@@ -221,6 +221,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "arreglos_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "arreglos_limpieza_id_fkey"
             columns: ["limpieza_id"]
             isOneToOne: false
@@ -302,6 +309,13 @@ export type Database = {
             referencedRelation: "departamentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "banos_depto_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bloqueos: {
@@ -344,6 +358,13 @@ export type Database = {
             columns: ["depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bloqueos_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
             referencedColumns: ["id"]
           },
         ]
@@ -415,10 +436,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cambios_calendario_calendario_depto_id_fkey"
+            columns: ["calendario_depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cambios_calendario_reserva_depto_id_fkey"
             columns: ["reserva_depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambios_calendario_reserva_depto_id_fkey"
+            columns: ["reserva_depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
             referencedColumns: ["id"]
           },
           {
@@ -594,6 +629,13 @@ export type Database = {
             columns: ["depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobros_programados_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
             referencedColumns: ["id"]
           },
           {
@@ -871,6 +913,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "distribucion_depto_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "distribucion_depto_persona_id_fkey"
             columns: ["persona_id"]
             isOneToOne: false
@@ -928,6 +977,13 @@ export type Database = {
             columns: ["depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipamiento_bebe_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
             referencedColumns: ["id"]
           },
           {
@@ -1189,6 +1245,13 @@ export type Database = {
             columns: ["depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventario_depto_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
             referencedColumns: ["id"]
           },
           {
@@ -1468,6 +1531,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "limpiezas_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "limpiezas_reserva_id_fkey"
             columns: ["reserva_id"]
             isOneToOne: false
@@ -1621,6 +1691,13 @@ export type Database = {
             referencedRelation: "departamentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "listing_alias_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
         ]
       }
       movimiento_cobertura: {
@@ -1743,6 +1820,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "movimientos_acceso_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "movimientos_acceso_evento_id_fkey"
             columns: ["evento_id"]
             isOneToOne: false
@@ -1845,6 +1929,13 @@ export type Database = {
             columns: ["depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
             referencedColumns: ["id"]
           },
         ]
@@ -2001,6 +2092,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "movimientos_economicos_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "movimientos_economicos_import_id_fkey"
             columns: ["import_id"]
             isOneToOne: false
@@ -2074,6 +2172,13 @@ export type Database = {
             columns: ["depto_id"]
             isOneToOne: false
             referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_reporte_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
             referencedColumns: ["id"]
           },
           {
@@ -2587,6 +2692,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reservas_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reservas_import_id_fkey"
             columns: ["import_id"]
             isOneToOne: false
@@ -2694,11 +2806,110 @@ export type Database = {
             referencedRelation: "departamentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tarifas_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      departamentos_ficha: {
+        Row: {
+          activo: boolean | null
+          ambientes: Database["public"]["Enums"]["ambientes_tipo"] | null
+          barrio: string | null
+          camas_king: number | null
+          camas_queen: number | null
+          camas_twin: number | null
+          capacidad: number | null
+          codigo: string | null
+          direccion: string | null
+          encargado_nombre: string | null
+          encargado_telefono: string | null
+          estado: Database["public"]["Enums"]["depto_estado"] | null
+          habitaciones: number | null
+          id: string | null
+          indicaciones_acceso: string | null
+          nombre_interno: string | null
+          observacion: string | null
+          requiere_aviso_seguridad: boolean | null
+          requiere_registro: boolean | null
+          self_checkout:
+            | Database["public"]["Enums"]["self_checkout_tipo"]
+            | null
+          sillon_cama: number | null
+          total_camas: number | null
+          url_mapa: string | null
+          wifi_pass: string | null
+          wifi_ssid: string | null
+          wifi_velocidad: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
+          barrio?: string | null
+          camas_king?: number | null
+          camas_queen?: number | null
+          camas_twin?: number | null
+          capacidad?: number | null
+          codigo?: string | null
+          direccion?: string | null
+          encargado_nombre?: string | null
+          encargado_telefono?: string | null
+          estado?: Database["public"]["Enums"]["depto_estado"] | null
+          habitaciones?: number | null
+          id?: string | null
+          indicaciones_acceso?: string | null
+          nombre_interno?: string | null
+          observacion?: string | null
+          requiere_aviso_seguridad?: boolean | null
+          requiere_registro?: boolean | null
+          self_checkout?:
+            | Database["public"]["Enums"]["self_checkout_tipo"]
+            | null
+          sillon_cama?: number | null
+          total_camas?: number | null
+          url_mapa?: string | null
+          wifi_pass?: string | null
+          wifi_ssid?: string | null
+          wifi_velocidad?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
+          barrio?: string | null
+          camas_king?: number | null
+          camas_queen?: number | null
+          camas_twin?: number | null
+          capacidad?: number | null
+          codigo?: string | null
+          direccion?: string | null
+          encargado_nombre?: string | null
+          encargado_telefono?: string | null
+          estado?: Database["public"]["Enums"]["depto_estado"] | null
+          habitaciones?: number | null
+          id?: string | null
+          indicaciones_acceso?: string | null
+          nombre_interno?: string | null
+          observacion?: string | null
+          requiere_aviso_seguridad?: boolean | null
+          requiere_registro?: boolean | null
+          self_checkout?:
+            | Database["public"]["Enums"]["self_checkout_tipo"]
+            | null
+          sillon_cama?: number | null
+          total_camas?: number | null
+          url_mapa?: string | null
+          wifi_pass?: string | null
+          wifi_ssid?: string | null
+          wifi_velocidad?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       mi_persona_id: { Args: never; Returns: string }

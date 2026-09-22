@@ -115,7 +115,6 @@ describe("limpieza", () => {
       "/economico",
       "/semana",
       "/limpiezas",
-      "/departamentos",
       "/propietarios",
       "/personas",
       "/tarifas",
@@ -128,6 +127,14 @@ describe("limpieza", () => {
     ]) {
       expect(puedeEntrar("limpieza", ruta), ruta).toBe(false);
     }
+  });
+
+  it("consulta las fichas de departamento, pero no las crea ni las edita", () => {
+    expect(puedeEntrar("limpieza", "/departamentos")).toBe(true);
+    expect(puedeEntrar("limpieza", "/departamentos/abc-123")).toBe(true);
+    expect(puedeEntrar("limpieza", "/departamentos/nuevo")).toBe(false);
+    expect(puedeEntrar("limpieza", "/departamentos/abc-123/editar")).toBe(false);
+    expect(puedeEntrar("limpieza", "/departamentos/abc-123/equipamiento")).toBe(false);
   });
 
   it("un prefijo parecido no le abre otra pantalla", () => {

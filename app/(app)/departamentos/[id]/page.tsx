@@ -13,8 +13,48 @@ import {
 } from "@/lib/etiquetas";
 import BotonCopiar from "@/app/componentes/BotonCopiar";
 import Wifi from "@/app/componentes/Wifi";
+import type { Tables } from "@/lib/database.types";
 import FormularioAlias from "./FormularioAlias";
 import { agregarAlias, alternarAlias } from "../acciones";
+
+/**
+ * Lo que cualquiera que consulta la ficha puede ver. Sale de la vista
+ * `departamentos_ficha`, que no tiene las columnas comerciales: así el
+ * personal de limpieza puede abrir cualquier departamento sin que la base le
+ * sirva comisiones, propietarios ni credenciales.
+ *
+ * Las columnas de una vista llegan todas como "puede ser null" en los tipos
+ * generados; son las mismas de `departamentos`, así que se tipan con esas.
+ */
+type FichaPublica = Pick<
+  Tables<"departamentos">,
+  | "id"
+  | "codigo"
+  | "nombre_interno"
+  | "estado"
+  | "activo"
+  | "direccion"
+  | "barrio"
+  | "ambientes"
+  | "habitaciones"
+  | "capacidad"
+  | "camas_king"
+  | "camas_queen"
+  | "camas_twin"
+  | "sillon_cama"
+  | "total_camas"
+  | "wifi_ssid"
+  | "wifi_pass"
+  | "wifi_velocidad"
+  | "url_mapa"
+  | "encargado_nombre"
+  | "encargado_telefono"
+  | "self_checkout"
+  | "requiere_registro"
+  | "requiere_aviso_seguridad"
+  | "indicaciones_acceso"
+  | "observacion"
+>;
 
 function Dato({
   etiqueta,
@@ -70,43 +110,61 @@ export default async function FichaDepartamento({
   const { id } = await params;
   const supabase = await crearClienteServidor();
 
-  const { data: depto } = await supabase
-    .from("departamentos")
-    .select("*, propietario:propietarios(id, nombre)")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (!depto) notFound();
-
   const rol = await rolDelUsuario(supabase);
   const veCredenciales = rol === "admin" || rol === "manager";
   const puedeEditar = puedeEntrar(rol, `/departamentos/${id}/editar`);
+  // El personal de limpieza consulta la ficha sin lo comercial: propietario,
+  // comisión, acuerdo de pago, publicación, anuncios y credenciales
+  // (decisión del dueño, 22/09/2026).
+  const veComercial = rol !== "limpieza";
 
-  const [{ data: aliases }, { data: catalogo }, { data: inventario }, { data: banos }] =
-    await Promise.all([
-      supabase
-        .from("listing_alias")
-        .select("id, canal, nombre_listing, activo")
-        .eq("depto_id", id)
-        .order("created_at"),
-      supabase
-        .from("item_catalogo")
-        .select("id, nombre, categoria, orden")
-        .eq("activo", true)
-        .order("categoria")
-        .order("orden"),
-      supabase
-        .from("inventario_depto")
-        .select("item_id, tiene, detalle")
-        .eq("depto_id", id),
-      supabase
-        .from("banos_depto")
-        .select("id, tipo, detalle")
-        .eq("depto_id", id)
-        .order("orden"),
-    ]);
+  const [{ data: publica }, { data: comercial }] = await Promise.all([
+    supabase.from("departamentos_ficha").select("*").eq("id", id).maybeSingle(),
+    veComercial
+      ? supabase
+          .from("departamentos")
+          .select(
+            "propietario_telefono, url_publicacion, comision_pct, acuerdo_pago, airbnb_user, airbnb_pass, propietario:propietarios(id, nombre)",
+          )
+          .eq("id", id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  const porItem = new Map((inventario ?? []).map((fila) => [fila.item_id, fila]));
+  if (!publica) notFound();
+  const depto = publica as FichaPublica;
+
+  const [
+    { data: aliases },
+    { data: catalogo },
+    { data: inventario },
+    { data: banos },
+  ] = await Promise.all([
+    supabase
+      .from("listing_alias")
+      .select("id, canal, nombre_listing, activo")
+      .eq("depto_id", id)
+      .order("created_at"),
+    supabase
+      .from("item_catalogo")
+      .select("id, nombre, categoria, orden")
+      .eq("activo", true)
+      .order("categoria")
+      .order("orden"),
+    supabase
+      .from("inventario_depto")
+      .select("item_id, tiene, detalle")
+      .eq("depto_id", id),
+    supabase
+      .from("banos_depto")
+      .select("id, tipo, detalle")
+      .eq("depto_id", id)
+      .order("orden"),
+  ]);
+
+  const porItem = new Map(
+    (inventario ?? []).map((fila) => [fila.item_id, fila]),
+  );
 
   // Ítems del catálogo agrupados por categoría, con lo cargado de este depto.
   const grupos = (catalogo ?? []).reduce<
@@ -194,22 +252,34 @@ export default async function FichaDepartamento({
         </div>
       </dl>
 
+      {/* Para quien no ve lo comercial, el bloque se reduce a lo que sirve
+          para llegar: el encargado del edificio y el mapa. */}
       <Acordeon
-        titulo="Propiedad"
-        resumen={depto.propietario?.nombre ?? "Sin propietario"}
+        titulo={comercial ? "Propiedad" : "Edificio"}
+        resumen={
+          comercial
+            ? (comercial.propietario?.nombre ?? "Sin propietario")
+            : (depto.encargado_nombre ?? undefined)
+        }
       >
         <dl className="grid gap-4 sm:grid-cols-2">
-          <Dato etiqueta="Propietario">{depto.propietario?.nombre}</Dato>
-          <Dato etiqueta="Teléfono del propietario">
-            {depto.propietario_telefono && (
-              <a
-                href={`tel:${depto.propietario_telefono}`}
-                className="underline decoration-tinta-apagada underline-offset-4"
-              >
-                {depto.propietario_telefono}
-              </a>
-            )}
-          </Dato>
+          {comercial && (
+            <>
+              <Dato etiqueta="Propietario">
+                {comercial.propietario?.nombre}
+              </Dato>
+              <Dato etiqueta="Teléfono del propietario">
+                {comercial.propietario_telefono && (
+                  <a
+                    href={`tel:${comercial.propietario_telefono}`}
+                    className="underline decoration-tinta-apagada underline-offset-4"
+                  >
+                    {comercial.propietario_telefono}
+                  </a>
+                )}
+              </Dato>
+            </>
+          )}
           <Dato etiqueta="Encargado del edificio">
             {depto.encargado_nombre}
           </Dato>
@@ -223,18 +293,20 @@ export default async function FichaDepartamento({
               </a>
             )}
           </Dato>
-          <Dato etiqueta="Publicación">
-            {depto.url_publicacion && (
-              <a
-                href={depto.url_publicacion}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline decoration-tinta-apagada underline-offset-4"
-              >
-                Abrir anuncio ↗
-              </a>
-            )}
-          </Dato>
+          {comercial && (
+            <Dato etiqueta="Publicación">
+              {comercial.url_publicacion && (
+                <a
+                  href={comercial.url_publicacion}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline decoration-tinta-apagada underline-offset-4"
+                >
+                  Abrir anuncio ↗
+                </a>
+              )}
+            </Dato>
+          )}
           <Dato etiqueta="Mapa">
             {depto.url_mapa && (
               <a
@@ -247,32 +319,39 @@ export default async function FichaDepartamento({
               </a>
             )}
           </Dato>
-          <Dato etiqueta="Comisión de MTHosting">
-            {depto.comision_pct !== null ? `${depto.comision_pct}%` : "—"}
-          </Dato>
-          <Dato etiqueta="Acuerdo de pago">
-            {depto.acuerdo_pago ? ETIQUETA_ACUERDO_PAGO[depto.acuerdo_pago] : "—"}
-          </Dato>
+          {comercial && (
+            <>
+              <Dato etiqueta="Comisión de MTHosting">
+                {comercial.comision_pct !== null
+                  ? `${comercial.comision_pct}%`
+                  : "—"}
+              </Dato>
+              <Dato etiqueta="Acuerdo de pago">
+                {comercial.acuerdo_pago
+                  ? ETIQUETA_ACUERDO_PAGO[comercial.acuerdo_pago]
+                  : "—"}
+              </Dato>
+            </>
+          )}
           {/* Las credenciales de Airbnb son de manager y administración
               (decisión del dueño, 13/08/2026). Están guardadas en texto plano,
-              así que la ficha no las muestra a nadie más: hasta ahora las veía
-              cualquiera que abriera un departamento. */}
-          {veCredenciales && (
+              así que la ficha no las muestra a nadie más. */}
+          {comercial && veCredenciales && (
             <>
               <Dato etiqueta="Usuario de Airbnb">
-                {depto.airbnb_user && (
+                {comercial.airbnb_user && (
                   <span className="flex items-center gap-2">
-                    <span className="font-mono">{depto.airbnb_user}</span>
-                    <BotonCopiar texto={depto.airbnb_user} />
+                    <span className="font-mono">{comercial.airbnb_user}</span>
+                    <BotonCopiar texto={comercial.airbnb_user} />
                   </span>
                 )}
               </Dato>
               <div className="sm:col-span-2">
                 <Dato etiqueta="Contraseña de Airbnb">
-                  {depto.airbnb_pass && (
+                  {comercial.airbnb_pass && (
                     <span className="flex items-center gap-2">
-                      <span className="font-mono">{depto.airbnb_pass}</span>
-                      <BotonCopiar texto={depto.airbnb_pass} />
+                      <span className="font-mono">{comercial.airbnb_pass}</span>
+                      <BotonCopiar texto={comercial.airbnb_pass} />
                     </span>
                   )}
                 </Dato>
@@ -310,7 +389,10 @@ export default async function FichaDepartamento({
                     <li key={bano.id}>
                       {ETIQUETA_TIPO_BANO[bano.tipo]}
                       {bano.detalle && (
-                        <span className="text-tinta-etiqueta"> — {bano.detalle}</span>
+                        <span className="text-tinta-etiqueta">
+                          {" "}
+                          — {bano.detalle}
+                        </span>
                       )}
                     </li>
                   ))}
@@ -391,53 +473,69 @@ export default async function FichaDepartamento({
         </dl>
       </Acordeon>
 
-      <Acordeon
-        titulo="Anuncios vinculados"
-        resumen={`${(aliases ?? []).filter((a) => a.activo).length} activos`}
-      >
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-tinta-etiqueta">
-            Los nombres de anuncio con los que este departamento aparece en los
-            archivos de reservas. Si un anuncio se renombra en Airbnb, agregá
-            el nombre nuevo acá (o va a caer en la bandeja de sin asignar).
-          </p>
-          <ul className="flex flex-col gap-2">
-            {(aliases ?? []).map((alias) => (
-              <li
-                key={alias.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-borde px-3 py-2"
-              >
-                <span className="min-w-0">
-                  <span
-                    className={`block truncate ${alias.activo ? "text-tinta-media" : "text-tinta-etiqueta line-through"}`}
-                  >
-                    {alias.nombre_listing}
-                  </span>
-                  <span className="text-xs text-tinta-etiqueta">
-                    {ETIQUETA_CANAL[alias.canal]}
-                  </span>
-                </span>
-                <form
-                  action={alternarAlias.bind(null, alias.id, id, !alias.activo)}
-                >
-                  <button
-                    type="submit"
-                    className="shrink-0 rounded-md border border-borde-control px-2 py-1 text-xs text-tinta-suave transition-colors hover:bg-elevada-hover"
-                  >
-                    {alias.activo ? "Desactivar" : "Reactivar"}
-                  </button>
-                </form>
-              </li>
-            ))}
-            {(aliases ?? []).length === 0 && (
-              <li className="text-sm text-tinta-etiqueta">
-                Todavía no hay anuncios vinculados.
-              </li>
+      {/* Los anuncios de Airbnb son parte de lo comercial. Quien consulta sin
+          editar (gobernanta) los ve, pero sin los botones. */}
+      {comercial && (
+        <Acordeon
+          titulo="Anuncios vinculados"
+          resumen={`${(aliases ?? []).filter((a) => a.activo).length} activos`}
+        >
+          <div className="flex flex-col gap-3">
+            {puedeEditar && (
+              <p className="text-sm text-tinta-etiqueta">
+                Los nombres de anuncio con los que este departamento aparece en
+                los archivos de reservas. Si un anuncio se renombra en Airbnb,
+                agregá el nombre nuevo acá (o va a caer en la bandeja de sin
+                asignar).
+              </p>
             )}
-          </ul>
-          <FormularioAlias accion={agregarAlias.bind(null, id)} />
-        </div>
-      </Acordeon>
+            <ul className="flex flex-col gap-2">
+              {(aliases ?? []).map((alias) => (
+                <li
+                  key={alias.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-borde px-3 py-2"
+                >
+                  <span className="min-w-0">
+                    <span
+                      className={`block truncate ${alias.activo ? "text-tinta-media" : "text-tinta-etiqueta line-through"}`}
+                    >
+                      {alias.nombre_listing}
+                    </span>
+                    <span className="text-xs text-tinta-etiqueta">
+                      {ETIQUETA_CANAL[alias.canal]}
+                    </span>
+                  </span>
+                  {puedeEditar && (
+                    <form
+                      action={alternarAlias.bind(
+                        null,
+                        alias.id,
+                        id,
+                        !alias.activo,
+                      )}
+                    >
+                      <button
+                        type="submit"
+                        className="shrink-0 rounded-md border border-borde-control px-2 py-1 text-xs text-tinta-suave transition-colors hover:bg-elevada-hover"
+                      >
+                        {alias.activo ? "Desactivar" : "Reactivar"}
+                      </button>
+                    </form>
+                  )}
+                </li>
+              ))}
+              {(aliases ?? []).length === 0 && (
+                <li className="text-sm text-tinta-etiqueta">
+                  Todavía no hay anuncios vinculados.
+                </li>
+              )}
+            </ul>
+            {puedeEditar && (
+              <FormularioAlias accion={agregarAlias.bind(null, id)} />
+            )}
+          </div>
+        </Acordeon>
+      )}
 
       <Acordeon titulo="Observación" resumen={depto.observacion ?? undefined}>
         <p className="whitespace-pre-wrap text-tinta-media">

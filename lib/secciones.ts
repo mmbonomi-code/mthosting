@@ -33,6 +33,13 @@ type Acceso = {
   vedadas?: readonly RegExp[];
 };
 
+/** Ve la ficha del departamento, pero no el alta, la edición ni el inventario. */
+const FICHA_SOLO_LECTURA: readonly RegExp[] = [
+  /^\/departamentos\/nuevo$/,
+  /\/editar$/,
+  /\/equipamiento$/,
+];
+
 const ACCESO: Partial<Record<Rol, Acceso>> = {
   /**
    * Gobernanta: reparte el trabajo de limpieza y consulta las fichas de los
@@ -58,7 +65,7 @@ const ACCESO: Partial<Record<Rol, Acceso>> = {
       "/api/exportar/limpiezas-pdf",
       "/api/exportar/limpiezas-rango",
     ],
-    vedadas: [/^\/departamentos\/nuevo$/, /\/editar$/, /\/equipamiento$/],
+    vedadas: FICHA_SOLO_LECTURA,
   },
 
   /**
@@ -76,14 +83,15 @@ const ACCESO: Partial<Record<Rol, Acceso>> = {
    * El reporte lo LEE (§3.8, "leer el reporte" ✓ para limpieza); escribirlo
    * ya está cerrado en `puede_escribir_reporte()`.
    *
-   * La spec también le da la ficha de los departamentos que tiene asignados.
-   * Queda afuera a propósito por ahora: esa ficha muestra la comisión de
-   * MTHosting, el acuerdo de pago y los datos del propietario, que no son
-   * suyos. Se puede sumar cuando esa pantalla separe lo comercial.
+   * Las fichas de departamento las CONSULTA, todas y sin lo comercial
+   * (decisión del dueño, 22/09/2026): la pantalla le oculta propietario,
+   * comisión, acuerdo de pago, publicación y credenciales, y la base se las
+   * sirve desde la vista `departamentos_ficha`, que no tiene esas columnas.
    */
   limpieza: {
     inicio: "/mis-limpiezas",
-    prefijos: ["/mis-limpiezas", "/reporte"],
+    prefijos: ["/mis-limpiezas", "/reporte", "/departamentos"],
+    vedadas: FICHA_SOLO_LECTURA,
   },
 };
 

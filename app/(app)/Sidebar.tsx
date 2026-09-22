@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cerrarSesion } from "@/app/ingresar/acciones";
 import { Isotipo } from "@/app/componentes/Logo";
+import { clsBoton } from "@/lib/ui";
 
 export type ItemNav = {
   href: string;
@@ -52,19 +53,19 @@ export default function Sidebar({
           onClick={() => setAbierto(false)}
           className={`flex min-h-11 items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
             esActivo(item.href)
-              ? "bg-slate-800 text-white"
-              : "text-slate-300 hover:bg-slate-800/60 hover:text-white"
+              ? "bg-elevada text-tinta"
+              : "text-tinta-suave hover:bg-superficie-alt hover:text-tinta"
           }`}
         >
           <span className="truncate">{item.texto}</span>
           <span className="flex shrink-0 items-center gap-1">
             {(item.criticas ?? 0) > 0 && (
-              <span className="rounded-full bg-red-500 px-1.5 text-xs font-semibold text-red-950">
+              <span className="rounded-full bg-error px-1.5 text-xs font-semibold text-tinta-inversa">
                 {item.criticas}
               </span>
             )}
             {item.pendientes > 0 && (
-              <span className="rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-slate-900">
+              <span className="rounded-full bg-aviso px-1.5 text-xs font-semibold text-tinta-inversa">
                 {item.pendientes}
               </span>
             )}
@@ -75,12 +76,12 @@ export default function Sidebar({
   );
 
   const pie = (
-    <div className="flex flex-col gap-2 border-t border-slate-800 px-3 py-3">
-      <span className="truncate px-1 text-sm text-slate-400">{nombre}</span>
+    <div className="flex flex-col gap-2 border-t border-borde px-3 py-3">
+      <span className="truncate px-1 text-sm text-tinta-tenue">{nombre}</span>
       <form action={cerrarSesion}>
         <button
           type="submit"
-          className="h-11 w-full rounded-lg border border-slate-700 text-sm text-slate-300 transition-colors hover:bg-slate-800"
+          className={`${clsBoton("secundario")} w-full`}
         >
           Salir
         </button>
@@ -91,29 +92,29 @@ export default function Sidebar({
   return (
     <>
       {/* Escritorio: fijo, siempre visible */}
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col self-start border-r border-slate-800 bg-slate-900 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col self-start border-r border-borde bg-fondo md:flex">
         <Link
           href={inicio}
-          className="flex items-center gap-2.5 border-b border-slate-800 px-4 py-4"
+          className="flex items-center gap-2.5 border-b border-borde px-4 py-4"
         >
           <Isotipo alto={26} decorativo />
-          <span className="text-lg font-semibold tracking-tight text-white">MTHosting</span>
+          <span className="text-lg font-semibold tracking-tight text-tinta">MTHosting</span>
         </Link>
         {listaNav}
         {pie}
       </aside>
 
       {/* Celular: barra angosta + botón que abre el mismo menú como panel */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur md:hidden">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-borde bg-fondo/95 px-4 py-3 backdrop-blur md:hidden">
         <Link href={inicio} className="flex items-center gap-2.5">
           <Isotipo alto={26} decorativo />
-          <span className="text-lg font-semibold tracking-tight text-white">MTHosting</span>
+          <span className="text-lg font-semibold tracking-tight text-tinta">MTHosting</span>
         </Link>
         <button
           type="button"
           onClick={() => setAbierto(true)}
           aria-label="Abrir menú"
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-300 transition-colors hover:bg-slate-800"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-tinta-suave transition-colors hover:bg-elevada"
         >
           <span className="text-xl">☰</span>
         </button>
@@ -125,16 +126,16 @@ export default function Sidebar({
             type="button"
             aria-label="Cerrar menú"
             onClick={() => setAbierto(false)}
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0 bg-fondo-hundido/60"
           />
-          <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-4">
-              <span className="text-lg font-semibold tracking-tight text-white">Menú</span>
+          <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col bg-fondo shadow-xl">
+            <div className="flex items-center justify-between border-b border-borde px-4 py-4">
+              <span className="text-lg font-semibold tracking-tight text-tinta">Menú</span>
               <button
                 type="button"
                 onClick={() => setAbierto(false)}
                 aria-label="Cerrar menú"
-                className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-300 transition-colors hover:bg-slate-800"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-tinta-suave transition-colors hover:bg-elevada"
               >
                 <span className="text-xl">✕</span>
               </button>

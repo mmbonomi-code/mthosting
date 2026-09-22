@@ -4,6 +4,7 @@ import {
   FILA_VENCE,
   TONO_CAMBIO_CALENDARIO,
   TONO_LIMPIEZA,
+  TONO_MARCA,
   TONO_RECLAMO,
   TONO_RESERVA,
   TONO_VENCIMIENTO,
@@ -15,7 +16,8 @@ describe("el mapa de estados", () => {
     expect(Object.keys(TONO_LIMPIEZA)).toHaveLength(6);
     expect(Object.keys(TONO_RECLAMO)).toHaveLength(7);
     expect(Object.keys(TONO_CAMBIO_CALENDARIO)).toHaveLength(3);
-    expect(CATALOGO).toHaveLength(22);
+    expect(Object.keys(TONO_MARCA)).toHaveLength(7);
+    expect(CATALOGO).toHaveLength(29);
   });
 
   it("ningún estado se queda sin color", () => {
@@ -37,8 +39,7 @@ describe("el mapa de estados", () => {
   });
 
   it("el ámbar del isotipo no aparece en ningún estado", () => {
-    // Vive solo dentro del logo. El único acento de la interfaz es el
-    // terracota (docs/IDENTIDAD-VISUAL.md §4).
+    // Vive solo dentro del logo (docs/IDENTIDAD-VISUAL.md §4).
     for (const { tono } of CATALOGO) {
       expect(tono.clases.toLowerCase()).not.toContain("e8a33d");
       expect(tono.clases).not.toContain("brandAmber");
@@ -47,10 +48,11 @@ describe("el mapa de estados", () => {
 });
 
 describe("las señales que no son de color", () => {
-  it("tentativa lleva borde punteado", () => {
-    // Es la que distingue una reserva sin confirmar de una finalizada, y las
-    // dos son grises.
+  it("tentativa lleva borde punteado, en la reserva y en la marca", () => {
+    // El violeta solo no alcanza: el borde se ve aunque no se distingan los
+    // colores.
     expect(TONO_RESERVA.tentativa.clases).toContain("border-dashed");
+    expect(TONO_MARCA.tentativa.clases).toBe(TONO_RESERVA.tentativa.clases);
   });
 
   it("vence pronto lleva punto", () => {
@@ -89,21 +91,23 @@ describe("la lógica de color es la misma en los tres dominios", () => {
 
   it("la excepción es violeta, y solo la excepción", () => {
     expect(TONO_RECLAMO.escalado.clases).toContain("excepcion");
-    // Además del reclamo escalado, lo que el calendario de Airbnb puso en
-    // duda: también pasó por fuera del flujo normal.
+    // Además del reclamo escalado, la reserva tentativa y lo que el calendario
+    // de Airbnb puso en duda: todo pasó por fuera del flujo normal.
     const violetas = CATALOGO.filter((c) => c.tono.clases.includes("excepcion"));
     expect(violetas.map((c) => `${c.dominio}/${c.estado}`)).toEqual([
+      "reserva/tentativa",
       "reclamo/escalado",
       "calendario/posible_cancelacion",
       "calendario/cambio_fechas",
       "calendario/cambio_depto",
+      "marca/tentativa",
     ]);
   });
 
   it("lo que pasa ahora es naranja, y no se confunde con lo que vence", () => {
     // "En proceso" y "vence pronto" son los dos anaranjados, pero el de
     // vencimiento va más saturado para que salte en una tabla llena.
-    expect(TONO_LIMPIEZA.en_curso.clases).toContain("accent");
+    expect(TONO_LIMPIEZA.en_curso.clases).toContain("ahora");
     expect(TONO_VENCIMIENTO.clases).toContain("alerta");
     expect(TONO_VENCIMIENTO.clases).not.toBe(TONO_LIMPIEZA.en_curso.clases);
   });

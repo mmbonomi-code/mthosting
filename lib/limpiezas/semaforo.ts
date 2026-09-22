@@ -39,10 +39,10 @@ export function semaforoDeLimpieza({
 
 /** Clase del borde izquierdo de la fila, según el semáforo. */
 export const BORDE_SEMAFORO: Record<Semaforo, string> = {
-  asignada: "border-l-emerald-600",
-  rojo: "border-l-red-500",
-  ambar: "border-l-amber-500",
-  gris: "border-l-slate-600",
+  asignada: "border-l-exito",
+  rojo: "border-l-error",
+  ambar: "border-l-aviso",
+  gris: "border-l-borde-fuerte",
 };
 
 export type CargaPersona = {

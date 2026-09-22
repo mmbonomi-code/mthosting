@@ -104,7 +104,9 @@ export function LogoHorizontal({
         fontSize="20"
         fontWeight="600"
         letterSpacing="-0.35"
-        fill={tono === "blanco" ? "#FFFFFF" : "#1A1815"}
+        // En color el nombre toma el color del texto de alrededor, así se lee
+        // sobre el fondo oscuro de la app.
+        fill={tono === "negro" ? "#1A1815" : tono === "blanco" ? "#FFFFFF" : "currentColor"}
       >
         MTHosting
       </text>

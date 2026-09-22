@@ -109,7 +109,7 @@ export default async function LayoutApp({
   ].filter((item) => puedeEntrar(rol, item.href));
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-slate-900 md:flex-row">
+    <div className="flex min-h-full flex-1 flex-col bg-fondo md:flex-row">
       <Sidebar items={items} nombre={persona?.nombre ?? user?.email ?? ""} inicio={inicioDelRol(rol)} />
       <div className="flex min-w-0 flex-1 flex-col">{children}</div>
     </div>

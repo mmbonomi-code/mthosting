@@ -35,14 +35,15 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black",
     title: "MTHosting",
   },
 };
 
 export const viewport: Viewport = {
-  // Verde de la marca: es la barra de estado del celular con la app abierta.
-  themeColor: "#14532D",
+  // El fondo de la app (--color-fondo, slate-900): la barra de estado del
+  // celular se funde con la pantalla en vez de cortarla con una franja verde.
+  themeColor: "#0F172B",
   width: "device-width",
   initialScale: 1,
 };

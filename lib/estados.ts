@@ -28,13 +28,24 @@ export type Tono = {
   punto?: boolean;
 };
 
-/** Los seis roles de color. Un estado nuevo elige uno de estos, no un color. */
-const INERTE = "bg-warm-100 text-warm-600";
+/**
+ * Los roles de color. Un estado nuevo elige uno de estos, no un color.
+ * AVISO es el ámbar de "hay que ocuparse": no es un estado del ciclo, es una
+ * marca de atención (por presentar, late checkout).
+ */
+const INERTE = "bg-elevada text-tinta-tenue";
 const ESPERANDO = "bg-dato-soft text-dato-text";
-const AHORA = "bg-accent-soft text-accent-soft-text";
+const AHORA = "bg-ahora-soft text-ahora-text";
+const AVISO = "bg-aviso-soft text-aviso-text";
 const CERRADO_BIEN = "bg-exito-soft text-exito-text";
 const CERRADO_MAL = "bg-error-soft text-error-text";
 const EXCEPCION = "bg-excepcion-soft text-excepcion-text";
+
+/**
+ * Tentativa: violeta de excepción, con borde punteado. El borde es la señal
+ * que se ve aunque no se distingan los colores.
+ */
+const TENTATIVA = `${EXCEPCION} border border-dashed border-excepcion`;
 
 // ---------------------------------------------------------------------------
 // Reservas
@@ -51,11 +62,8 @@ export const TONO_RESERVA: Record<EstadoReserva, Tono> = {
   // Verde de marca, no el semántico: una reserva confirmada es el estado
   // bueno del negocio, no un "cerrado bien".
   confirmada: { clases: "bg-primary-soft text-primary-soft-text" },
-  // Importada del calendario y sin confirmar. El borde punteado es la señal
-  // que se ve aunque no se distingan los colores.
-  tentativa: {
-    clases: "bg-superficie-hover text-warm-600 border border-dashed border-borde-control",
-  },
+  // Importada del calendario y sin confirmar.
+  tentativa: { clases: TENTATIVA },
   en_curso: { clases: ESPERANDO },
   finalizada: { clases: INERTE },
   cancelada: { clases: CERRADO_MAL },
@@ -121,15 +129,15 @@ export type EstadoReclamo =
   | "descartado";
 
 export const TONO_RECLAMO: Record<EstadoReclamo, Tono> = {
-  borrador: { clases: "bg-superficie-hover text-warm-600" },
-  // Corre contra reloj: ámbar de advertencia, no el naranja del acento.
-  por_presentar: { clases: "bg-aviso-soft text-aviso-text" },
+  borrador: { clases: INERTE },
+  // Corre contra reloj: ámbar de advertencia, no el naranja de "ahora".
+  por_presentar: { clases: AVISO },
   presentado: { clases: ESPERANDO },
   escalado: { clases: EXCEPCION },
   cobrado: { clases: CERRADO_BIEN },
   rechazado: { clases: CERRADO_MAL },
   // Lo bajamos nosotros: inerte, no fallido.
-  descartado: { clases: "bg-warm-100 text-warm-500" },
+  descartado: { clases: "bg-elevada text-tinta-etiqueta" },
 };
 
 export const ETIQUETA_RECLAMO: Record<EstadoReclamo, string> = {
@@ -182,7 +190,46 @@ export const TONO_VENCIMIENTO: Tono = {
  * REGLA: una sola alarma por fila. O la fila se pinta, o el badge de
  * vencimiento — nunca las dos señales con el badge en rojo encima.
  */
-export const FILA_VENCE = "bg-accent-soft border-l-[3px] border-l-accent";
+export const FILA_VENCE = "bg-ahora-soft/40 border-l-[3px] border-l-ahora";
+
+// ---------------------------------------------------------------------------
+// Marcas de una reserva en el Día y la Semana
+// ---------------------------------------------------------------------------
+
+/**
+ * No son estados del ciclo sino señales sueltas que se apilan al lado del
+ * departamento: una reserva puede ser tentativa, tener late checkout y estar
+ * coordinada a la vez. Cada una elige un rol como cualquier estado.
+ */
+export type MarcaReserva =
+  | "tentativa"
+  | "coordinado"
+  | "late"
+  | "movido"
+  | "cancelada"
+  | "check_in_out"
+  | "fecha_manual";
+
+export const TONO_MARCA: Record<MarcaReserva, Tono> = {
+  tentativa: { clases: TENTATIVA },
+  coordinado: { clases: CERRADO_BIEN },
+  late: { clases: AVISO },
+  movido: { clases: ESPERANDO },
+  cancelada: { clases: CERRADO_MAL },
+  // Sale y entra gente el mismo día: la limpieza no tiene margen.
+  check_in_out: { clases: CERRADO_MAL },
+  fecha_manual: { clases: "bg-elevada-hover text-tinta-media" },
+};
+
+export const ETIQUETA_MARCA: Record<MarcaReserva, string> = {
+  tentativa: "Tentativa",
+  coordinado: "Coordinado",
+  late: "Late",
+  movido: "Movido",
+  cancelada: "Cancelada",
+  check_in_out: "Check in/out",
+  fecha_manual: "Fecha a mano",
+};
 
 // ---------------------------------------------------------------------------
 
@@ -191,7 +238,7 @@ export const FILA_VENCE = "bg-accent-soft border-l-[3px] border-l-accent";
  * existen en dos dominios con colores distintos y se pisarían.
  */
 export const CATALOGO: {
-  dominio: "reserva" | "limpieza" | "reclamo" | "calendario" | "alerta";
+  dominio: "reserva" | "limpieza" | "reclamo" | "calendario" | "marca" | "alerta";
   estado: string;
   etiqueta: string;
   tono: Tono;
@@ -218,6 +265,12 @@ export const CATALOGO: {
     dominio: "calendario" as const,
     estado,
     etiqueta: ETIQUETA_CAMBIO_CALENDARIO[estado as CambioCalendario],
+    tono,
+  })),
+  ...Object.entries(TONO_MARCA).map(([estado, tono]) => ({
+    dominio: "marca" as const,
+    estado,
+    etiqueta: ETIQUETA_MARCA[estado as MarcaReserva],
     tono,
   })),
   {

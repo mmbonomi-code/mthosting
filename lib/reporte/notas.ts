@@ -153,19 +153,19 @@ export function contarUrgentes(notas: Nota[], hoy: string): number {
 }
 
 export const BORDE_PLAZO: Record<EstadoPlazo, string> = {
-  vencido: "border-l-red-500",
-  hoy: "border-l-amber-500",
-  proximo: "border-l-amber-700",
-  tranquilo: "border-l-slate-700",
-  sin_fecha: "border-l-slate-700",
-  hecho: "border-l-emerald-700",
+  vencido: "border-l-error",
+  hoy: "border-l-aviso",
+  proximo: "border-l-aviso-borde",
+  tranquilo: "border-l-borde-control",
+  sin_fecha: "border-l-borde-control",
+  hecho: "border-l-exito-borde",
 };
 
 export const TEXTO_PLAZO: Record<EstadoPlazo, string> = {
-  vencido: "text-red-300",
-  hoy: "text-amber-300",
-  proximo: "text-amber-400",
-  tranquilo: "text-slate-400",
-  sin_fecha: "text-slate-500",
-  hecho: "text-emerald-400",
+  vencido: "text-error-text",
+  hoy: "text-aviso-text",
+  proximo: "text-aviso-text",
+  tranquilo: "text-tinta-tenue",
+  sin_fecha: "text-tinta-etiqueta",
+  hecho: "text-exito-text",
 };

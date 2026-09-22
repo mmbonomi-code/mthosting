@@ -139,18 +139,18 @@ export function textoDePlazo(dias: number | null): string {
 
 /** Clases del borde izquierdo, igual que el semáforo de las limpiezas. */
 export const BORDE_SEMAFORO: Record<Semaforo, string> = {
-  vencido: "border-l-red-500",
-  urgente: "border-l-red-600",
-  proximo: "border-l-amber-600",
-  tranquilo: "border-l-slate-700",
-  sin_plazo: "border-l-slate-800",
+  vencido: "border-l-error",
+  urgente: "border-l-error",
+  proximo: "border-l-aviso",
+  tranquilo: "border-l-borde-control",
+  sin_plazo: "border-l-borde",
 };
 
 /** Colores del texto del plazo. */
 export const TEXTO_SEMAFORO: Record<Semaforo, string> = {
-  vencido: "text-red-300",
-  urgente: "text-red-300",
-  proximo: "text-amber-300",
-  tranquilo: "text-slate-400",
-  sin_plazo: "text-slate-500",
+  vencido: "text-error-text",
+  urgente: "text-error-text",
+  proximo: "text-aviso-text",
+  tranquilo: "text-tinta-tenue",
+  sin_plazo: "text-tinta-etiqueta",
 };

@@ -30,8 +30,8 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     orientation: "portrait",
     // Fondo de la pantalla de arranque y color de la barra de estado.
-    background_color: "#FAF9F7",
-    theme_color: "#14532D",
+    background_color: "#0F172B",
+    theme_color: "#0F172B",
     icons: [
       {
         src: "/icons/pwa-icon-512-any.svg",

@@ -27,7 +27,7 @@ export default async function LayoutEconomico({
   return (
     // Texto claro y barras de desplazamiento oscuras para toda la sección: las
     // tablas se armaron para el diseño claro y sus celdas heredan el color.
-    <div className="flex flex-1 flex-col text-slate-200 [color-scheme:dark]">
+    <div className="flex flex-1 flex-col text-slate-200">
       <nav className="flex gap-1 overflow-x-auto border-b border-slate-800 px-4 py-2 sm:px-6">
         {[
           { href: "/economico", texto: "Resumen" },

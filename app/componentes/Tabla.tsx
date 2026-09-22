@@ -1,9 +1,9 @@
 /**
- * La tabla de la identidad (docs/IDENTIDAD-VISUAL.md §5, §8.1 y §8.3).
+ * La tabla de la identidad (docs/IDENTIDAD-VISUAL.md).
  *
- * La app no tiene ninguna `<table>`: todo son tarjetas apiladas. Anda bien en
- * el celular, pero para 50 departamentos en el escritorio hace falta una
- * tabla de verdad, con fila de 40px, encabezado propio y cifras alineadas.
+ * En el celular la app usa tarjetas apiladas; en el escritorio, para 50
+ * departamentos, hace falta una tabla de verdad, con fila de 40px, encabezado
+ * propio y cifras alineadas.
  *
  * Tres cosas que resuelve y que si se dejan a cada pantalla salen distintas:
  *
@@ -24,7 +24,7 @@ export function Tabla({
   minimo?: string;
 }) {
   return (
-    <div className="overflow-x-auto rounded border border-borde bg-superficie">
+    <div className="overflow-x-auto rounded-lg border border-borde bg-superficie">
       <table
         className="w-full border-collapse text-left text-[13px] tabular-nums"
         style={{ minWidth: minimo }}
@@ -54,7 +54,7 @@ export function Th({
   return (
     <th
       scope="col"
-      className={`border-b border-borde px-3 py-2 font-semibold text-warm-700 ${
+      className={`px-3 py-2 font-semibold text-tinta-suave ${
         derecha ? "text-right" : ""
       }`}
     >
@@ -76,7 +76,7 @@ export function Fila({
   return (
     <tr
       onClick={onClick}
-      className={`h-fila border-b border-borde last:border-0 odd:bg-warm-50 hover:bg-superficie-hover ${
+      className={`h-fila border-t border-borde hover:bg-superficie-alt ${
         onClick ? "cursor-pointer" : ""
       } ${destacada ?? ""}`}
     >
@@ -98,7 +98,7 @@ export function Td({
   return (
     <td
       className={`px-3 py-0 ${derecha ? "text-right" : ""} ${
-        tenue ? "text-tinta-suave" : "text-tinta"
+        tenue ? "text-tinta-tenue" : "text-tinta-media"
       }`}
     >
       {children}
@@ -116,7 +116,7 @@ export function SinFilas({
 }) {
   return (
     <tr>
-      <td colSpan={columnas} className="px-3 py-8 text-center text-tinta-tenue">
+      <td colSpan={columnas} className="border-t border-borde px-3 py-8 text-center text-tinta-etiqueta">
         {children}
       </td>
     </tr>

@@ -74,10 +74,10 @@ export default async function CuentasPayout() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-100">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-tinta">
           Cuentas de payout
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-tenue">
           Adónde va cada pago. Lo que entra a una cuenta de MTHosting puede ser
           ingreso propio; lo que va a una cuenta del propietario, no. Nada se
           clasifica solo.
@@ -85,7 +85,7 @@ export default async function CuentasPayout() {
       </div>
 
       {sinClasificar > 0 && (
-        <p className="rounded-md border border-slate-800 border-l-[3px] border-l-amber-600 bg-amber-950/40 px-4 py-3 text-sm font-medium text-amber-300">
+        <p className="rounded-md border border-borde border-l-[3px] border-l-aviso bg-aviso-soft/40 px-4 py-3 text-sm font-medium text-aviso-text">
           Hay {sinClasificar} cuenta{sinClasificar === 1 ? "" : "s"} sin decidir. Mientras
           tanto no suma{sinClasificar === 1 ? "" : "n"} a lo percibido, así que los
           números van a quedar cortos hasta que las tildes.
@@ -93,8 +93,8 @@ export default async function CuentasPayout() {
       )}
 
       {(ordenadas).length === 0 ? (
-        <div className="rounded-md border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-400">
+        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-tenue">
             Todavía no se importó ningún pago, así que no hay cuentas detectadas.
           </p>
         </div>
@@ -106,22 +106,22 @@ export default async function CuentasPayout() {
             return (
               <li
                 key={c.id}
-                className={`flex flex-col gap-3 rounded-md border bg-slate-800/40 p-4 ${
+                className={`flex flex-col gap-3 rounded-md border bg-superficie p-4 ${
                   c.clasificacion === "sin_clasificar"
-                    ? "border-slate-800 border-l-[3px] border-l-amber-600"
-                    : "border-slate-800"
+                    ? "border-borde border-l-[3px] border-l-aviso"
+                    : "border-borde"
                 }`}
               >
                 <div>
-                  <p className="font-semibold text-slate-100">
+                  <p className="font-semibold text-tinta">
                     {c.titular ?? "Sin titular"}
                     {c.numero && (
-                      <span className="ml-2 font-mono font-normal text-slate-400">
+                      <span className="ml-2 font-mono font-normal text-tinta-tenue">
                         ····{c.numero}
                       </span>
                     )}
                   </p>
-                  <p className="text-sm tabular-nums text-slate-400">
+                  <p className="text-sm tabular-nums text-tinta-tenue">
                     {[c.tipo, c.moneda].filter(Boolean).join(" · ")}
                     {uso && (
                       <>
@@ -142,11 +142,11 @@ export default async function CuentasPayout() {
                   {/* Una misma cuenta aparece escrita de varias formas: se
                       muestran todas para poder reconocerla. */}
                   {nombres.length > 1 && (
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-tinta-etiqueta">
                       Aparece como: {nombres.join(" · ")}
                     </p>
                   )}
-                  {c.notas && <p className="mt-1 text-xs text-slate-500">{c.notas}</p>}
+                  {c.notas && <p className="mt-1 text-xs text-tinta-etiqueta">{c.notas}</p>}
                 </div>
                 <ClasificarCuenta cuentaId={c.id} actual={c.clasificacion} />
               </li>

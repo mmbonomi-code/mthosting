@@ -18,7 +18,7 @@ export default function BotonDeshacer({
       <button
         type="button"
         onClick={() => setConfirmando(true)}
-        className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+        className="rounded-lg border border-borde-control px-3 py-1.5 text-sm text-tinta-tenue transition-colors hover:bg-elevada hover:text-tinta"
       >
         Deshacer
       </button>
@@ -27,21 +27,21 @@ export default function BotonDeshacer({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-amber-200">
+      <span className="text-sm text-aviso-text-fuerte">
         ¿Sacar las {filas.toLocaleString("es-AR")} filas de esta carga?
       </span>
       <button
         type="button"
         disabled={pendiente}
         onClick={() => comenzar(() => deshacerImportacion(importId))}
-        className="rounded-lg bg-red-900 px-3 py-1.5 text-sm font-medium text-red-100 transition-colors hover:bg-red-800 disabled:opacity-60"
+        className="rounded-lg bg-error-borde px-3 py-1.5 text-sm font-medium text-error-text-fuerte transition-colors hover:bg-error-borde disabled:opacity-60"
       >
         {pendiente ? "Deshaciendo…" : "Sí, deshacer"}
       </button>
       <button
         type="button"
         onClick={() => setConfirmando(false)}
-        className="px-2 py-1.5 text-sm text-slate-400 hover:text-white"
+        className="px-2 py-1.5 text-sm text-tinta-tenue hover:text-tinta"
       >
         No
       </button>

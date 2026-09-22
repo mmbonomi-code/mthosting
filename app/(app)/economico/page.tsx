@@ -136,13 +136,13 @@ export default async function Economico({
   if (celdas.length === 0) {
     return (
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-100">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-tinta">
           Económico
         </h1>
-        <div className="rounded-md border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-400">
+        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-tenue">
             Todavía no hay cobros cargados.{" "}
-            <Link href="/economico/importar" className="font-medium text-emerald-300 underline">
+            <Link href="/economico/importar" className="font-medium text-exito-text underline">
               Importar los CSV de Airbnb
             </Link>
           </p>
@@ -192,16 +192,16 @@ export default async function Economico({
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-100">
+          <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-tinta">
             Económico
           </h1>
-          <p className="text-sm tabular-nums text-slate-400">
+          <p className="text-sm tabular-nums text-tinta-tenue">
             {elegido ? codigoDepto.get(elegido) : `${porDepto.size} departamentos`} ·{" "}
             {nombreMes(meses[0])} a {nombreMes(meses[meses.length - 1])} · todo en USD
           </p>
         </div>
         {elegido && (
-          <Link href="/economico" className={"text-sm text-slate-400 underline"}>
+          <Link href="/economico" className={"text-sm text-tinta-tenue underline"}>
             ver todos
           </Link>
         )}
@@ -215,14 +215,14 @@ export default async function Economico({
       <Tablas celdas={paraTablas} programados={paraTablasProgramado} />
 
       {totalPeriodo.aircover !== 0 && (
-        <p className="rounded-md border border-slate-800 bg-slate-800/40 px-4 py-3 text-sm text-slate-400">
+        <p className="rounded-md border border-borde bg-superficie px-4 py-3 text-sm text-tinta-tenue">
           Además entraron{" "}
-          <strong className="tabular-nums text-slate-100">
+          <strong className="tabular-nums text-tinta">
             USD {usd(totalPeriodo.aircover)}
           </strong>{" "}
           de AirCover por daños. No están en la ganancia: según el caso corresponden al
           propietario o a MTHosting, y eso se define{" "}
-          <Link href="/economico/aircover" className="font-medium text-emerald-300 underline">
+          <Link href="/economico/aircover" className="font-medium text-exito-text underline">
             en su pantalla
           </Link>
           .
@@ -232,11 +232,11 @@ export default async function Economico({
       {/* ---- 3. Saldos ---- */}
       <section className="flex flex-col gap-3">
         <div>
-          <h2 className="font-semibold text-slate-100">Saldos con propietarios</h2>
-          <p className="text-sm text-slate-400">
+          <h2 className="font-semibold text-tinta">Saldos con propietarios</h2>
+          <p className="text-sm text-tinta-tenue">
             Lo que entró menos lo que corresponde a MTHosting. En{" "}
-            <span className="font-medium text-amber-300">naranja</span> lo que hay que
-            girarle al propietario; en <span className="font-medium text-sky-300">azul</span>{" "}
+            <span className="font-medium text-aviso-text">naranja</span> lo que hay que
+            girarle al propietario; en <span className="font-medium text-dato-text">azul</span>{" "}
             lo que el propietario le debe a MTHosting.
           </p>
         </div>
@@ -254,19 +254,19 @@ export default async function Economico({
                   key={d.id}
                   className={`flex items-baseline justify-between gap-3 rounded-md border border-l-[3px] px-4 py-3 ${
                     s > 0
-                      ? "border-slate-800 border-l-amber-600 bg-amber-950/40"
-                      : "border-slate-800 border-l-sky-600 bg-sky-950"
+                      ? "border-borde border-l-aviso bg-aviso-soft/40"
+                      : "border-borde border-l-dato bg-dato-soft"
                   }`}
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-mono font-semibold text-slate-100">{d.codigo}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="truncate font-mono font-semibold text-tinta">{d.codigo}</p>
+                    <p className="text-xs text-tinta-tenue">
                       {s > 0 ? "hay que girarle" : "le debe a MTHosting"}
                     </p>
                   </div>
                   <p
                     className={`shrink-0 text-lg font-semibold tabular-nums ${
-                      s > 0 ? "text-amber-300" : "text-sky-300"
+                      s > 0 ? "text-aviso-text" : "text-dato-text"
                     }`}
                   >
                     {usd(Math.abs(s))}
@@ -277,7 +277,7 @@ export default async function Economico({
         </div>
       </section>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-tinta-etiqueta">
         Todo se calcula al abrir la página, desde los movimientos importados. Para ver de
         qué fila del CSV sale cada número está{" "}
         <Link href="/economico/validacion" className="underline">

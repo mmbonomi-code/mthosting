@@ -186,11 +186,11 @@ export default async function Rentabilidad({
   if (filas.length === 0) {
     return (
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-100">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-tinta">
           Rentabilidad
         </h1>
-        <div className="rounded-md border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-400">
+        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-tenue">
             Todavía no hay ganancia ni gastos cargados desde {nombreMes(ARRANCA)}.
           </p>
         </div>
@@ -221,10 +221,10 @@ export default async function Rentabilidad({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-100">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-tinta">
           Rentabilidad
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-tenue">
           Ganancia contra gastos, mes a mes, desde {nombreMes(ARRANCA)}. No incluye lo que
           reembolsa el propietario: esa plata se adelanta y se recupera, no es un costo de
           MTHosting.
@@ -232,7 +232,7 @@ export default async function Rentabilidad({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <p className="text-[13px] font-semibold text-slate-300">Los gastos, pasados a dólares</p>
+        <p className="text-[13px] font-semibold text-tinta-suave">Los gastos, pasados a dólares</p>
         <div className="flex flex-wrap gap-1.5">
           {CRITERIOS.map((c) => (
             <Link
@@ -241,15 +241,15 @@ export default async function Rentabilidad({
               aria-current={c.valor === criterio ? "true" : undefined}
               className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                 c.valor === criterio
-                  ? "border-emerald-600 bg-emerald-950 text-emerald-300"
-                  : "border-slate-700 text-slate-400 hover:bg-slate-800"
+                  ? "border-exito bg-exito-soft text-exito-text"
+                  : "border-borde-control text-tinta-tenue hover:bg-elevada"
               }`}
             >
               {c.texto}
             </Link>
           ))}
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-tinta-etiqueta">
           {elegido.detalle}{" "}
           {Math.round(Math.abs(difContraElOtro)) === 0 ? (
             <>Con el otro criterio el total da lo mismo.</>
@@ -266,7 +266,7 @@ export default async function Rentabilidad({
         gananciaSinConvertir > 0 ||
         mesesSinTc > 0 ||
         gastosSinReparto > 0) && (
-        <div className="rounded-md border border-slate-800 border-l-[3px] border-l-amber-600 bg-amber-950/40 px-4 py-3 text-sm text-amber-300">
+        <div className="rounded-md border border-borde border-l-[3px] border-l-aviso bg-aviso-soft/40 px-4 py-3 text-sm text-aviso-text">
           {gastosSinConvertir > 0 && (
             <p>
               {gastosSinConvertir} gasto{gastosSinConvertir === 1 ? "" : "s"} sin tipo de
@@ -303,31 +303,31 @@ export default async function Rentabilidad({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-md border border-slate-800 bg-slate-800/40">
+      <div className="overflow-x-auto rounded-md border border-borde bg-superficie">
         <table className="w-full text-sm tabular-nums">
-          <thead className="bg-slate-800/60 text-left text-[13px] font-semibold text-slate-300">
+          <thead className="bg-superficie-alt text-left text-[13px] font-semibold text-tinta-suave">
             <tr>
               <th className="px-3 py-2">Mes</th>
               <th className="px-3 py-2 text-right">Ganancia USD</th>
               <th className="px-3 py-2 text-right">Gastos USD</th>
               <th className="px-3 py-2 text-right">Resultado USD</th>
-              <th className="border-l border-slate-800 px-3 py-2 text-right">Ganancia $</th>
+              <th className="border-l border-borde px-3 py-2 text-right">Ganancia $</th>
               <th className="px-3 py-2 text-right">Gastos $</th>
               <th className="px-3 py-2 text-right">Resultado $</th>
             </tr>
           </thead>
           <tbody>
             {filas.map((f) => (
-              <tr key={f.mes} className="h-fila border-t border-slate-800">
+              <tr key={f.mes} className="h-fila border-t border-borde">
                 <td className="whitespace-nowrap px-3 py-2 font-medium capitalize">
                   {nombreMes(f.mes)}
                 </td>
-                <td className="px-3 py-2 text-right text-emerald-300">{usd(f.gananciaUsd)}</td>
-                <td className="px-3 py-2 text-right text-red-300">
+                <td className="px-3 py-2 text-right text-exito-text">{usd(f.gananciaUsd)}</td>
+                <td className="px-3 py-2 text-right text-error-text">
                   {usd(f.gastosUsd)}
                   {f.gastosSinConvertir > 0 && (
                     <span
-                      className="ml-1 text-amber-300"
+                      className="ml-1 text-aviso-text"
                       title={`${f.gastosSinConvertir} gasto(s) sin tipo de cambio, no incluidos`}
                     >
                       *
@@ -336,22 +336,22 @@ export default async function Rentabilidad({
                 </td>
                 <td
                   className={`px-3 py-2 text-right font-semibold ${
-                    f.resultadoUsd >= 0 ? "text-emerald-300" : "text-red-400"
+                    f.resultadoUsd >= 0 ? "text-exito-text" : "text-error-text"
                   }`}
                 >
                   {usd(f.resultadoUsd)}
                 </td>
-                <td className="border-l border-slate-800 px-3 py-2 text-right text-slate-400">
+                <td className="border-l border-borde px-3 py-2 text-right text-tinta-tenue">
                   {f.gananciaArs === null ? "—" : pesos(f.gananciaArs)}
                 </td>
-                <td className="px-3 py-2 text-right text-slate-400">{pesos(f.gastosArs)}</td>
+                <td className="px-3 py-2 text-right text-tinta-tenue">{pesos(f.gastosArs)}</td>
                 <td
                   className={`px-3 py-2 text-right font-medium ${
                     f.resultadoArs === null
-                      ? "text-slate-500"
+                      ? "text-tinta-etiqueta"
                       : f.resultadoArs >= 0
-                        ? "text-slate-100"
-                        : "text-red-300"
+                        ? "text-tinta"
+                        : "text-error-text"
                   }`}
                 >
                   {f.resultadoArs === null ? "—" : pesos(f.resultadoArs)}
@@ -360,18 +360,18 @@ export default async function Rentabilidad({
             ))}
           </tbody>
           <tfoot>
-            <tr className="h-fila border-t-2 border-slate-700 bg-slate-800/60 font-semibold">
+            <tr className="h-fila border-t-2 border-borde-control bg-superficie-alt font-semibold">
               <td className="px-3 py-2">Total</td>
               <td className="px-3 py-2 text-right">{usd(totalGananciaUsd)}</td>
               <td className="px-3 py-2 text-right">{usd(totalGastosUsd)}</td>
               <td className="px-3 py-2 text-right">
                 {usd(totalGananciaUsd - totalGastosUsd)}
               </td>
-              <td className="border-l border-slate-800 px-3 py-2 text-right text-slate-500">
+              <td className="border-l border-borde px-3 py-2 text-right text-tinta-etiqueta">
                 {totalGananciaArs === null ? "—" : pesos(totalGananciaArs)}
               </td>
-              <td className="px-3 py-2 text-right text-slate-500">{pesos(totalGastosArs)}</td>
-              <td className="px-3 py-2 text-right text-slate-500">
+              <td className="px-3 py-2 text-right text-tinta-etiqueta">{pesos(totalGastosArs)}</td>
+              <td className="px-3 py-2 text-right text-tinta-etiqueta">
                 {totalResultadoArs === null ? "—" : pesos(totalResultadoArs)}
               </td>
             </tr>
@@ -379,7 +379,7 @@ export default async function Rentabilidad({
         </table>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-tinta-etiqueta">
         Los pesos de la columna de gastos son los mismos con cualquiera de los dos criterios:
         lo que cambia es con qué dólar se los valúa. La ganancia en pesos usa la cotización
         típica de cada mes (la mediana de lo cargado en Caja), porque nace en dólares y no

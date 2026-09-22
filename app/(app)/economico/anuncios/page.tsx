@@ -51,29 +51,29 @@ export default async function AnunciosSinMapear() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Anuncios sin mapear
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-tenue">
           Movimientos que se importaron pero todavía no tienen departamento. La plata
           está guardada; lo que falta es decir de quién es.
         </p>
       </div>
 
       {lista.length === 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-300">No quedó ningún anuncio sin departamento.</p>
+        <div className="rounded-xl border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-suave">No quedó ningún anuncio sin departamento.</p>
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
           {lista.map(([anuncio, datos]) => (
             <li
               key={anuncio}
-              className="flex flex-col gap-3 rounded-xl border border-amber-900/60 bg-slate-800/40 p-4"
+              className="flex flex-col gap-3 rounded-xl border border-aviso-borde/60 bg-superficie p-4"
             >
               <div>
-                <p className="font-medium text-slate-100">{anuncio}</p>
-                <p className="text-sm text-slate-500">
+                <p className="font-medium text-tinta">{anuncio}</p>
+                <p className="text-sm text-tinta-etiqueta">
                   {datos.filas} movimiento{datos.filas === 1 ? "" : "s"} ·{" "}
                   {formatearFechaAR(datos.desde)} a {formatearFechaAR(datos.hasta)} ·{" "}
                   {[...datos.montos]

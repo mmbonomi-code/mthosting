@@ -17,18 +17,18 @@ export default async function Importaciones() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Importaciones
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-tenue">
           Cada carga es un lote. Deshacer saca sus filas de todos los números; no
           borra nada, y el archivo se puede volver a subir.
         </p>
       </div>
 
       {(lotes ?? []).length === 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-300">Todavía no se importó nada.</p>
+        <div className="rounded-xl border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-suave">Todavía no se importó nada.</p>
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -38,23 +38,23 @@ export default async function Importaciones() {
             return (
               <li
                 key={l.id}
-                className={`flex flex-col gap-2 rounded-xl border bg-slate-800/40 p-4 ${
-                  deshecho ? "border-slate-800 opacity-60" : "border-slate-800"
+                className={`flex flex-col gap-2 rounded-xl border bg-superficie p-4 ${
+                  deshecho ? "border-borde opacity-60" : "border-borde"
                 }`}
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <span className="font-medium text-slate-100">
+                  <span className="font-medium text-tinta">
                     {formatearFechaAR(l.created_at.slice(0, 10))}
-                    <span className="ml-2 font-normal text-slate-500">
+                    <span className="ml-2 font-normal text-tinta-etiqueta">
                       {l.tipo === "programado" ? "Programados" : "Cobros efectivos"}
                     </span>
                     {deshecho && (
-                      <span className="ml-2 rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
+                      <span className="ml-2 rounded-full bg-elevada-hover px-2 py-0.5 text-xs text-tinta-suave">
                         deshecha
                       </span>
                     )}
                     {!deshecho && l.cerrado_en === null && (
-                      <span className="ml-2 rounded-full bg-amber-950 px-2 py-0.5 text-xs text-amber-300">
+                      <span className="ml-2 rounded-full bg-aviso-soft px-2 py-0.5 text-xs text-aviso-text">
                         sin terminar
                       </span>
                     )}
@@ -64,18 +64,18 @@ export default async function Importaciones() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-slate-500">
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-tinta-etiqueta">
                   <span className="tabular-nums">
                     {l.archivos} archivo{l.archivos === 1 ? "" : "s"}
                   </span>
-                  <span className="tabular-nums text-emerald-300">
+                  <span className="tabular-nums text-exito-text">
                     +{l.filas_nuevas.toLocaleString("es-AR")} filas
                   </span>
                   <span className="tabular-nums">
                     {l.filas_duplicadas.toLocaleString("es-AR")} ya estaban
                   </span>
                   {l.filas_sin_mapear > 0 && (
-                    <span className="tabular-nums text-amber-300">
+                    <span className="tabular-nums text-aviso-text">
                       {l.filas_sin_mapear} sin departamento
                     </span>
                   )}
@@ -83,10 +83,10 @@ export default async function Importaciones() {
 
                 {avisos.length > 0 && (
                   <details>
-                    <summary className="cursor-pointer text-xs text-slate-500">
+                    <summary className="cursor-pointer text-xs text-tinta-etiqueta">
                       {avisos.length} aviso{avisos.length === 1 ? "" : "s"}
                     </summary>
-                    <ul className="mt-1 flex flex-col gap-1 text-xs text-slate-400">
+                    <ul className="mt-1 flex flex-col gap-1 text-xs text-tinta-tenue">
                       {avisos.map((a) => (
                         <li key={a}>{a}</li>
                       ))}

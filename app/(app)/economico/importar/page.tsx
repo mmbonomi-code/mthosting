@@ -4,10 +4,10 @@ export default function ImportarEconomico() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-tinta">
           Importar cobros de Airbnb
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-tenue">
           Ganancias → Historial de transacciones, exportado a CSV. Se cargan todos
           los archivos juntos y una fila ya cargada no se vuelve a tomar.
         </p>
@@ -15,10 +15,10 @@ export default function ImportarEconomico() {
 
       <FormularioImportar />
 
-      <div className="rounded-xl border border-slate-800 bg-slate-800/40 p-4 text-sm text-slate-400">
-        <p className="mb-2 font-medium text-slate-300">Dos cosas que conviene saber</p>
+      <div className="rounded-xl border border-borde bg-superficie p-4 text-sm text-tinta-tenue">
+        <p className="mb-2 font-medium text-tinta-suave">Dos cosas que conviene saber</p>
         <p className="mb-1">
-          <strong className="font-medium text-slate-300">
+          <strong className="font-medium text-tinta-suave">
             Los archivos se pisan entre sí y está bien.
           </strong>{" "}
           Exportar el mismo rango varias veces es lo normal. Cada fila se
@@ -26,7 +26,7 @@ export default function ImportarEconomico() {
           nada.
         </p>
         <p>
-          <strong className="font-medium text-slate-300">
+          <strong className="font-medium text-tinta-suave">
             Un archivo puede tener varios departamentos.
           </strong>{" "}
           La exportación se hace por propietario, y un propietario puede tener

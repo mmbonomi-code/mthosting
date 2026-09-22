@@ -131,18 +131,18 @@ export default function FormularioImportar() {
   if (estado.paso === "procesando") {
     const pct = Math.round((estado.hechos / estado.total) * 100);
     return (
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-800/40 p-6">
-        <p className="text-slate-200">
+      <div className="flex flex-col gap-3 rounded-xl border border-borde bg-superficie p-6">
+        <p className="text-tinta-media">
           Procesando {estado.hechos + 1} de {estado.total}
         </p>
-        <p className="truncate text-sm text-slate-500">{estado.actual}</p>
-        <div className="h-2 overflow-hidden rounded-full bg-slate-700">
+        <p className="truncate text-sm text-tinta-etiqueta">{estado.actual}</p>
+        <div className="h-2 overflow-hidden rounded-full bg-elevada-hover">
           <div
-            className="h-full bg-emerald-500 transition-all"
+            className="h-full bg-exito transition-all"
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-tinta-etiqueta">
           No cierres esta pantalla hasta que termine.
         </p>
       </div>
@@ -165,13 +165,13 @@ export default function FormularioImportar() {
           await agregar(await desdeDrop(e.dataTransfer));
         }}
         className={`flex flex-col items-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
-          encima ? "border-emerald-500 bg-emerald-950/20" : "border-slate-700 bg-slate-800/40"
+          encima ? "border-exito bg-exito-soft/20" : "border-borde-control bg-superficie"
         }`}
       >
-        <p className="text-slate-200">
+        <p className="text-tinta-media">
           Arrastrá acá los CSV, una carpeta entera o un .zip
         </p>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-tinta-etiqueta">
           Se importan todos juntos, como un solo lote
         </p>
         <div className="flex flex-wrap justify-center gap-2">
@@ -216,7 +216,7 @@ export default function FormularioImportar() {
       </div>
 
       {rechazados.length > 0 && (
-        <p className="text-sm text-amber-300">
+        <p className="text-sm text-aviso-text">
           Quedaron afuera {rechazados.length} archivo
           {rechazados.length === 1 ? "" : "s"} que no son CSV: {rechazados.join(", ")}
         </p>
@@ -224,21 +224,21 @@ export default function FormularioImportar() {
 
       {pendientes.length > 0 && (
         <>
-          <div className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-4">
+          <div className="flex flex-col gap-2 rounded-xl border border-borde bg-superficie p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-medium text-white">
+              <span className="font-medium text-tinta">
                 {pendientes.length} archivo{pendientes.length === 1 ? "" : "s"} listo
                 {pendientes.length === 1 ? "" : "s"}
               </span>
               <button
                 type="button"
                 onClick={() => setPendientes([])}
-                className="text-sm text-slate-400 underline underline-offset-4 hover:text-white"
+                className="text-sm text-tinta-tenue underline underline-offset-4 hover:text-tinta"
               >
                 Vaciar
               </button>
             </div>
-            <ul className="max-h-48 overflow-y-auto text-sm text-slate-400">
+            <ul className="max-h-48 overflow-y-auto text-sm text-tinta-tenue">
               {pendientes.map((p) => (
                 <li key={p.nombre} className="truncate py-0.5">
                   {p.nombre}
@@ -247,8 +247,8 @@ export default function FormularioImportar() {
             </ul>
           </div>
 
-          <fieldset className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-4">
-            <legend className="px-1 text-sm text-slate-400">Qué son estos archivos</legend>
+          <fieldset className="flex flex-col gap-2 rounded-xl border border-borde bg-superficie p-4">
+            <legend className="px-1 text-sm text-tinta-tenue">Qué son estos archivos</legend>
             {(
               [
                 {
@@ -276,8 +276,8 @@ export default function FormularioImportar() {
                   className="mt-1"
                 />
                 <span>
-                  <span className="block text-slate-100">{o.titulo}</span>
-                  <span className="block text-sm text-slate-500">{o.detalle}</span>
+                  <span className="block text-tinta">{o.titulo}</span>
+                  <span className="block text-sm text-tinta-etiqueta">{o.detalle}</span>
                 </span>
               </label>
             ))}
@@ -297,7 +297,7 @@ export default function FormularioImportar() {
 function Numero({ etiqueta, valor, color }: { etiqueta: string; valor: number; color: string }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</span>
+      <span className="text-xs uppercase tracking-wide text-tinta-etiqueta">{etiqueta}</span>
       <span className={`text-2xl font-semibold tabular-nums ${color}`}>
         {valor.toLocaleString("es-AR")}
       </span>
@@ -322,22 +322,22 @@ function Resumen({
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="grid grid-cols-2 gap-4 rounded-xl border border-slate-800 bg-slate-800/40 p-4 sm:grid-cols-4">
-        <Numero etiqueta="Archivos" valor={resumen.archivos} color="text-white" />
-        <Numero etiqueta="Filas nuevas" valor={resumen.filas_nuevas} color="text-emerald-300" />
+      <section className="grid grid-cols-2 gap-4 rounded-xl border border-borde bg-superficie p-4 sm:grid-cols-4">
+        <Numero etiqueta="Archivos" valor={resumen.archivos} color="text-tinta" />
+        <Numero etiqueta="Filas nuevas" valor={resumen.filas_nuevas} color="text-exito-text" />
         <Numero
           etiqueta="Ya estaban"
           valor={resumen.filas_duplicadas}
-          color="text-slate-400"
+          color="text-tinta-tenue"
         />
         <Numero
           etiqueta="Sin departamento"
           valor={resumen.filas_sin_mapear}
-          color={resumen.filas_sin_mapear > 0 ? "text-amber-300" : "text-slate-400"}
+          color={resumen.filas_sin_mapear > 0 ? "text-aviso-text" : "text-tinta-tenue"}
         />
       </section>
 
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-tinta-tenue">
         Se leyeron {resumen.filas_leidas.toLocaleString("es-AR")} filas.{" "}
         {resumen.filas_duplicadas > 0 && (
           <>
@@ -350,12 +350,12 @@ function Resumen({
       {/* Lo que queda por hacer. Son las dos cosas que, sin resolver, dejan
           plata afuera de los números. */}
       {(resumen.anuncios_sin_mapear > 0 || resumen.cuentas_sin_clasificar > 0) && (
-        <div className="flex flex-col gap-2 rounded-xl border border-amber-900 bg-amber-950/30 p-4">
-          <p className="font-medium text-amber-200">Falta resolver esto</p>
+        <div className="flex flex-col gap-2 rounded-xl border border-aviso-borde bg-aviso-soft/30 p-4">
+          <p className="font-medium text-aviso-text-fuerte">Falta resolver esto</p>
           {resumen.anuncios_sin_mapear > 0 && (
             <Link
               href="/economico/anuncios"
-              className="text-sm text-amber-100 underline underline-offset-4"
+              className="text-sm text-aviso-text-fuerte underline underline-offset-4"
             >
               {resumen.anuncios_sin_mapear} anuncio
               {resumen.anuncios_sin_mapear === 1 ? "" : "s"} sin departamento →
@@ -364,7 +364,7 @@ function Resumen({
           {resumen.cuentas_sin_clasificar > 0 && (
             <Link
               href="/economico/cuentas"
-              className="text-sm text-amber-100 underline underline-offset-4"
+              className="text-sm text-aviso-text-fuerte underline underline-offset-4"
             >
               {resumen.cuentas_sin_clasificar} cuenta
               {resumen.cuentas_sin_clasificar === 1 ? "" : "s"} de payout sin clasificar →
@@ -374,14 +374,14 @@ function Resumen({
       )}
 
       {fallados.length > 0 && (
-        <div className="flex flex-col gap-1 rounded-xl border border-red-900 bg-red-950/30 p-4">
-          <p className="font-medium text-red-200">
+        <div className="flex flex-col gap-1 rounded-xl border border-error-borde bg-error-soft/30 p-4">
+          <p className="font-medium text-error-text-fuerte">
             {fallados.length} archivo{fallados.length === 1 ? "" : "s"} no se pudo leer
           </p>
-          <p className="text-xs text-red-200/70">
+          <p className="text-xs text-error-text-fuerte/70">
             El resto del lote se importó igual.
           </p>
-          <ul className="mt-1 text-sm text-red-100">
+          <ul className="mt-1 text-sm text-error-text-fuerte">
             {fallados.map((a) => (
               <li key={a.nombre}>
                 <span className="font-medium">{a.nombre}</span>: {a.error}
@@ -392,11 +392,11 @@ function Resumen({
       )}
 
       {avisos.length > 0 && (
-        <details className="rounded-xl border border-slate-800 bg-slate-800/40 p-4">
-          <summary className="cursor-pointer text-sm text-slate-300">
+        <details className="rounded-xl border border-borde bg-superficie p-4">
+          <summary className="cursor-pointer text-sm text-tinta-suave">
             {avisos.length} aviso{avisos.length === 1 ? "" : "s"} del lote
           </summary>
-          <ul className="mt-2 flex flex-col gap-1 text-sm text-slate-400">
+          <ul className="mt-2 flex flex-col gap-1 text-sm text-tinta-tenue">
             {avisos.map((a) => (
               <li key={a}>{a}</li>
             ))}
@@ -404,16 +404,16 @@ function Resumen({
         </details>
       )}
 
-      <details className="rounded-xl border border-slate-800 bg-slate-800/40 p-4">
-        <summary className="cursor-pointer text-sm text-slate-300">
+      <details className="rounded-xl border border-borde bg-superficie p-4">
+        <summary className="cursor-pointer text-sm text-tinta-suave">
           Archivo por archivo
         </summary>
         <ul className="mt-2 flex flex-col gap-1 text-sm">
           {archivos.map((a) => (
             <li key={a.nombre} className="flex flex-wrap items-baseline gap-x-3">
-              <span className="min-w-0 flex-1 truncate text-slate-300">{a.nombre}</span>
-              <span className="tabular-nums text-emerald-300">+{a.filas_nuevas}</span>
-              <span className="tabular-nums text-slate-500">
+              <span className="min-w-0 flex-1 truncate text-tinta-suave">{a.nombre}</span>
+              <span className="tabular-nums text-exito-text">+{a.filas_nuevas}</span>
+              <span className="tabular-nums text-tinta-etiqueta">
                 {a.filas_duplicadas} repetidas
               </span>
             </li>
@@ -427,7 +427,7 @@ function Resumen({
         </button>
         <Link
           href="/economico/importaciones"
-          className="flex h-11 items-center px-2 text-sm text-slate-400 hover:text-white"
+          className="flex h-11 items-center px-2 text-sm text-tinta-tenue hover:text-tinta"
         >
           Ver las importaciones (y deshacer esta) →
         </Link>

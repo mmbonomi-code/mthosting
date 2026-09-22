@@ -62,10 +62,10 @@ export default async function AirCover() {
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div>
-        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-100">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-tinta">
           AirCover
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta-tenue">
           Reembolsos de Airbnb por daños. No son ingreso del alquiler: si el daño fue a
           algo del propietario la indemnización le corresponde entera, y si el gasto lo
           absorbió MTHosting es de MTHosting. Del archivo no se puede deducir, así que se
@@ -74,8 +74,8 @@ export default async function AirCover() {
       </div>
 
       {filas.length === 0 ? (
-        <div className="rounded-md border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
-          <p className="text-slate-400">No hay reembolsos de AirCover en lo importado.</p>
+        <div className="rounded-md border border-borde bg-superficie px-6 py-12 text-center">
+          <p className="text-tinta-tenue">No hay reembolsos de AirCover en lo importado.</p>
         </div>
       ) : (
         <>
@@ -86,25 +86,25 @@ export default async function AirCover() {
               monto={total("sin_asignar")}
               tono={
                 sinDecidir > 0
-                  ? "border-l-amber-600 bg-amber-950/40 text-amber-300"
-                  : "border-l-slate-700 bg-slate-800/40 text-slate-500"
+                  ? "border-l-aviso bg-aviso-soft/40 text-aviso-text"
+                  : "border-l-borde-control bg-superficie text-tinta-etiqueta"
               }
             />
             <Resumen
               titulo="De MTHosting"
               cantidad={cuantos("mthosting")}
               monto={total("mthosting")}
-              tono="border-l-emerald-600 bg-slate-800/40 text-emerald-300"
+              tono="border-l-exito bg-superficie text-exito-text"
             />
             <Resumen
               titulo="Del propietario"
               cantidad={cuantos("propietario")}
               monto={total("propietario")}
-              tono="border-l-sky-600 bg-slate-800/40 text-sky-300"
+              tono="border-l-dato bg-superficie text-dato-text"
             />
           </div>
 
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-tinta-tenue">
             Marcar no cambia la ganancia ni lo percibido: el AirCover se informa aparte de
             las dos. Lo que queda es el registro de a quién le corresponde.
           </p>
@@ -113,25 +113,25 @@ export default async function AirCover() {
             {filas.map((f) => (
               <li
                 key={f.id}
-                className={`flex flex-col gap-3 rounded-md border bg-slate-800/40 p-4 sm:flex-row sm:items-center sm:justify-between ${
+                className={`flex flex-col gap-3 rounded-md border bg-superficie p-4 sm:flex-row sm:items-center sm:justify-between ${
                   f.aircover_destino === "sin_asignar"
-                    ? "border-slate-800 border-l-[3px] border-l-amber-600"
-                    : "border-slate-800"
+                    ? "border-borde border-l-[3px] border-l-aviso"
+                    : "border-borde"
                 }`}
               >
                 <div className="min-w-0">
                   <p className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="font-mono font-semibold text-slate-100">
+                    <span className="font-mono font-semibold text-tinta">
                       {f.depto_id ? (codigoDepto.get(f.depto_id) ?? "—") : "sin departamento"}
                     </span>
-                    <span className="font-semibold tabular-nums text-slate-100">
+                    <span className="font-semibold tabular-nums text-tinta">
                       {f.moneda} {usd(Number(f.monto ?? 0))}
                     </span>
-                    <span className="text-sm tabular-nums text-slate-400">
+                    <span className="text-sm tabular-nums text-tinta-tenue">
                       {formatearFechaAR(f.fecha)}
                     </span>
                   </p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-tinta-tenue">
                     {f.huesped ?? "Sin nombre"}
                     {f.codigo_confirmacion && (
                       <span className="ml-2 font-mono text-xs">{f.codigo_confirmacion}</span>
@@ -140,9 +140,9 @@ export default async function AirCover() {
                   {/* El detalle trae el número de resolución de Airbnb, que es
                       por dónde se busca el caso para saber qué se rompió. */}
                   {f.detalles && (
-                    <p className="mt-0.5 text-xs text-slate-500">{f.detalles}</p>
+                    <p className="mt-0.5 text-xs text-tinta-etiqueta">{f.detalles}</p>
                   )}
-                  <p className="mt-0.5 font-mono text-xs text-slate-500">
+                  <p className="mt-0.5 font-mono text-xs text-tinta-etiqueta">
                     {f.archivo}:{f.linea}
                   </p>
                 </div>
@@ -153,7 +153,7 @@ export default async function AirCover() {
         </>
       )}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-tinta-etiqueta">
         <Link href="/economico" className="underline">
           Volver al resumen
         </Link>
@@ -174,9 +174,9 @@ function Resumen({
   tono: string;
 }) {
   return (
-    <div className={`rounded-md border border-slate-800 border-l-[3px] p-4 ${tono}`}>
+    <div className={`rounded-md border border-borde border-l-[3px] p-4 ${tono}`}>
       <p className="text-2xl font-semibold tabular-nums">{usd(monto)}</p>
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-tinta-tenue">
         {titulo} · {cantidad} caso{cantidad === 1 ? "" : "s"}
       </p>
     </div>

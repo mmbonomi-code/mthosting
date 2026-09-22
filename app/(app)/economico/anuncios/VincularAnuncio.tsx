@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { clsEntrada } from "@/lib/ui";
+import { clsEntrada, clsBoton } from "@/lib/ui";
 import { mapearAnuncioEconomico } from "../acciones";
 
 export default function VincularAnuncio({
@@ -17,7 +17,7 @@ export default function VincularAnuncio({
 
   if (listo) {
     return (
-      <p className="rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+      <p className="rounded-lg bg-exito-soft px-3 py-2 text-sm text-exito-text">
         ✓ Vinculado. Se reimputó todo lo que ya estaba cargado de este anuncio, sin
         reimportar nada.
       </p>
@@ -62,13 +62,13 @@ export default function VincularAnuncio({
         <button
           type="submit"
           disabled={pendiente}
-          className="h-11 shrink-0 rounded-lg bg-white px-4 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
+          className={`${clsBoton("primario")} shrink-0`}
         >
           {pendiente ? "Vinculando…" : "Vincular"}
         </button>
       </div>
       {error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
           {error}
         </p>
       )}

@@ -1,3 +1,4 @@
+import { clsBoton } from "@/lib/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
@@ -29,8 +30,8 @@ import {
 function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</dt>
-      <dd className="text-base text-slate-200">{children ?? "—"}</dd>
+      <dt className="text-xs uppercase tracking-wide text-tinta-etiqueta">{etiqueta}</dt>
+      <dd className="text-base text-tinta-media">{children ?? "—"}</dd>
     </div>
   );
 }
@@ -155,26 +156,26 @@ export default async function FichaLimpieza({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link href="/limpiezas" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/limpiezas" className="text-sm text-tinta-tenue hover:text-tinta">
         ← Volver a limpiezas
       </Link>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-mono text-2xl font-bold tracking-tight text-white">
+            <h1 className="font-mono text-2xl font-bold tracking-tight text-tinta">
               {limpieza.depto?.codigo}
             </h1>
             {esMismoDia && (
-              <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
+              <span className="rounded-full bg-error-soft px-2.5 py-0.5 text-xs font-medium text-error-text">
                 Check in/out
               </span>
             )}
-            <span className="rounded-full bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-200">
+            <span className="rounded-full bg-elevada-hover px-2.5 py-0.5 text-xs font-medium text-tinta-media">
               {ESTADOS_LIMPIEZA[limpieza.estado]}
             </span>
           </div>
-          <p className="text-slate-400">
+          <p className="text-tinta-tenue">
             {formatearFechaAR(limpieza.fecha)} ·{" "}
             {TIPOS_LIMPIEZA[limpieza.tipo] ?? limpieza.tipo}
           </p>
@@ -183,7 +184,7 @@ export default async function FichaLimpieza({
           <form action={reactivarLimpieza.bind(null, id)}>
             <button
               type="submit"
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+              className={clsBoton("secundario", "chico")}
             >
               Reactivar
             </button>
@@ -192,7 +193,7 @@ export default async function FichaLimpieza({
           <form action={cancelarLimpieza.bind(null, id)}>
             <button
               type="submit"
-              className="rounded-lg border border-red-900 px-4 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-950"
+              className="rounded-lg border border-error-borde px-4 py-2 text-sm font-medium text-error-text transition-colors hover:bg-error-soft"
             >
               Cancelar limpieza
             </button>
@@ -201,7 +202,7 @@ export default async function FichaLimpieza({
       </div>
 
       {/* Lo que hace falta para ir a trabajar */}
-      <dl className="grid grid-cols-2 gap-4 rounded-xl border border-slate-700 bg-slate-800/60 p-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-4 rounded-xl border border-borde-control bg-superficie-alt p-4 sm:grid-cols-3">
         <div className="col-span-2 sm:col-span-3">
           <Dato etiqueta="Dirección">{limpieza.depto?.direccion}</Dato>
         </div>
@@ -228,21 +229,21 @@ export default async function FichaLimpieza({
       </dl>
 
       {llegadaConValijas && (
-        <p className="rounded-xl bg-sky-950/60 px-4 py-3 text-sm text-sky-200">
+        <p className="rounded-xl bg-dato-soft/60 px-4 py-3 text-sm text-dato-text-fuerte">
           🧳 El huésped que llega{horaValijas ? " a las " + horaValijas : ""} deja
           las valijas con la limpieza.
         </p>
       )}
 
       {/* Asignación */}
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
+      <section className="flex flex-col gap-3 rounded-xl border border-borde p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-medium text-white">Responsable</h2>
+          <h2 className="font-medium text-tinta">Responsable</h2>
           {limpieza.monto_pactado !== null && (
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-tinta-tenue">
               {limpieza.moneda} {limpieza.monto_pactado}
               {limpieza.pago_doble && (
-                <span className="ml-2 rounded-full bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
+                <span className="ml-2 rounded-full bg-exito-soft px-2 py-0.5 text-xs text-exito-text">
                   pago doble
                 </span>
               )}
@@ -257,7 +258,7 @@ export default async function FichaLimpieza({
         {limpieza.responsable && (
           <div className="flex flex-wrap items-center gap-3">
             {limpieza.monto_pactado === null && (
-              <p className="text-xs text-amber-400">
+              <p className="text-xs text-aviso-text">
                 Sin monto: no hay valores cargados para este departamento a esa
                 fecha.
               </p>
@@ -265,19 +266,19 @@ export default async function FichaLimpieza({
             <form action={recalcularMonto.bind(null, id)}>
               <button
                 type="submit"
-                className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700"
+                className="rounded-md border border-borde-control px-2 py-1 text-xs text-tinta-suave transition-colors hover:bg-elevada-hover"
               >
                 Recalcular monto
               </button>
             </form>
-            <span className="text-xs text-slate-600">
+            <span className="text-xs text-tinta-apagada">
               El monto se congela al asignar; recalculalo si cambiaste el tipo o
               la fecha.
             </span>
           </div>
         )}
         {anterior && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-tinta-etiqueta">
             La última vez la limpió {anterior.responsable?.nombre ?? "alguien sin registrar"} el{" "}
             {formatearFechaAR(anterior.fecha)}.
           </p>
@@ -286,8 +287,8 @@ export default async function FichaLimpieza({
 
       {/* Reserva */}
       {limpieza.reserva && (
-        <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
-          <h2 className="font-medium text-white">Reserva</h2>
+        <section className="flex flex-col gap-3 rounded-xl border border-borde p-4">
+          <h2 className="font-medium text-tinta">Reserva</h2>
           <dl className="grid gap-4 sm:grid-cols-3">
             <Dato etiqueta="Código">{limpieza.reserva.codigo_reserva}</Dato>
             <Dato etiqueta="Huésped">{limpieza.reserva.huesped_nombre}</Dato>
@@ -309,15 +310,15 @@ export default async function FichaLimpieza({
 
       {/* Acceso */}
       {(limpieza.depto?.indicaciones_acceso || limpieza.depto?.encargado_nombre) && (
-        <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
-          <h2 className="font-medium text-white">Acceso</h2>
+        <section className="flex flex-col gap-3 rounded-xl border border-borde p-4">
+          <h2 className="font-medium text-tinta">Acceso</h2>
           {limpieza.depto?.encargado_nombre && (
-            <p className="text-sm text-slate-300">
+            <p className="text-sm text-tinta-suave">
               Encargado: {limpieza.depto.encargado_nombre}
               {limpieza.depto.encargado_telefono && (
                 <a
                   href={`tel:${limpieza.depto.encargado_telefono}`}
-                  className="ml-2 underline decoration-slate-600 underline-offset-4"
+                  className="ml-2 underline decoration-tinta-apagada underline-offset-4"
                 >
                   {limpieza.depto.encargado_telefono}
                 </a>
@@ -325,7 +326,7 @@ export default async function FichaLimpieza({
             </p>
           )}
           {limpieza.depto?.indicaciones_acceso && (
-            <p className="whitespace-pre-wrap text-sm text-slate-300">
+            <p className="whitespace-pre-wrap text-sm text-tinta-suave">
               {limpieza.depto.indicaciones_acceso}
             </p>
           )}
@@ -334,10 +335,10 @@ export default async function FichaLimpieza({
 
       {/* Fotos y lo que dejó anotado quien limpió (spec Fase 2 §2.7 y §3) */}
       {verFotos && (
-        <section className="flex flex-col gap-4 rounded-xl border border-slate-800 p-4">
+        <section className="flex flex-col gap-4 rounded-xl border border-borde p-4">
           <div>
-            <h2 className="font-medium text-white">Fotos</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="font-medium text-tinta">Fotos</h2>
+            <p className="text-xs text-tinta-etiqueta">
               Las que sacó quien limpió. Podés sumar las tuyas.
             </p>
           </div>
@@ -357,10 +358,10 @@ export default async function FichaLimpieza({
           </PendientesProvider>
           {limpieza.observacion_proxima && (
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-tinta-etiqueta">
                 Observación para la próxima limpieza
               </span>
-              <p className="whitespace-pre-wrap rounded-lg bg-slate-900/60 px-3 py-2 text-sm italic text-slate-300">
+              <p className="whitespace-pre-wrap rounded-lg bg-fondo/60 px-3 py-2 text-sm italic text-tinta-suave">
                 {limpieza.observacion_proxima}
               </p>
             </div>
@@ -370,7 +371,7 @@ export default async function FichaLimpieza({
               en la base y no lo leía ninguna pantalla. */}
           {arreglos.length > 0 && (
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-tinta-etiqueta">
                 Reportado para arreglar
               </span>
               {arreglos.map((a) => {
@@ -379,18 +380,18 @@ export default async function FichaLimpieza({
                   <div
                     key={a.id}
                     className={`flex flex-wrap items-start justify-between gap-3 rounded-lg px-3 py-2 ${
-                      resuelto ? "bg-slate-900/60" : "bg-red-950/40"
+                      resuelto ? "bg-fondo/60" : "bg-error-soft/40"
                     }`}
                   >
                     <div className="min-w-0 flex-1">
                       <p
                         className={`whitespace-pre-wrap text-sm ${
-                          resuelto ? "text-slate-500 line-through" : "text-red-200"
+                          resuelto ? "text-tinta-etiqueta line-through" : "text-error-text-fuerte"
                         }`}
                       >
                         {a.descripcion}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-tinta-etiqueta">
                         {formatearFechaAR(a.created_at.slice(0, 10))}
                       </p>
                     </div>
@@ -403,7 +404,7 @@ export default async function FichaLimpieza({
                     >
                       <button
                         type="submit"
-                        className="h-9 shrink-0 rounded-md border border-slate-700 px-3 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700"
+                        className="h-9 shrink-0 rounded-md border border-borde-control px-3 text-xs font-medium text-tinta-suave transition-colors hover:bg-elevada-hover"
                       >
                         {resuelto ? "Reabrir" : "Marcar resuelto"}
                       </button>
@@ -419,11 +420,11 @@ export default async function FichaLimpieza({
               (decisión del dueño, 29/08/2026). */}
           {(limpieza.viatico_monto !== null || urlViatico) && (
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-tinta-etiqueta">
                 Viático
               </span>
               <div className="flex flex-wrap items-center gap-4">
-                <span className="text-base font-semibold text-slate-200">
+                <span className="text-base font-semibold text-tinta-media">
                   {limpieza.viatico_monto !== null
                     ? `${limpieza.moneda ?? "ARS"} ${limpieza.viatico_monto.toLocaleString("es-AR")}`
                     : "sin monto cargado"}
@@ -433,7 +434,7 @@ export default async function FichaLimpieza({
                     href={urlViatico}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-slate-300 underline decoration-slate-600 underline-offset-4 hover:text-white"
+                    className="text-sm text-tinta-suave underline decoration-tinta-apagada underline-offset-4 hover:text-tinta"
                   >
                     Ver comprobante
                   </a>
@@ -445,8 +446,8 @@ export default async function FichaLimpieza({
       )}
 
       {/* Edición */}
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
-        <h2 className="font-medium text-white">Datos de la limpieza</h2>
+      <section className="flex flex-col gap-3 rounded-xl border border-borde p-4">
+        <h2 className="font-medium text-tinta">Datos de la limpieza</h2>
         <FormularioEditar
           accion={editarLimpieza.bind(null, id)}
           valores={{

@@ -35,8 +35,8 @@ export default function SelectorResponsable({
       }}
       className={`h-9 max-w-44 rounded-lg border px-2 text-sm outline-none transition-colors ${
         valor
-          ? "border-emerald-800 bg-emerald-950/40 text-emerald-200"
-          : "border-amber-800 bg-amber-950/30 text-amber-200"
+          ? "border-exito-borde bg-exito-soft/40 text-exito-text-fuerte"
+          : "border-aviso-borde bg-aviso-soft/30 text-aviso-text-fuerte"
       } ${pendiente ? "opacity-60" : ""}`}
     >
       <option value="">Sin asignar</option>

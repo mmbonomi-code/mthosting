@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ETIQUETA_AMBIENTES } from "@/lib/etiquetas";
-import { clsEntrada } from "@/lib/ui";
+import { clsEntrada, clsBoton } from "@/lib/ui";
 
 export type Filtros = {
   q: string;
@@ -29,7 +29,7 @@ export default function FiltrosDepartamentos({
     <form
       action="/departamentos"
       method="get"
-      className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-800/30 p-3"
+      className="flex flex-col gap-2 rounded-xl border border-borde bg-elevada/30 p-3"
     >
       <input
         type="search"
@@ -101,7 +101,7 @@ export default function FiltrosDepartamentos({
 
         <button
           type="submit"
-          className="h-11 rounded-lg border border-slate-700 px-4 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800"
+          className={clsBoton("secundario")}
         >
           Buscar
         </button>
@@ -109,7 +109,7 @@ export default function FiltrosDepartamentos({
         {hayFiltros && (
           <Link
             href="/departamentos"
-            className="flex h-11 items-center px-3 text-sm text-slate-400 underline decoration-slate-600 underline-offset-4 hover:text-white"
+            className="flex h-11 items-center px-3 text-sm text-tinta-tenue underline decoration-tinta-apagada underline-offset-4 hover:text-tinta"
           >
             Limpiar
           </Link>

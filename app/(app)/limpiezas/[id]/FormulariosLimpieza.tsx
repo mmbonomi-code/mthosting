@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import type { EstadoFormulario } from "../acciones";
 import { PAGO_POR_TIPO, TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
-import { clsAreaTexto, clsBotonPrimario, clsEntrada, clsEtiqueta } from "@/lib/ui";
+import { clsAreaTexto, clsBotonPrimario, clsEntrada, clsEtiqueta, clsBoton } from "@/lib/ui";
 
 export type PersonaOpcion = { id: string; nombre: string };
 
@@ -40,18 +40,18 @@ export function FormularioAsignar({
         <button
           type="submit"
           disabled={pendiente}
-          className="h-11 shrink-0 rounded-lg bg-white px-5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-60"
+          className={`${clsBoton("primario")} shrink-0`}
         >
           {pendiente ? "Guardando…" : "Asignar"}
         </button>
       </div>
       {personas.length === 0 && (
-        <p className="text-xs text-amber-400">
+        <p className="text-xs text-aviso-text">
           No hay personas que hagan limpieza cargadas. Se agregan en Personas.
         </p>
       )}
       {estado?.error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
           {estado.error}
         </p>
       )}
@@ -110,7 +110,7 @@ export function FormularioEditar({
       {estado?.error && (
         <p
           role="alert"
-          className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300 sm:col-span-2"
+          className="rounded-lg bg-error-soft px-4 py-3 text-sm text-error-text sm:col-span-2"
         >
           {estado.error}
         </p>

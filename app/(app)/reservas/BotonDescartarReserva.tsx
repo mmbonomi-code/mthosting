@@ -1,5 +1,6 @@
 "use client";
 
+import { clsBoton } from "@/lib/ui";
 import { useActionState, useState } from "react";
 import type { EstadoFormulario } from "@/lib/reservas/tipos";
 
@@ -53,12 +54,12 @@ export default function BotonDescartarReserva({
   return (
     <div className="flex flex-col gap-3">
       {avisoDescarte && (
-        <p className="rounded-lg bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
+        <p className="rounded-lg bg-exito-soft px-4 py-3 text-sm text-exito-text">
           ✓ {avisoDescarte}
         </p>
       )}
       {avisoRecupero && (
-        <p className="rounded-lg bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
+        <p className="rounded-lg bg-exito-soft px-4 py-3 text-sm text-exito-text">
           ✓ {avisoRecupero}
         </p>
       )}
@@ -68,7 +69,7 @@ export default function BotonDescartarReserva({
           <button
             type="submit"
             disabled={recuperando}
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 disabled:opacity-60"
+            className={clsBoton("secundario", "chico")}
           >
             {recuperando ? "Recuperando…" : "Recuperar la reserva"}
           </button>
@@ -77,13 +78,13 @@ export default function BotonDescartarReserva({
         <button
           type="button"
           onClick={() => setConfirmando(true)}
-          className="self-start rounded-lg border border-red-900 px-4 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-950"
+          className="self-start rounded-lg border border-error-borde px-4 py-2 text-sm font-medium text-error-text transition-colors hover:bg-error-soft"
         >
           Descartar la reserva
         </button>
       ) : (
-        <div className="flex flex-col gap-3 rounded-xl border border-red-900 bg-red-950/40 p-4">
-          <p className="text-sm text-red-200">
+        <div className="flex flex-col gap-3 rounded-xl border border-error-borde bg-error-soft/40 p-4">
+          <p className="text-sm text-error-text-fuerte">
             La reserva <span className="font-mono">{codigo}</span> sale de la
             operación: dejan de figurar su check-in, su check-out y su limpieza.
             No se borra nada. Si más adelante aparece en un archivo de Airbnb,
@@ -94,7 +95,7 @@ export default function BotonDescartarReserva({
               <button
                 type="submit"
                 disabled={descartando}
-                className="rounded-lg bg-red-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+                className={clsBoton("peligro", "chico")}
               >
                 {descartando ? "Descartando…" : "Sí, descartarla"}
               </button>
@@ -103,7 +104,7 @@ export default function BotonDescartarReserva({
               type="button"
               onClick={() => setConfirmando(false)}
               disabled={descartando}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 disabled:opacity-60"
+              className={clsBoton("secundario", "chico")}
             >
               No, dejarla como está
             </button>
@@ -112,7 +113,7 @@ export default function BotonDescartarReserva({
       )}
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="rounded-lg bg-error-soft px-4 py-3 text-sm text-error-text">
           {error}
         </p>
       )}

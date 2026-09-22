@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { clsEntrada } from "@/lib/ui";
+import { clsEntrada, clsBoton } from "@/lib/ui";
 
 /**
  * Una sola caja de búsqueda, arriba de todo: en la calle no se filtra, se
@@ -28,7 +28,7 @@ export default function BuscadorDia({
       {q && (
         <Link
           href={`/dia?fecha=${fecha}`}
-          className="flex h-11 shrink-0 items-center rounded-lg border border-slate-700 px-3 text-sm text-slate-300 hover:bg-slate-800"
+          className={`${clsBoton("secundario")} shrink-0`}
         >
           Limpiar
         </Link>

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Badge from "@/app/componentes/Badge";
+import { ETIQUETA_MARCA, TONO_MARCA } from "@/lib/estados";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR, sumarDias } from "@/lib/fechas";
 import { ETIQUETA_AMBIENTES } from "@/lib/etiquetas";
@@ -155,14 +157,14 @@ export default async function Semana({
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">
+          <h1 className="text-2xl font-semibold tracking-tight text-tinta">
             Limpiezas
           </h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-tinta-tenue">
             {formatearFechaAR(desde)} al {formatearFechaAR(hasta)} · {total}{" "}
             {total === 1 ? "limpieza" : "limpiezas"}
             {totalSinAsignar > 0 && (
-              <span className="text-amber-400"> · {totalSinAsignar} sin asignar</span>
+              <span className="text-aviso-text"> · {totalSinAsignar} sin asignar</span>
             )}
           </p>
         </div>
@@ -174,12 +176,12 @@ export default async function Semana({
       <NavegadorSemana desde={desde} />
 
       {alertas.size > 0 && (
-        <div className="rounded-xl border border-amber-900 bg-amber-950/30 px-4 py-3">
-          <p className="text-sm font-medium text-amber-200">
+        <div className="rounded-xl border border-aviso-borde bg-aviso-soft/30 px-4 py-3">
+          <p className="text-sm font-medium text-aviso-text-fuerte">
             {alertas.size} {alertas.size === 1 ? "limpieza" : "limpiezas"} para
             revisar en este período
           </p>
-          <p className="mt-0.5 text-xs text-amber-200/70">
+          <p className="mt-0.5 text-xs text-aviso-text-fuerte/70">
             Están marcadas abajo con el motivo. No se tocaron solas: puede ser
             correcto o puede estar mal, y eso lo decide una persona.
           </p>
@@ -188,15 +190,15 @@ export default async function Semana({
 
       {/* Cuánto lleva cada persona: se mira antes de darle una más a alguien */}
       {carga.length > 0 && (
-        <div className="flex flex-wrap gap-2 rounded-xl border border-slate-800 bg-slate-800/30 p-3">
+        <div className="flex flex-wrap gap-2 rounded-xl border border-borde bg-elevada/30 p-3">
           {carga.map((c) => (
-            <span key={c.personaId} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm">
-              <span className="text-slate-200">{c.nombre}</span>
-              <span className="ml-2 text-slate-400">
+            <span key={c.personaId} className="rounded-lg bg-elevada px-3 py-1.5 text-sm">
+              <span className="text-tinta-media">{c.nombre}</span>
+              <span className="ml-2 text-tinta-tenue">
                 {c.cantidad} {c.cantidad === 1 ? "limpieza" : "limpiezas"}
               </span>
               {c.monto > 0 && (
-                <span className="ml-2 text-emerald-300">
+                <span className="ml-2 text-exito-text">
                   {formatearMonto(c.monto, c.moneda)}
                 </span>
               )}
@@ -224,43 +226,43 @@ export default async function Semana({
             <details
               key={fecha}
               open={fecha === hoy && delDia.length > 0}
-              className={`group rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/30 ${
-                delDia.length === 0 ? "border-l-slate-800 opacity-60" : BORDE_SEMAFORO[semaforoDia]
+              className={`group rounded-xl border-y border-r border-y-borde border-r-borde border-l-4 bg-elevada/30 ${
+                delDia.length === 0 ? "border-l-borde opacity-60" : BORDE_SEMAFORO[semaforoDia]
               }`}
             >
               <summary className="flex cursor-pointer flex-col gap-2 px-4 py-3 [&::-webkit-details-marker]:hidden">
                 <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="font-medium capitalize text-white">
+                  <span className="font-medium capitalize text-tinta">
                     {DIAS_SEMANA[diaDeLaSemana(fecha)]}
                   </span>
-                  <span className="text-sm text-slate-400">{formatearFechaAR(fecha)}</span>
+                  <span className="text-sm text-tinta-tenue">{formatearFechaAR(fecha)}</span>
                   {fecha === hoy && (
-                    <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-200">
+                    <span className="rounded-full bg-elevada-hover px-2 py-0.5 text-xs text-tinta-media">
                       hoy
                     </span>
                   )}
                   {pagoDoble && delDia.length > 0 && (
-                    <span className="rounded-full bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
+                    <span className="rounded-full bg-exito-soft px-2 py-0.5 text-xs text-exito-text">
                       pago doble
                     </span>
                   )}
                   <span className="ml-auto flex items-center gap-3 text-sm">
                     {delDia.length === 0 ? (
-                      <span className="text-slate-600">sin limpiezas</span>
+                      <span className="text-tinta-apagada">sin limpiezas</span>
                     ) : (
                       <>
-                        <span className="text-slate-300">
+                        <span className="text-tinta-suave">
                           {delDia.length} {delDia.length === 1 ? "limpieza" : "limpiezas"}
                         </span>
                         {faltanAsignar > 0 && (
-                          <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
+                          <span className="rounded-full bg-error-soft px-2.5 py-0.5 text-xs font-medium text-error-text">
                             {faltanAsignar} sin asignar
                           </span>
                         )}
                       </>
                     )}
                     {delDia.length > 0 && (
-                      <span className="text-slate-500 transition-transform group-open:rotate-180">
+                      <span className="text-tinta-etiqueta transition-transform group-open:rotate-180">
                         ▾
                       </span>
                     )}
@@ -269,9 +271,9 @@ export default async function Semana({
 
                 {delDia.length > 0 && (
                   /* Barra de proporción: cuánto del día ya está repartido */
-                  <span className="block h-1.5 overflow-hidden rounded-full bg-amber-900/60">
+                  <span className="block h-1.5 overflow-hidden rounded-full bg-aviso-borde/60">
                     <span
-                      className="block h-full rounded-full bg-emerald-500 transition-all"
+                      className="block h-full rounded-full bg-exito transition-all"
                       style={{ width: `${proporcion}%` }}
                     />
                   </span>
@@ -279,7 +281,7 @@ export default async function Semana({
               </summary>
 
               {delDia.length > 0 && (
-                <ul className="flex flex-col gap-2 border-t border-slate-800 p-3">
+                <ul className="flex flex-col gap-2 border-t border-borde p-3">
                   {delDia.map((l) => {
                     const proximo = l.prox_checkin?.slice(0, 10) ?? null;
                     const mismoDia = proximo === l.fecha;
@@ -300,28 +302,24 @@ export default async function Semana({
                     return (
                       <li
                         key={l.id}
-                        className={`flex flex-col gap-2 rounded-xl border-y border-r border-y-slate-800 border-r-slate-800 border-l-4 bg-slate-800/40 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 ${
+                        className={`flex flex-col gap-2 rounded-xl border-y border-r border-y-borde border-r-borde border-l-4 bg-superficie px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4 ${
                           revisar.length > 0
-                            ? "border-y-amber-800 border-r-amber-800"
+                            ? "border-y-aviso-borde border-r-aviso-borde"
                             : ""
                         } ${BORDE_SEMAFORO[semaforo]}`}
                       >
                         <Link href={`/limpiezas/${l.id}`} className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-baseline gap-x-2">
-                            <span className="font-mono text-sm font-semibold text-white">
+                            <span className="font-mono text-sm font-semibold text-tinta">
                               {l.depto?.codigo}
                             </span>
                             {mismoDia && (
-                              <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs font-medium text-red-300">
-                                Check in/out
-                              </span>
+                              <Badge tono={TONO_MARCA.check_in_out}>{ETIQUETA_MARCA.check_in_out}</Badge>
                             )}
                             {/* Salió del calendario: la reserva todavía no
                                 se confirmó con el archivo de Airbnb. */}
                             {l.reserva && !l.reserva.datos_completos && (
-                              <span className="rounded-full bg-violet-950 px-2 py-0.5 text-xs font-medium text-violet-300">
-                                Tentativa
-                              </span>
+                              <Badge tono={TONO_MARCA.tentativa}>{ETIQUETA_MARCA.tentativa}</Badge>
                             )}
                             {/* El calendario de Airbnb puso la reserva en
                                 duda: antes de mandar a alguien, mirarlo. */}
@@ -330,30 +328,26 @@ export default async function Semana({
                                 check-out, y que la importación no la va a
                                 mover. */}
                             {l.fecha_manual && (
-                              <span
-                                title="La fecha la puso una persona. La importación no la mueve."
-                                className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-200"
-                              >
-                                Fecha a mano
-                              </span>
+                              <Badge title="La fecha la puso una persona. La importación no la mueve."
+                                tono={TONO_MARCA.fecha_manual}>{ETIQUETA_MARCA.fecha_manual}</Badge>
                             )}
                             {l.monto_pactado !== null && (
-                              <span className="ml-auto text-sm text-emerald-300">
+                              <span className="ml-auto text-sm text-exito-text">
                                 {formatearMonto(l.monto_pactado, l.moneda)}
                                 {l.pago_doble && (
-                                  <span className="ml-1 text-xs text-emerald-500">×2</span>
+                                  <span className="ml-1 text-xs text-exito">×2</span>
                                 )}
                               </span>
                             )}
                           </span>
-                          <span className="block text-sm text-slate-300">
+                          <span className="block text-sm text-tinta-suave">
                             {TIPOS_LIMPIEZA[l.tipo] ?? l.tipo}
                             {l.depto?.ambientes &&
                               ` · ${ETIQUETA_AMBIENTES[l.depto.ambientes]}`}
                             {l.depto?.barrio && ` · ${l.depto.barrio}`}
                             {l.reserva?.noches ? ` · ${l.reserva.noches} noches` : ""}
                           </span>
-                          <span className="block text-xs text-slate-500">
+                          <span className="block text-xs text-tinta-etiqueta">
                             {fechaSalida
                               ? `sale ${salidaOtroDia ? formatearFechaAR(fechaSalida) + " " : ""}${horaSalida ?? "sin hora"}`
                               : null}
@@ -365,7 +359,7 @@ export default async function Semana({
                           {revisar.map((a) => (
                             <span
                               key={a.motivo}
-                              className="mt-1 block text-xs text-amber-300"
+                              className="mt-1 block text-xs text-aviso-text"
                             >
                               ⚠ {a.detalle}
                             </span>
@@ -388,7 +382,7 @@ export default async function Semana({
       </div>
 
       {opciones.length === 0 && (
-        <p className="text-xs text-amber-400">
+        <p className="text-xs text-aviso-text">
           No hay personas que hagan limpieza cargadas: agregalas en Personas
           para poder asignar.
         </p>

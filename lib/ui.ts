@@ -15,7 +15,7 @@
 // ---------------------------------------------------------------------------
 
 export type VarianteBoton = "primario" | "secundario" | "discreto" | "peligro";
-export type TamanoBoton = "chico" | "normal" | "grande";
+export type TamanoBoton = "chico" | "normal" | "grande" | "icono";
 
 const VARIANTE: Record<VarianteBoton, string> = {
   primario:
@@ -35,6 +35,8 @@ const TAMANO: Record<TamanoBoton, string> = {
   normal: "h-11 px-5 text-sm",
   // La acción principal de una pantalla de celular.
   grande: "h-12 px-5 text-base",
+  // Cuadrado, para una flecha o una cruz. 44px: se toca con el dedo.
+  icono: "size-11 text-base",
 };
 
 export function clsBoton(

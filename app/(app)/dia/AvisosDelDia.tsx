@@ -111,12 +111,12 @@ export default async function AvisosDelDia({ fecha }: { fecha: string }) {
   if (vigentes.length === 0 && equipos.length === 0) return null;
 
   return (
-    <section className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-4">
+    <section className="flex flex-col gap-2 rounded-xl border border-borde bg-superficie p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-tinta-tenue">
           Para tener en cuenta
         </h2>
-        <Link href="/reporte" className="text-xs text-slate-500 hover:text-slate-300">
+        <Link href="/reporte" className="text-xs text-tinta-etiqueta hover:text-tinta-suave">
           Ver el reporte →
         </Link>
       </div>
@@ -124,36 +124,36 @@ export default async function AvisosDelDia({ fecha }: { fecha: string }) {
       <ul className="flex flex-col gap-1.5">
         {vigentes.map((n) => (
           <li key={n.id} className="text-sm">
-            <span className="text-slate-200">
+            <span className="text-tinta-media">
               {n.depto_codigo && (
-                <span className="font-medium text-emerald-300">{n.depto_codigo} · </span>
+                <span className="font-medium text-exito-text">{n.depto_codigo} · </span>
               )}
               {n.titulo}
             </span>
-            {n.detalle && <span className="text-slate-500"> — {n.detalle}</span>}
+            {n.detalle && <span className="text-tinta-etiqueta"> — {n.detalle}</span>}
             {n.seccion === "pendiente" && (
-              <span className="ml-1 text-xs text-amber-300">(vence hoy)</span>
+              <span className="ml-1 text-xs text-aviso-text">(vence hoy)</span>
             )}
           </li>
         ))}
 
         {equipos.map((e) => (
           <li key={e.id} className="text-sm">
-            <span className="text-slate-200">
+            <span className="text-tinta-media">
               {e.depto_codigo && (
-                <span className="font-medium text-emerald-300">{e.depto_codigo} · </span>
+                <span className="font-medium text-exito-text">{e.depto_codigo} · </span>
               )}
               {ETIQUETA_TIPO[e.tipo]}
               {e.huesped_nombre && (
-                <span className="text-slate-500"> para {e.huesped_nombre}</span>
+                <span className="text-tinta-etiqueta"> para {e.huesped_nombre}</span>
               )}
             </span>
             {e.aviso === "llevar" ? (
-              <span className="ml-1 text-xs text-amber-300">— logística la tiene que llevar hoy</span>
+              <span className="ml-1 text-xs text-aviso-text">— logística la tiene que llevar hoy</span>
             ) : e.aviso === "retirar" ? (
-              <span className="ml-1 text-xs text-amber-300">— logística la tiene que retirar hoy</span>
+              <span className="ml-1 text-xs text-aviso-text">— logística la tiene que retirar hoy</span>
             ) : (
-              <span className="ml-1 text-xs text-emerald-300">— ya entregada ✓</span>
+              <span className="ml-1 text-xs text-exito-text">— ya entregada ✓</span>
             )}
           </li>
         ))}

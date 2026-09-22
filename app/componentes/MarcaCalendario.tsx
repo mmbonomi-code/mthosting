@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cambioPendiente, type EstadoCambio, type TipoCambio } from "@/lib/ical/cambios";
+import Badge from "@/app/componentes/Badge";
 import { ETIQUETA_CAMBIO_CALENDARIO, TONO_CAMBIO_CALENDARIO } from "@/lib/estados";
 
 type Cambios = { tipo: TipoCambio; estado: EstadoCambio }[] | null | undefined;
@@ -10,22 +11,16 @@ type Cambios = { tipo: TipoCambio; estado: EstadoCambio }[] | null | undefined;
  * ficha: la limpieza sigue en pie, pero nadie tendría que mandar a alguien
  * sin mirar esto antes.
  */
-export default function MarcaCalendario({
-  cambios,
-  className = "px-2 py-0.5",
-}: {
-  cambios: Cambios;
-  className?: string;
-}) {
+export default function MarcaCalendario({ cambios }: { cambios: Cambios }) {
   const tipo = cambioPendiente(cambios);
   if (!tipo) return null;
   return (
-    <span
+    <Badge
       title="Lo detectó el calendario de Airbnb. Se confirma desde Alertas."
-      className={`rounded-full text-xs font-medium ${className} ${TONO_CAMBIO_CALENDARIO[tipo].clases}`}
+      tono={TONO_CAMBIO_CALENDARIO[tipo]}
     >
       {ETIQUETA_CAMBIO_CALENDARIO[tipo]}
-    </span>
+    </Badge>
   );
 }
 

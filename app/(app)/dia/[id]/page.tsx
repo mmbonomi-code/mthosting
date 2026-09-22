@@ -1,4 +1,7 @@
+import { clsBoton } from "@/lib/ui";
 import Link from "next/link";
+import Badge from "@/app/componentes/Badge";
+import { ETIQUETA_MARCA, TONO_MARCA } from "@/lib/estados";
 import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
@@ -34,8 +37,8 @@ import {
 function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-xs uppercase tracking-wide text-slate-500">{etiqueta}</dt>
-      <dd className="text-base text-slate-200">{children ?? "—"}</dd>
+      <dt className="text-xs uppercase tracking-wide text-tinta-etiqueta">{etiqueta}</dt>
+      <dd className="text-base text-tinta-media">{children ?? "—"}</dd>
     </div>
   );
 }
@@ -377,7 +380,7 @@ export default async function FichaEvento({
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <Link
         href={`/dia?fecha=${evento.fecha_coordinada ?? fechaReserva}`}
-        className="text-sm text-slate-400 hover:text-white"
+        className="text-sm text-tinta-tenue hover:text-tinta"
       >
         ← Volver al día
       </Link>
@@ -386,39 +389,33 @@ export default async function FichaEvento({
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              esLlegada ? "bg-sky-950 text-sky-300" : "bg-orange-950 text-orange-300"
+              esLlegada ? "bg-dato-soft text-dato-text" : "bg-ahora-soft text-ahora-text"
             }`}
           >
             {esLlegada ? "Llegada" : "Salida"}
           </span>
           {r.cancelada && (
-            <span className="rounded-full bg-red-950 px-2.5 py-0.5 text-xs font-medium text-red-300">
-              Cancelada
-            </span>
+            <Badge tono={TONO_MARCA.cancelada}>{ETIQUETA_MARCA.cancelada}</Badge>
           )}
           {!r.datos_completos && (
-            <span className="rounded-full bg-violet-950 px-2.5 py-0.5 text-xs font-medium text-violet-300">
-              Tentativa
-            </span>
+            <Badge tono={TONO_MARCA.tentativa}>{ETIQUETA_MARCA.tentativa}</Badge>
           )}
-          <MarcaCalendario cambios={r.cambios} className="px-2.5 py-0.5" />
+          <MarcaCalendario cambios={r.cambios} />
           {faltantes.length === 0 && (
-            <span className="rounded-full bg-emerald-950 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
-              Coordinado
-            </span>
+            <Badge tono={TONO_MARCA.coordinado}>{ETIQUETA_MARCA.coordinado}</Badge>
           )}
         </div>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-tinta">
           {r.huesped_nombre ?? "Sin nombre"}
-          <span className="ml-3 font-mono text-lg font-normal text-emerald-300">
+          <span className="ml-3 font-mono text-lg font-normal text-exito-text">
             {depto?.codigo}
           </span>
         </h1>
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-tinta-tenue">
           <span className="font-mono">{r.codigo_reserva}</span>
           {r.huesped_contacto && (
             <span className="flex items-center gap-2">
-              <span className="font-mono text-slate-300">{r.huesped_contacto}</span>
+              <span className="font-mono text-tinta-suave">{r.huesped_contacto}</span>
               <BotonCopiar texto={r.huesped_contacto} />
             </span>
           )}
@@ -433,12 +430,12 @@ export default async function FichaEvento({
           href={`https://wa.me/${telefono}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-base font-semibold text-white transition-colors hover:bg-emerald-500"
+          className={clsBoton("primario", "grande")}
         >
           WhatsApp
         </a>
       ) : (
-        <p className="rounded-lg bg-slate-800/60 px-3 py-2 text-sm text-slate-400">
+        <p className="rounded-lg bg-superficie-alt px-3 py-2 text-sm text-tinta-tenue">
           Sin teléfono cargado
           {r.cancelada
             ? " (Airbnb lo borra al cancelar)."
@@ -453,7 +450,7 @@ export default async function FichaEvento({
       )}
 
       {imposible && (
-        <p className="rounded-lg bg-red-950 px-4 py-3 text-sm text-red-200">
+        <p className="rounded-lg bg-error-soft px-4 py-3 text-sm text-error-text-fuerte">
           <strong>Ventana insuficiente:</strong> con esos horarios no hay tiempo
           material para limpiar. Hay que negociar con uno de los dos huéspedes.
         </p>
@@ -488,7 +485,7 @@ export default async function FichaEvento({
       {esLlegada && (
         <p
           className={`rounded-lg px-4 py-3 text-sm ${
-            listo ? "bg-emerald-950/60 text-emerald-200" : "bg-slate-800/60 text-slate-300"
+            listo ? "bg-exito-soft/60 text-exito-text-fuerte" : "bg-superficie-alt text-tinta-suave"
           }`}
         >
           {listo
@@ -498,7 +495,7 @@ export default async function FichaEvento({
       )}
 
       {/* Estadía */}
-      <dl className="grid grid-cols-2 gap-4 rounded-xl border border-slate-800 p-4 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-4 rounded-xl border border-borde p-4 sm:grid-cols-4">
         <Dato etiqueta={esLlegada ? "Entra (reserva)" : "Sale (reserva)"}>
           {fechaReserva ? formatearFechaAR(fechaReserva) : "—"}
         </Dato>
@@ -548,10 +545,10 @@ export default async function FichaEvento({
       </dl>
 
       {/* Departamento */}
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4">
-        <h2 className="font-medium text-white">
+      <section className="flex flex-col gap-3 rounded-xl border border-borde p-4">
+        <h2 className="font-medium text-tinta">
           {depto?.codigo}{" "}
-          <span className="font-normal text-slate-400">{depto?.nombre_interno}</span>
+          <span className="font-normal text-tinta-tenue">{depto?.nombre_interno}</span>
         </h2>
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="col-span-2 sm:col-span-3">
@@ -561,7 +558,7 @@ export default async function FichaEvento({
                   href={depto.url_mapa}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline decoration-slate-600 underline-offset-4"
+                  className="underline decoration-tinta-apagada underline-offset-4"
                 >
                   {depto.direccion} ↗
                 </a>
@@ -585,14 +582,14 @@ export default async function FichaEvento({
         </dl>
 
         {(depto?.indicaciones_acceso || depto?.encargado_nombre) && (
-          <div className="flex flex-col gap-2 border-t border-slate-800 pt-3">
+          <div className="flex flex-col gap-2 border-t border-borde pt-3">
             {depto?.encargado_nombre && (
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-tinta-suave">
                 Encargado: {depto.encargado_nombre}
                 {depto.encargado_telefono && (
                   <a
                     href={`tel:${depto.encargado_telefono}`}
-                    className="ml-2 underline decoration-slate-600 underline-offset-4"
+                    className="ml-2 underline decoration-tinta-apagada underline-offset-4"
                   >
                     {depto.encargado_telefono}
                   </a>
@@ -600,7 +597,7 @@ export default async function FichaEvento({
               </p>
             )}
             {depto?.indicaciones_acceso && (
-              <p className="whitespace-pre-wrap text-sm text-slate-400">
+              <p className="whitespace-pre-wrap text-sm text-tinta-tenue">
                 {depto.indicaciones_acceso}
               </p>
             )}
@@ -611,10 +608,10 @@ export default async function FichaEvento({
       {/* Editar los datos de la reserva: sobre todo las que trajo el
           calendario, que llegan sin nombre ni teléfono. */}
       {puedeEditar && (
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 p-4">
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-borde p-4">
           <div>
-            <h2 className="font-medium text-white">Datos de la reserva</h2>
-            <p className="text-sm text-slate-400">
+            <h2 className="font-medium text-tinta">Datos de la reserva</h2>
+            <p className="text-sm text-tinta-tenue">
               {r.datos_completos
                 ? "Fechas, huésped y contacto. Lo que edites lo puede pisar la próxima importación."
                 : "Vino del calendario: cargale el nombre y el teléfono."}
@@ -622,7 +619,7 @@ export default async function FichaEvento({
           </div>
           <Link
             href={`/reservas/${r.id}/editar`}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+            className={clsBoton("secundario", "chico")}
           >
             {r.datos_completos ? "Editar reserva" : "Completar datos"}
           </Link>
@@ -632,10 +629,10 @@ export default async function FichaEvento({
       {/* Reclamo de daños: se carga desde la reserva, que es donde se está
           mirando cuando la limpieza avisa que algo se rompió. */}
       {verReclamos && (
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 p-4">
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-borde p-4">
           <div>
-            <h2 className="font-medium text-white">Reclamo a Airbnb</h2>
-            <p className="text-sm text-slate-400">
+            <h2 className="font-medium text-tinta">Reclamo a Airbnb</h2>
+            <p className="text-sm text-tinta-tenue">
               {reclamo
                 ? "Esta reserva ya tiene un reclamo cargado."
                 : "Si el huésped dañó algo, se reclama desde acá."}
@@ -644,11 +641,11 @@ export default async function FichaEvento({
           {reclamo ? (
             <Link
               href={`/reclamos/${reclamo.id}`}
-              className="flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+              className={clsBoton("secundario", "chico")}
             >
               Ver reclamo
               {plazoReclamo && requiereAtencion(plazoReclamo.semaforo) && (
-                <span className="rounded-full bg-red-950 px-2 py-0.5 text-xs text-red-300">
+                <span className="rounded-full bg-error-soft px-2 py-0.5 text-xs text-error-text">
                   {textoDePlazo(plazoReclamo.dias)}
                 </span>
               )}
@@ -656,7 +653,7 @@ export default async function FichaEvento({
           ) : (
             <Link
               href={`/reclamos/nuevo?reserva=${r.id}`}
-              className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+              className={clsBoton("secundario", "chico")}
             >
               Cargar reclamo
             </Link>
@@ -667,7 +664,7 @@ export default async function FichaEvento({
       {eventoOpuesto && (
         <Link
           href={`/dia/${eventoOpuesto.id}`}
-          className="text-sm text-slate-400 underline decoration-slate-700 underline-offset-4 hover:text-white"
+          className="text-sm text-tinta-tenue underline decoration-tinta-apagada underline-offset-4 hover:text-tinta"
         >
           Ver {eventoOpuesto.tipo === "checkin" ? "la llegada" : "la salida"} de esta
           misma estadía →

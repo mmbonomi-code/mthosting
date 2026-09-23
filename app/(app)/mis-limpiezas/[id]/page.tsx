@@ -7,7 +7,7 @@ import { rolDelUsuario } from "@/lib/permisos";
 import { diasSinLimpiar, tareaPeriodicaVencida } from "@/lib/limpiezas/diasSinLimpiar";
 import { calcularQueLlevar } from "@/lib/limpiezas/quellevar";
 import { AYUDA_FOTO, ETIQUETA_FOTO, TIPOS_FOTO } from "@/lib/limpiezas/fotos";
-import ReportarArreglo from "../ReportarArreglo";
+import ReporteTexto from "../ReporteTexto";
 import { ultimaLimpiezaDelDepto } from "@/lib/limpiezas/ultimaLimpieza";
 import { TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
 import { traerInteracciones } from "@/lib/limpiezas/interaccion-db";
@@ -20,6 +20,7 @@ import AlTerminar from "../AlTerminar";
 import PendientesProvider from "../PendientesProvider";
 import {
   crearArreglo,
+  guardarDanioHuesped,
   finalizarLimpieza,
   iniciarLimpieza,
   subirComprobanteViatico,
@@ -28,7 +29,7 @@ import { BUCKET } from "../tipos";
 
 const CAMPOS = `
   id, depto_id, reserva_id, rol_reserva, fecha, estado, tipo, asignado_a, urgente,
-  observacion_proxima, viatico_monto, viatico_comprobante, monto_pactado, moneda,
+  observacion_proxima, danio_huesped, viatico_monto, viatico_comprobante, monto_pactado, moneda,
   prox_checkin, hora_checkout,
   depto:departamentos(id, codigo, barrio, direccion, url_mapa, camas_king, camas_queen, camas_twin, capacidad),
   reserva:reservas(id, noches, fecha_checkin, fecha_checkout)
@@ -388,7 +389,23 @@ export default async function DetalleMiLimpieza({
             >
               {/* El texto va pegado a la foto, no al final de la pantalla:
                   son las dos mitades del mismo reporte. */}
-              {t === "arreglar" && <ReportarArreglo crearArreglo={crearArreglo.bind(null, id, depto.id)} />}
+              {t === "arreglar" && (
+                <ReporteTexto
+                  accion={crearArreglo.bind(null, id, depto.id)}
+                  placeholder="¿Qué hay que arreglar? Ej: la persiana del dormitorio no cierra bien…"
+                  boton="Reportar"
+                  enviando="Reportando…"
+                />
+              )}
+              {t === "huesped" && (
+                <ReporteTexto
+                  accion={guardarDanioHuesped.bind(null, id)}
+                  placeholder="¿Qué dejó mal? Ej: quemaron el acolchado de la cama grande con un cigarrillo…"
+                  boton="Guardar"
+                  enviando="Guardando…"
+                  valorInicial={limpieza.danio_huesped ?? ""}
+                />
+              )}
             </SubidorFotos>
           ))}
 
@@ -414,7 +431,13 @@ export default async function DetalleMiLimpieza({
                 limpiezaId={id}
                 tipo={t}
                 etiqueta={ETIQUETA_FOTO[t]}
-              />
+              >
+                {t === "huesped" && limpieza.danio_huesped && (
+                  <p className="whitespace-pre-wrap rounded-lg bg-fondo/60 px-3 py-2 text-sm text-tinta-suave">
+                    {limpieza.danio_huesped}
+                  </p>
+                )}
+              </SubidorFotos>
             ) : null,
           )}
           <p className="rounded-lg bg-exito-soft/60 px-4 py-3 text-center text-sm font-medium text-exito-text">

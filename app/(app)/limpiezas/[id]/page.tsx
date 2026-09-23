@@ -353,7 +353,15 @@ export default async function FichaLimpieza({
                 limpiezaId={id}
                 tipo={t}
                 etiqueta={ETIQUETA_FOTO[t]}
-              />
+              >
+                {/* Lo que la limpieza contó del daño, pegado a sus fotos: es
+                    lo que después encabeza el reclamo a Airbnb. */}
+                {t === "huesped" && limpieza.danio_huesped && (
+                  <p className="whitespace-pre-wrap rounded-lg bg-fondo/60 px-3 py-2 text-sm text-tinta-suave">
+                    {limpieza.danio_huesped}
+                  </p>
+                )}
+              </SubidorFotos>
             ))}
           </PendientesProvider>
           {limpieza.observacion_proxima && (

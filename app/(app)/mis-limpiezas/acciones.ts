@@ -125,6 +125,34 @@ export async function crearArreglo(
   return { ok: "Arreglo reportado." };
 }
 
+/**
+ * Lo que dejó mal el huésped, en palabras. Acompaña a las fotos de esa
+ * categoría y encabeza el reclamo a Airbnb (pedido del dueño, 23/09/2026).
+ *
+ * Es UN texto por limpieza, que se reescribe: el daño de una estadía es un
+ * solo relato, aunque se cuente en varios renglones. Vacío no pisa lo ya
+ * escrito (CLAUDE.md, regla 4): para corregir se escribe de nuevo.
+ */
+export async function guardarDanioHuesped(
+  limpiezaId: string,
+  _estadoPrevio: EstadoFormulario,
+  fd: FormData,
+): Promise<EstadoFormulario> {
+  const descripcion = String(fd.get("descripcion") ?? "").trim();
+  if (!descripcion) return { error: "Contá qué dejó mal el huésped." };
+
+  const supabase = await crearClienteServidor();
+  const { error } = await supabase
+    .from("limpiezas")
+    .update({ danio_huesped: descripcion })
+    .eq("id", limpiezaId);
+  if (error) return { error: "No se pudo guardar. Probá de nuevo." };
+
+  revalidatePath(`/mis-limpiezas/${limpiezaId}`);
+  revalidatePath(`/limpiezas/${limpiezaId}`);
+  return { ok: "Guardado." };
+}
+
 /** Monto del viático. El comprobante se sube aparte, con `subirComprobanteViatico`. */
 export async function guardarViaticoMonto(id: string, monto: string) {
   const supabase = await crearClienteServidor();

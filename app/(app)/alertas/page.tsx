@@ -222,11 +222,15 @@ export default async function Alertas({
               key={d.limpieza_id}
               href={`/limpiezas/${d.limpieza_id}`}
               titulo={`${nombreDepto(d.depto_id)} · ${formatearFechaAR(d.fecha)}`}
-              sub={
+              sub={[
+                d.descripcion,
+                contarFotos(d.cantidad),
                 d.reserva
-                  ? `${contarFotos(d.cantidad)} · se le reclama a ${d.reserva.codigo_reserva}`
-                  : `${contarFotos(d.cantidad)} · no se pudo identificar a qué reserva reclamarle`
-              }
+                  ? `se le reclama a ${d.reserva.codigo_reserva}`
+                  : "no se pudo identificar a qué reserva reclamarle",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             >
               {d.reserva && (
                 <form action={crearReclamo.bind(null, d.reserva.id)}>

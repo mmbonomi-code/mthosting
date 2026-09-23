@@ -32,6 +32,8 @@ export type LimpiezaDeFoto = {
   tipo: string;
   rol_reserva: "salida" | "entrada" | "durante" | null;
   reserva_id: string | null;
+  /** Lo que dejó mal el huésped, en palabras. Solo lo usa esa categoría. */
+  danio_huesped?: string | null;
 };
 
 export type RevisadaCruda = {

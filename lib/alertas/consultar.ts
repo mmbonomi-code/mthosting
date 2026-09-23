@@ -77,6 +77,8 @@ export type PanelAlertas = {
 export type FilaDanioHuesped = AlertaFotos & {
   /** A quién se le reclama. Null si no se pudo determinar: ahí se entra a mano. */
   reserva: { id: string; codigo_reserva: string } | null;
+  /** Lo que escribió quien limpió. Sin esto, la fila es solo "3 fotos". */
+  descripcion: string | null;
 };
 
 export async function calcularPanelAlertas(
@@ -363,7 +365,7 @@ export async function calcularPanelAlertas(
     idsLimpiezaFoto.length > 0
       ? await supabase
           .from("limpiezas")
-          .select("id, depto_id, fecha, tipo, rol_reserva, reserva_id")
+          .select("id, depto_id, fecha, tipo, rol_reserva, reserva_id, danio_huesped")
           .in("id", idsLimpiezaFoto)
       : { data: [] as LimpiezaDeFoto[] };
 
@@ -411,6 +413,7 @@ export async function calcularPanelAlertas(
       return {
         ...a,
         reserva: reserva ? { id: reserva.id, codigo_reserva: reserva.codigo_reserva } : null,
+        descripcion: limpieza?.danio_huesped ?? null,
       };
     })
     // Con el reclamo ya creado el tema está encarado: sigue su curso en

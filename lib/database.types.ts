@@ -1430,6 +1430,7 @@ export type Database = {
       limpiezas: {
         Row: {
           asignado_a: string | null
+          danio_huesped: string | null
           cancelada_manual: boolean
           conflicto_resuelto: string | null
           created_at: string
@@ -1459,6 +1460,7 @@ export type Database = {
         }
         Insert: {
           asignado_a?: string | null
+          danio_huesped?: string | null
           cancelada_manual?: boolean
           conflicto_resuelto?: string | null
           created_at?: string
@@ -1488,6 +1490,7 @@ export type Database = {
         }
         Update: {
           asignado_a?: string | null
+          danio_huesped?: string | null
           cancelada_manual?: boolean
           conflicto_resuelto?: string | null
           created_at?: string

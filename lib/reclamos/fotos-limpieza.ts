@@ -36,6 +36,30 @@ export type FotoLimpieza = {
 /** Las de daño, en orden de utilidad para el reclamo. */
 const TIPOS_DE_DANIO = ["huesped", "arreglar"] as const;
 
+/**
+ * Lo que quien limpió escribió sobre el daño, para encabezar el reclamo
+ * (pedido del dueño, 23/09/2026). Es un borrador: se edita antes de mandarlo.
+ *
+ * Si hay varias limpiezas de la misma reserva con texto, van todas: el relato
+ * completo es más útil que elegir uno por nosotros.
+ */
+export async function danioDeLimpieza(
+  supabase: SupabaseClient<Database>,
+  reservaId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("limpiezas")
+    .select("danio_huesped, fecha")
+    .eq("reserva_id", reservaId)
+    .not("danio_huesped", "is", null)
+    .order("fecha");
+  // Igual que las fotos: es un extra. Si falla, el reclamo se crea igual.
+  if (error) return null;
+
+  const textos = (data ?? []).map((l) => l.danio_huesped?.trim()).filter(Boolean);
+  return textos.length > 0 ? textos.join("\n\n") : null;
+}
+
 export async function fotosDeLimpieza(
   supabase: SupabaseClient<Database>,
   reservaId: string,

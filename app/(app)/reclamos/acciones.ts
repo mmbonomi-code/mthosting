@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
-import { fotosDeLimpieza } from "@/lib/reclamos/fotos-limpieza";
+import { danioDeLimpieza, fotosDeLimpieza } from "@/lib/reclamos/fotos-limpieza";
 import { camposAlCambiar, faltaParaPresentar, puedeIr } from "@/lib/reclamos/estados";
 import type { EstadoReclamo } from "@/lib/reclamos/plazos";
 import type { Database } from "@/lib/database.types";
@@ -57,9 +57,13 @@ export async function crearReclamo(reservaId: string) {
 
   if (existente) redirect(`/reclamos/${existente.id}`);
 
+  // El motivo arranca con lo que contó quien limpió, si lo escribió. Antes se
+  // escribía de cero mirando las fotos.
+  const motivo = await danioDeLimpieza(supabase, reservaId);
+
   const { data: creado, error } = await supabase
     .from("reclamos")
-    .insert({ reserva_id: reservaId })
+    .insert({ reserva_id: reservaId, motivo })
     .select("id")
     .single();
 

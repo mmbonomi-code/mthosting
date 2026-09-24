@@ -101,7 +101,7 @@ async function guardarBanos(
   supabase: Awaited<ReturnType<typeof crearClienteServidor>>,
   deptoId: string,
   fd: FormData,
-) {
+): Promise<string | null> {
   const tipos = fd.getAll("bano_tipo").map(String);
   const detalles = fd.getAll("bano_detalle").map(String);
 
@@ -114,10 +114,25 @@ async function guardarBanos(
     }))
     .filter((fila) => fila.tipo);
 
-  await supabase.from("banos_depto").delete().eq("depto_id", deptoId);
+  // Primero se cargan los nuevos y recién después se borran los viejos: si la
+  // carga falla, el depto se queda con los baños que tenía. Al revés, un
+  // error dejaba el depto sin baños y la pantalla decía que se había guardado.
+  const { data: viejos, error: errorLectura } = await supabase
+    .from("banos_depto")
+    .select("id")
+    .eq("depto_id", deptoId);
+  if (errorLectura) return "No se pudieron leer los baños.";
+
   if (filas.length > 0) {
-    await supabase.from("banos_depto").insert(filas);
+    const { error } = await supabase.from("banos_depto").insert(filas);
+    if (error) return "Se guardó la ficha, pero no los baños. Probá de nuevo.";
   }
+
+  const idsViejos = (viejos ?? []).map((b) => b.id);
+  if (idsViejos.length > 0) {
+    await supabase.from("banos_depto").delete().in("id", idsViejos);
+  }
+  return null;
 }
 
 /**
@@ -164,7 +179,8 @@ export async function crearDepartamento(
     return { error: "No se pudo guardar. Probá de nuevo." };
   }
 
-  await guardarBanos(supabase, data.id, fd);
+  const errorBanos = await guardarBanos(supabase, data.id, fd);
+  if (errorBanos) return { error: errorBanos };
 
   revalidatePath("/departamentos");
   redirect(`/departamentos/${data.id}`);
@@ -195,7 +211,8 @@ export async function actualizarDepartamento(
     return { error: "No se pudo guardar. Probá de nuevo." };
   }
 
-  await guardarBanos(supabase, id, fd);
+  const errorBanos = await guardarBanos(supabase, id, fd);
+  if (errorBanos) return { error: errorBanos };
 
   revalidatePath("/departamentos");
   revalidatePath(`/departamentos/${id}`);

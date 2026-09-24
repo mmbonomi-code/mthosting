@@ -1430,10 +1430,10 @@ export type Database = {
       limpiezas: {
         Row: {
           asignado_a: string | null
-          danio_huesped: string | null
           cancelada_manual: boolean
           conflicto_resuelto: string | null
           created_at: string
+          danio_huesped: string | null
           depto_id: string
           estado: Database["public"]["Enums"]["limpieza_estado"]
           fecha: string
@@ -1460,10 +1460,10 @@ export type Database = {
         }
         Insert: {
           asignado_a?: string | null
-          danio_huesped?: string | null
           cancelada_manual?: boolean
           conflicto_resuelto?: string | null
           created_at?: string
+          danio_huesped?: string | null
           depto_id: string
           estado?: Database["public"]["Enums"]["limpieza_estado"]
           fecha: string
@@ -1490,10 +1490,10 @@ export type Database = {
         }
         Update: {
           asignado_a?: string | null
-          danio_huesped?: string | null
           cancelada_manual?: boolean
           conflicto_resuelto?: string | null
           created_at?: string
+          danio_huesped?: string | null
           depto_id?: string
           estado?: Database["public"]["Enums"]["limpieza_estado"]
           fecha?: string
@@ -2915,6 +2915,11 @@ export type Database = {
       }
     }
     Functions: {
+      firma_caja: { Args: never; Returns: string }
+      guardar_cobertura: {
+        Args: { p_filas: Json; p_firma: string }
+        Returns: number
+      }
       mi_persona_id: { Args: never; Returns: string }
       mi_rol: {
         Args: never

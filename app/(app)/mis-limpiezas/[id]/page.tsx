@@ -77,28 +77,46 @@ async function asegurarChecklist(
   if (error && error.code !== "23505") throw new Error(error.message);
 }
 
-/** Hace cuántos días se hizo esta tarea periódica en este depto, la última vez. */
-async function diasDesdePeriodica(
+/**
+ * Hace cuántos días se hizo cada tarea periódica en este depto, la última vez
+ * antes de esta limpieza. Null si no hay registro.
+ *
+ * Una sola consulta para todas las tareas, y el máximo se saca acá. Antes era
+ * una por tarea, y el `order` sobre la tabla embebida no ordenaba las filas
+ * de checklist: con `limit(1)` salía una fecha cualquiera, no la última.
+ */
+async function diasDesdePeriodicas(
   supabase: Awaited<ReturnType<typeof crearClienteServidor>>,
-  tareaId: string,
+  tareaIds: string[],
   deptoId: string,
   limpiezaId: string,
   fechaReferencia: string,
-): Promise<number | null> {
-  const { data } = await supabase
-    .from("limpieza_checklist")
-    .select("limpieza:limpiezas!inner(fecha, depto_id)")
-    .eq("tarea_periodica_id", tareaId)
-    .eq("hecho", true)
-    .eq("activo", true)
-    .eq("limpieza.depto_id", deptoId)
-    .neq("limpieza_id", limpiezaId)
-    .order("fecha", { referencedTable: "limpiezas", ascending: false })
-    .limit(1)
-    .maybeSingle();
+): Promise<Map<string, number | null>> {
+  const ultima = new Map<string, string>();
+  if (tareaIds.length > 0) {
+    const { data } = await supabase
+      .from("limpieza_checklist")
+      .select("tarea_periodica_id, limpieza:limpiezas!inner(fecha, depto_id)")
+      .in("tarea_periodica_id", tareaIds)
+      .eq("hecho", true)
+      .eq("activo", true)
+      .eq("limpieza.depto_id", deptoId)
+      .lte("limpieza.fecha", fechaReferencia)
+      .neq("limpieza_id", limpiezaId);
 
-  const fechaUltima = data?.limpieza?.fecha;
-  return fechaUltima ? diasSinLimpiar(fechaUltima, fechaReferencia) : null;
+    for (const fila of data ?? []) {
+      const fecha = fila.limpieza?.fecha;
+      if (!fila.tarea_periodica_id || !fecha) continue;
+      const previa = ultima.get(fila.tarea_periodica_id);
+      if (!previa || fecha > previa) ultima.set(fila.tarea_periodica_id, fecha);
+    }
+  }
+  return new Map(
+    tareaIds.map((id) => {
+      const fecha = ultima.get(id);
+      return [id, fecha ? diasSinLimpiar(fecha, fechaReferencia) : null];
+    }),
+  );
 }
 
 export default async function DetalleMiLimpieza({
@@ -156,12 +174,17 @@ export default async function DetalleMiLimpieza({
     supabase.from("limpieza_fotos").select("id, tipo, storage_path").eq("limpieza_id", id),
   ]);
 
-  const tareasConDias = await Promise.all(
-    (tareasActivas ?? []).map(async (t) => ({
-      ...t,
-      dias: await diasDesdePeriodica(supabase, t.id, depto.id, id, limpieza.fecha),
-    })),
+  const diasPorTarea = await diasDesdePeriodicas(
+    supabase,
+    (tareasActivas ?? []).map((t) => t.id),
+    depto.id,
+    id,
+    limpieza.fecha,
   );
+  const tareasConDias = (tareasActivas ?? []).map((t) => ({
+    ...t,
+    dias: diasPorTarea.get(t.id) ?? null,
+  }));
   const periodicasVencidas = tareasConDias.filter((t) => tareaPeriodicaVencida(t.dias, t.frecuencia_dias));
 
   const diasSin = diasSinLimpiar(anterior?.fecha ?? null, limpieza.fecha);

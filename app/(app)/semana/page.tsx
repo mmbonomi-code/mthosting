@@ -3,6 +3,9 @@ import Badge from "@/app/componentes/Badge";
 import { ETIQUETA_MARCA, TONO_MARCA } from "@/lib/estados";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR, sumarDias } from "@/lib/fechas";
+import { traerTodo } from "@/lib/economico/consultar";
+
+const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 import { ETIQUETA_AMBIENTES } from "@/lib/etiquetas";
 import { TIPOS_LIMPIEZA, formatearHora } from "@/lib/limpiezas/etiquetas";
 import {
@@ -41,24 +44,33 @@ export default async function Semana({
 }) {
   const params = await searchParams;
   const hoy = hoyAR();
-  const desde = params.desde ?? hoy;
+  // Un `desde` mal escrito en la dirección rompía la pantalla entera.
+  const desde = params.desde && FECHA_ISO.test(params.desde) ? params.desde : hoy;
   const dias = Math.min(31, Math.max(1, Number.parseInt(params.dias ?? "7", 10) || 7));
   const hasta = sumarDias(desde, dias - 1);
 
   const supabase = await crearClienteServidor();
 
-  const [{ data: limpiezas }, { data: personas }, { data: feriados }] =
+  const [limpiezas, { data: personas }, { data: feriados }] =
     await Promise.all([
-      supabase
-        .from("limpiezas")
-        .select(
-          "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, fecha_manual, depto_id, asignado_a, monto_pactado, moneda, pago_doble, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, noches, fecha_checkout, datos_completos, cambios:cambios_calendario(tipo, estado))",
-        )
-        .gte("fecha", desde)
-        .lte("fecha", hasta)
-        .neq("estado", "cancelada")
-        .order("fecha")
-        .order("urgente", { ascending: false }),
+      // Paginado: la vista de 31 días con 121 departamentos en temporada alta
+      // pasa las mil filas, y la base corta ahí sin avisar (los últimos días
+      // del mes aparecían vacíos). El `id` final hace el orden total.
+      traerTodo(
+        () =>
+          supabase
+            .from("limpiezas")
+            .select(
+              "id, fecha, tipo, urgente, estado, prox_checkin, hora_checkout, fecha_manual, depto_id, asignado_a, monto_pactado, moneda, pago_doble, depto:departamentos(codigo, barrio, ambientes), responsable:personas(nombre), reserva:reservas(id, noches, fecha_checkout, datos_completos, cambios:cambios_calendario(tipo, estado))",
+            )
+            .gte("fecha", desde)
+            .lte("fecha", hasta)
+            .neq("estado", "cancelada")
+            .order("fecha")
+            .order("urgente", { ascending: false })
+            .order("id"),
+        "las limpiezas",
+      ),
       supabase
         .from("personas")
         .select("id, nombre")

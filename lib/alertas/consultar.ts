@@ -16,6 +16,7 @@ import { hoyAR, sumarDias } from "@/lib/fechas";
 import { limpiezasEnMedioDeEstadia, type Alerta } from "@/lib/limpiezas/alertas";
 import { semaforoDeLimpieza, type Semaforo } from "@/lib/limpiezas/semaforo";
 import {
+  ARREGLO_RESUELTO,
   arreglosSinResolver,
   conflictosCancelacionOFecha,
   conflictosLateCheckout,
@@ -103,7 +104,6 @@ export async function calcularPanelAlertas(
     { count: sinDepto },
     { data: arreglosCrudos },
     { data: fotosAccion },
-    { data: revisadas },
     { data: reclamosExistentes },
     { data: conTextoDeDanio },
     calendario,
@@ -158,12 +158,15 @@ export async function calcularPanelAlertas(
       .is("depto_id", null)
       .eq("descartada", false),
     // Sin ventana de fechas: un arreglo reportado hace un mes y nunca
-    // resuelto sigue siendo un arreglo pendiente.
+    // resuelto sigue siendo un arreglo pendiente. Los resueltos se descartan
+    // acá y no en memoria: se acumulan para siempre, y pasadas las mil filas
+    // la base corta sin avisar y un pendiente podía quedar afuera.
     supabase
       .from("arreglos")
       .select("id, depto_id, limpieza_id, descripcion, estado, activo, created_at")
       .eq("activo", true)
-      .not("limpieza_id", "is", null),
+      .not("limpieza_id", "is", null)
+      .or(`estado.is.null,estado.neq.${ARREGLO_RESUELTO}`),
     // Las tres categorías que piden acción. La única que queda afuera es
     // "depto terminado", que no le pide nada a nadie.
     supabase
@@ -171,7 +174,6 @@ export async function calcularPanelAlertas(
       .select("limpieza_id, tipo, created_at")
       .in("tipo", ["huesped", "olvido", "arreglar"])
       .gte("created_at", desdeFotos + "T00:00:00Z"),
-    supabase.from("alerta_revisada").select("clase, limpieza_id, firma"),
     // Los reclamos son pocos (decenas por año): traerlos enteros sale más
     // barato que una segunda vuelta con la lista de reservas candidatas.
     supabase.from("reclamos").select("reserva_id"),
@@ -370,13 +372,22 @@ export async function calcularPanelAlertas(
       ...(conTextoDeDanio ?? []).map((l) => l.id),
     ]),
   ];
-  const { data: limpiezasDeFoto } =
+  // Los "revisado" se piden solo para estas limpiezas: la tabla crece para
+  // siempre, y traerla entera se cortaba en mil filas sin avisar (las
+  // alertas ya revisadas volvían a aparecer).
+  const [{ data: limpiezasDeFoto }, { data: revisadas }] =
     idsLimpiezaFoto.length > 0
-      ? await supabase
-          .from("limpiezas")
-          .select("id, depto_id, fecha, tipo, rol_reserva, reserva_id, danio_huesped")
-          .in("id", idsLimpiezaFoto)
-      : { data: [] as LimpiezaDeFoto[] };
+      ? await Promise.all([
+          supabase
+            .from("limpiezas")
+            .select("id, depto_id, fecha, tipo, rol_reserva, reserva_id, danio_huesped")
+            .in("id", idsLimpiezaFoto),
+          supabase
+            .from("alerta_revisada")
+            .select("clase, limpieza_id, firma")
+            .in("limpieza_id", idsLimpiezaFoto),
+        ])
+      : [{ data: [] as LimpiezaDeFoto[] }, { data: [] }];
 
   const limpiezasFoto: LimpiezaDeFoto[] = limpiezasDeFoto ?? [];
   const deptosDeFoto = [...new Set(limpiezasFoto.map((l) => l.depto_id))];

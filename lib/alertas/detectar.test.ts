@@ -188,6 +188,8 @@ describe("detectarFaltaLimpieza", () => {
         depto_id: "d1",
         tipo: "salida",
         fecha: "2026-08-15",
+        cancelada_id: null,
+        firma: "salida|2026-08-15",
       },
       {
         reserva_id: "r1",
@@ -195,8 +197,44 @@ describe("detectarFaltaLimpieza", () => {
         depto_id: "d1",
         tipo: "repaso",
         fecha: "2026-08-10",
+        cancelada_id: null,
+        firma: "repaso|2026-08-10",
       },
     ]);
+  });
+
+  describe("cancelada a mano y \"Está bien así\"", () => {
+    const reserva = {
+      id: "r1",
+      codigo_reserva: "HM1",
+      depto_id: "d1",
+      fecha_checkin: "2026-08-10",
+      fecha_checkout: "2026-08-15",
+    };
+    const previa = { ...reserva, id: "r0", fecha_checkin: "2026-08-01", fecha_checkout: "2026-08-10" };
+    const cancelada = { id: "L1", reserva_id: "r1", rol_reserva: "salida" as const, estado: "cancelada" };
+
+    it("avisa, con la limpieza cancelada para poder darla por buena", () => {
+      const [f] = detectarFaltaLimpieza([reserva], [previa, reserva], [cancelada]);
+      expect(f).toMatchObject({ tipo: "salida", cancelada_id: "L1", firma: "salida|2026-08-15" });
+    });
+
+    it("dada por buena, no vuelve a avisar", () => {
+      const revisada = { limpieza_id: "L1", firma: "salida|2026-08-15" };
+      expect(detectarFaltaLimpieza([reserva], [previa, reserva], [cancelada], [revisada])).toEqual([]);
+    });
+
+    it("si la reserva cambia de fecha, vuelve a avisar", () => {
+      const revisada = { limpieza_id: "L1", firma: "salida|2026-08-15" };
+      const movida = { ...reserva, fecha_checkout: "2026-08-16" };
+      const [f] = detectarFaltaLimpieza([movida], [previa, movida], [cancelada], [revisada]);
+      expect(f).toMatchObject({ fecha: "2026-08-16", cancelada_id: "L1" });
+    });
+
+    it("si nunca se generó no hay nada que dar por bueno", () => {
+      const [f] = detectarFaltaLimpieza([reserva], [previa, reserva], []);
+      expect(f.cancelada_id).toBeNull();
+    });
   });
 
   it("con las dos limpiezas vivas no falta nada", () => {

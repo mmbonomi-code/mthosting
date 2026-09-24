@@ -4,6 +4,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerAlertas } from "@/lib/alertas/permisos";
 import { calcularPanelAlertas, contarCriticas, contarResto } from "@/lib/alertas/consultar";
 import type { FilaCambioCalendario } from "@/lib/alertas/calendario";
+import { CLASE_FALTA_LIMPIEZA } from "@/lib/alertas/detectar";
 import { ETIQUETA_CAMBIO_CALENDARIO, TONO_CAMBIO_CALENDARIO } from "@/lib/estados";
 import { diaARDe, formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
@@ -272,16 +273,32 @@ export default async function Alertas({
           tono="ambar"
           ocultar={ocultar}
         >
-          {panel.faltaLimpieza.map((f) => (
-            <Fila key={`${f.reserva_id}-${f.tipo}`} href={`/reservas/${f.reserva_id}/editar`}>
-              <FilaTitulo>
-                {nombreDepto(f.depto_id)} · {formatearFechaAR(f.fecha)}
-              </FilaTitulo>
-              <FilaSub>
-                {f.codigo_reserva} — falta {f.tipo === "salida" ? "la limpieza de salida" : "el repaso de entrada"}.
-              </FilaSub>
-            </Fila>
-          ))}
+          {panel.faltaLimpieza.map((f) => {
+            const falta = f.tipo === "salida" ? "la limpieza de salida" : "el repaso de entrada";
+            // Cancelada a mano: alguien lo decidió, se puede dar por bueno.
+            // Si nunca se generó, no hay botón: eso se arregla, no se tapa.
+            return f.cancelada_id ? (
+              <FilaAcciones
+                key={`${f.reserva_id}-${f.tipo}`}
+                href={`/limpiezas/${f.cancelada_id}`}
+                titulo={`${nombreDepto(f.depto_id)} · ${formatearFechaAR(f.fecha)}`}
+                sub={`${f.codigo_reserva} — ${falta} se canceló a mano.`}
+              >
+                <form action={marcarRevisada.bind(null, CLASE_FALTA_LIMPIEZA, f.cancelada_id, f.firma)}>
+                  <BotonAlerta>Está bien así</BotonAlerta>
+                </form>
+              </FilaAcciones>
+            ) : (
+              <Fila key={`${f.reserva_id}-${f.tipo}`} href={`/reservas/${f.reserva_id}/editar`}>
+                <FilaTitulo>
+                  {nombreDepto(f.depto_id)} · {formatearFechaAR(f.fecha)}
+                </FilaTitulo>
+                <FilaSub>
+                  {f.codigo_reserva} — falta {falta}.
+                </FilaSub>
+              </Fila>
+            );
+          })}
         </Seccion>
 
         <Seccion

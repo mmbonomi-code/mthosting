@@ -16,8 +16,10 @@ import type { Database } from "@/lib/database.types";
 import { hoyAR, sumarDias } from "@/lib/fechas";
 import { limpiezasEnMedioDeEstadia, type Alerta } from "@/lib/limpiezas/alertas";
 import { semaforoDeLimpieza, type Semaforo } from "@/lib/limpiezas/semaforo";
+import { traerTodo } from "@/lib/economico/consultar";
 import {
   ARREGLO_RESUELTO,
+  CLASE_FALTA_LIMPIEZA,
   arreglosSinResolver,
   conflictosCancelacionOFecha,
   conflictosLateCheckout,
@@ -256,30 +258,55 @@ async function calcularPanel(
 
   const deptosEnVentana = [...new Set(cobertura.map((r) => r.depto_id))];
 
-  const [{ data: limpiezasCobertura }, { data: contextoDepto }] = await Promise.all([
+  const [{ data: limpiezasCobertura }, contextoDepto] = await Promise.all([
     idsReservaVentana.length > 0
       ? supabase
           .from("limpiezas")
-          .select("reserva_id, rol_reserva, estado")
+          .select("id, reserva_id, rol_reserva, estado")
           .in("reserva_id", idsReservaVentana)
       : Promise.resolve({
-          data: [] as { reserva_id: string | null; rol_reserva: string | null; estado: string }[],
+          data: [] as {
+            id: string;
+            reserva_id: string | null;
+            rol_reserva: string | null;
+            estado: string;
+          }[],
         }),
     // Sin cota de fecha hacia atrás a propósito: para saber si una reserva es
     // "la primera del depto" hace falta el check-out anterior, sea de cuando
-    // sea, no solo el que cae dentro de la ventana de 24 días.
+    // sea, no solo el que cae dentro de la ventana de 24 días. Paginado: son
+    // todas las reservas de la historia (968 al 24/09/2026), y pasadas las
+    // mil la base corta sin avisar y aparecían repasos "faltantes" falsos.
     deptosEnVentana.length > 0
-      ? supabase
-          .from("reservas")
-          .select("id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout")
-          .in("depto_id", deptosEnVentana)
-          .eq("cancelada", false)
-          .eq("descartada", false)
-          .lte("fecha_checkout", hasta)
-      : Promise.resolve({ data: [] as ReservaCobertura[] }),
+      ? traerTodo(
+          () =>
+            supabase
+              .from("reservas")
+              .select("id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout")
+              .in("depto_id", deptosEnVentana)
+              .eq("cancelada", false)
+              .eq("descartada", false)
+              .lte("fecha_checkout", hasta)
+              .order("id"),
+          "las reservas de los departamentos",
+        )
+      : Promise.resolve([]),
   ]);
 
-  const contexto: ReservaCobertura[] = (contextoDepto ?? [])
+  // Las limpiezas canceladas a mano que alguien ya dio por buenas.
+  const idsCanceladas = (limpiezasCobertura ?? [])
+    .filter((l) => l.estado === "cancelada")
+    .map((l) => l.id);
+  const { data: faltasRevisadas } =
+    idsCanceladas.length > 0
+      ? await supabase
+          .from("alerta_revisada")
+          .select("limpieza_id, firma")
+          .eq("clase", CLASE_FALTA_LIMPIEZA)
+          .in("limpieza_id", idsCanceladas)
+      : { data: [] };
+
+  const contexto: ReservaCobertura[] = contextoDepto
     .filter(
       (r): r is typeof r & { depto_id: string; fecha_checkin: string; fecha_checkout: string } =>
         r.depto_id !== null && r.fecha_checkin !== null && r.fecha_checkout !== null,
@@ -296,10 +323,12 @@ async function calcularPanel(
     cobertura,
     contexto,
     (limpiezasCobertura ?? []) as {
+      id: string;
       reserva_id: string | null;
       rol_reserva: "salida" | "entrada" | "durante" | null;
       estado: string;
     }[],
+    faltasRevisadas ?? [],
   );
 
   const lateCheckout = conflictosLateCheckout(late);

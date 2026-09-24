@@ -114,6 +114,7 @@ export type ReservaCobertura = {
 };
 
 export type LimpiezaCobertura = {
+  id?: string;
   reserva_id: string | null;
   rol_reserva: "salida" | "entrada" | "durante" | null;
   estado: string;
@@ -126,7 +127,21 @@ export type FaltaLimpieza = {
   /** "salida" = falta la limpieza del check-out. "repaso" = falta el repaso de entrada. */
   tipo: "salida" | "repaso";
   fecha: string;
+  /**
+   * La limpieza que alguien canceló a mano en ese lugar, si la hay. Es lo que
+   * se puede dar por bueno ("Está bien así"). Si no hay ninguna, la limpieza
+   * nunca se generó: eso no se tapa, se arregla.
+   */
+  cancelada_id: string | null;
+  /** Lo que se guarda al darla por buena: si la reserva se mueve, vuelve. */
+  firma: string;
 };
+
+/** La clase con la que se guarda un "Está bien así" de falta de limpieza. */
+export const CLASE_FALTA_LIMPIEZA = "falta_limpieza";
+
+/** Una marca de "revisado" ya guardada (tabla alerta_revisada). */
+export type RevisadaFalta = { limpieza_id: string; firma: string };
 
 /**
  * Reservas cuyo check-out (o, si son la primera del departamento, su
@@ -151,12 +166,40 @@ export function detectarFaltaLimpieza(
   reservas: ReservaCobertura[],
   contexto: ReservaCobertura[],
   limpiezas: LimpiezaCobertura[],
+  revisadas: RevisadaFalta[] = [],
 ): FaltaLimpieza[] {
   const vivas = limpiezas.filter((l) => l.estado !== "cancelada");
   const cubierto = new Set<string>();
   for (const l of vivas) {
     if (l.reserva_id && l.rol_reserva) cubierto.add(`${l.reserva_id}|${l.rol_reserva}`);
   }
+  const cancelada = new Map<string, string>();
+  for (const l of limpiezas) {
+    if (l.estado === "cancelada" && l.id && l.reserva_id && l.rol_reserva) {
+      cancelada.set(`${l.reserva_id}|${l.rol_reserva}`, l.id);
+    }
+  }
+  const firmaRevisada = new Map(revisadas.map((r) => [r.limpieza_id, r.firma]));
+
+  /** El hueco, salvo que alguien ya lo haya dado por bueno con esta misma firma. */
+  const hueco = (
+    r: ReservaCobertura,
+    tipo: FaltaLimpieza["tipo"],
+    fecha: string,
+  ): FaltaLimpieza | null => {
+    const canceladaId = cancelada.get(`${r.id}|${tipo === "salida" ? "salida" : "entrada"}`) ?? null;
+    const firma = `${tipo}|${fecha}`;
+    if (canceladaId && firmaRevisada.get(canceladaId) === firma) return null;
+    return {
+      reserva_id: r.id,
+      codigo_reserva: r.codigo_reserva,
+      depto_id: r.depto_id,
+      tipo,
+      fecha,
+      cancelada_id: canceladaId,
+      firma,
+    };
+  };
 
   const porDepto = new Map<string, ReservaCobertura[]>();
   for (const r of contexto) {
@@ -166,26 +209,16 @@ export function detectarFaltaLimpieza(
   const faltantes: FaltaLimpieza[] = [];
   for (const r of reservas) {
     if (!cubierto.has(`${r.id}|salida`)) {
-      faltantes.push({
-        reserva_id: r.id,
-        codigo_reserva: r.codigo_reserva,
-        depto_id: r.depto_id,
-        tipo: "salida",
-        fecha: r.fecha_checkout,
-      });
+      const f = hueco(r, "salida", r.fecha_checkout);
+      if (f) faltantes.push(f);
     }
 
     const previas = (porDepto.get(r.depto_id) ?? []).filter(
       (o) => o.id !== r.id && o.fecha_checkout <= r.fecha_checkin,
     );
     if (previas.length === 0 && !cubierto.has(`${r.id}|entrada`)) {
-      faltantes.push({
-        reserva_id: r.id,
-        codigo_reserva: r.codigo_reserva,
-        depto_id: r.depto_id,
-        tipo: "repaso",
-        fecha: r.fecha_checkin,
-      });
+      const f = hueco(r, "repaso", r.fecha_checkin);
+      if (f) faltantes.push(f);
     }
   }
   return faltantes;

@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../lib/database.types";
 import { plazosDeReclamo, semaforoDeReclamo } from "../lib/reclamos/plazos";
-import { fotosDeLimpieza } from "../lib/reclamos/fotos-limpieza";
+import { fotosDeLimpieza, limpiezasDelReclamo } from "../lib/reclamos/fotos-limpieza";
 import { BUCKET } from "../lib/reclamos/storage";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -147,7 +147,8 @@ describe.skipIf(!url || !clave)("reclamos (base dev)", () => {
       .select("reserva_id")
       .eq("id", creados[0])
       .single();
-    expect(await fotosDeLimpieza(s, reclamo!.reserva_id, creados[0])).toEqual([]);
+    const limpiezas = await limpiezasDelReclamo(s, reclamo!.reserva_id);
+    expect(await fotosDeLimpieza(s, limpiezas, creados[0])).toEqual([]);
   });
 
   it("sube evidencia al bucket privado y la sirve con URL firmada", async () => {

@@ -25,6 +25,11 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import {
+  limpiezasDeLaReserva,
+  type LimpiezaDeFoto,
+  type ReservaDelDepto,
+} from "@/lib/alertas/fotos";
 import { BUCKET_LIMPIEZAS } from "@/lib/limpiezas/storage";
 import { BUCKET } from "./storage";
 
@@ -36,43 +41,91 @@ export type FotoLimpieza = {
 /** Las de daño, en orden de utilidad para el reclamo. */
 const TIPOS_DE_DANIO = ["huesped", "arreglar"] as const;
 
+const CAMPOS_LIMPIEZA = "id, depto_id, fecha, tipo, rol_reserva, reserva_id, danio_huesped";
+
+/**
+ * Las limpiezas cuyo daño se le reclama a esta reserva, con la MISMA regla
+ * que usa Alertas (`reservaAReclamar`). Antes se tomaban las atadas por
+ * `reserva_id`, y la limpieza de un recambio está atada a la reserva que
+ * llega: el reclamo al que se fue salía sin texto ni fotos, y uno al que
+ * llegó se llevaba el daño ajeno.
+ *
+ * Adjuntar evidencia es un extra: si algo falla, devuelve lo que pudo (o
+ * nada) y el reclamo se crea igual. Nunca al revés.
+ */
+export async function limpiezasDelReclamo(
+  supabase: SupabaseClient<Database>,
+  reservaId: string,
+): Promise<LimpiezaDeFoto[]> {
+  const { data: reserva } = await supabase
+    .from("reservas")
+    .select("id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout")
+    .eq("id", reservaId)
+    .maybeSingle();
+  if (!reserva?.depto_id || !reserva.fecha_checkin || !reserva.fecha_checkout) return [];
+  const objetivo: ReservaDelDepto = {
+    id: reserva.id,
+    codigo_reserva: reserva.codigo_reserva,
+    depto_id: reserva.depto_id,
+    fecha_checkin: reserva.fecha_checkin,
+    fecha_checkout: reserva.fecha_checkout,
+  };
+
+  // Candidatas: las atadas a la reserva, más las del depto durante la estadía
+  // (el respaldo por fecha de `reservaAReclamar` nunca mira fuera de ella).
+  // Y las reservas vecinas, para que la regla pueda decidir entre ellas.
+  const [{ data: limpiezas, error }, { data: vecinas }] = await Promise.all([
+    supabase
+      .from("limpiezas")
+      .select(CAMPOS_LIMPIEZA)
+      .eq("depto_id", objetivo.depto_id)
+      .or(
+        `reserva_id.eq.${objetivo.id},and(fecha.gte.${objetivo.fecha_checkin},fecha.lte.${objetivo.fecha_checkout})`,
+      )
+      .order("fecha"),
+    supabase
+      .from("reservas")
+      .select("id, codigo_reserva, depto_id, fecha_checkin, fecha_checkout")
+      .eq("depto_id", objetivo.depto_id)
+      .eq("cancelada", false)
+      .eq("descartada", false)
+      .gte("fecha_checkout", objetivo.fecha_checkin)
+      .lte("fecha_checkin", objetivo.fecha_checkout),
+  ]);
+  if (error || !limpiezas) return [];
+
+  const reservas: ReservaDelDepto[] = [
+    objetivo,
+    ...(vecinas ?? [])
+      .filter(
+        (r): r is typeof r & { depto_id: string; fecha_checkin: string; fecha_checkout: string } =>
+          r.id !== objetivo.id &&
+          r.depto_id !== null &&
+          r.fecha_checkin !== null &&
+          r.fecha_checkout !== null,
+      ),
+  ];
+  return limpiezasDeLaReserva(objetivo.id, limpiezas, reservas);
+}
+
 /**
  * Lo que quien limpió escribió sobre el daño, para encabezar el reclamo
  * (pedido del dueño, 23/09/2026). Es un borrador: se edita antes de mandarlo.
  *
- * Si hay varias limpiezas de la misma reserva con texto, van todas: el relato
- * completo es más útil que elegir uno por nosotros.
+ * Si hay varias limpiezas con texto, van todas: el relato completo es más
+ * útil que elegir uno por nosotros.
  */
-export async function danioDeLimpieza(
-  supabase: SupabaseClient<Database>,
-  reservaId: string,
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("limpiezas")
-    .select("danio_huesped, fecha")
-    .eq("reserva_id", reservaId)
-    .not("danio_huesped", "is", null)
-    .order("fecha");
-  // Igual que las fotos: es un extra. Si falla, el reclamo se crea igual.
-  if (error) return null;
-
-  const textos = (data ?? []).map((l) => l.danio_huesped?.trim()).filter(Boolean);
+export function motivoDelDanio(limpiezas: LimpiezaDeFoto[]): string | null {
+  const textos = limpiezas.map((l) => l.danio_huesped?.trim()).filter(Boolean);
   return textos.length > 0 ? textos.join("\n\n") : null;
 }
 
 export async function fotosDeLimpieza(
   supabase: SupabaseClient<Database>,
-  reservaId: string,
+  limpiezas: LimpiezaDeFoto[],
   reclamoId: string,
 ): Promise<FotoLimpieza[]> {
-  const { data: limpiezas, error } = await supabase
-    .from("limpiezas")
-    .select("id")
-    .eq("reserva_id", reservaId);
-  // Adjuntar evidencia es un extra: si falla, el reclamo se crea igual y las
-  // fotos se suben a mano. Nunca al revés.
-  if (error) return [];
-  const ids = (limpiezas ?? []).map((l) => l.id);
+  const ids = limpiezas.map((l) => l.id);
   if (ids.length === 0) return [];
 
   const { data: fotos } = await supabase

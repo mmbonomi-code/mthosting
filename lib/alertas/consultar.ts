@@ -105,6 +105,7 @@ export async function calcularPanelAlertas(
     { data: fotosAccion },
     { data: revisadas },
     { data: reclamosExistentes },
+    { data: conTextoDeDanio },
     calendario,
   ] = await Promise.all([
     supabase.from("parametros_operativos").select("clave, valor"),
@@ -174,6 +175,13 @@ export async function calcularPanelAlertas(
     // Los reclamos son pocos (decenas por año): traerlos enteros sale más
     // barato que una segunda vuelta con la lista de reservas candidatas.
     supabase.from("reclamos").select("reserva_id"),
+    // El daño contado en palabras también es una alerta, aunque no tenga
+    // foto: si no, un texto sin foto no le llegaba a nadie.
+    supabase
+      .from("limpiezas")
+      .select("id")
+      .not("danio_huesped", "is", null)
+      .gte("fecha", desdeFotos),
     alertasDelCalendario(supabase, hoy),
   ]);
 
@@ -359,6 +367,7 @@ export async function calcularPanelAlertas(
       // También las de los arreglos abiertos: la fecha buena de la alerta es
       // la de la limpieza, no la del día en que se cargó el arreglo.
       ...arreglosPendientes.map((a) => a.limpieza_id),
+      ...(conTextoDeDanio ?? []).map((l) => l.id),
     ]),
   ];
   const { data: limpiezasDeFoto } =

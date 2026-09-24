@@ -105,6 +105,24 @@ export function alertasDeFotos(
     });
   }
 
+  // Lo que dejó mal el huésped también se cuenta en palabras (23/09/2026):
+  // un texto sin foto es igual de reclamable. Su firma es la de "sin fotos";
+  // si después se suma una foto, la firma cambia y la alerta vuelve.
+  if (clase === "huesped") {
+    for (const limpieza of limpiezas) {
+      if (porLimpieza.has(limpieza.id) || !limpieza.danio_huesped?.trim()) continue;
+      const firma = firmaFotos([]);
+      if (firmaRevisada.get(limpieza.id) === firma) continue;
+      alertas.push({
+        limpieza_id: limpieza.id,
+        depto_id: limpieza.depto_id,
+        fecha: limpieza.fecha,
+        cantidad: 0,
+        firma,
+      });
+    }
+  }
+
   // La más vieja primero: es la que lleva más tiempo esperando, y en los
   // daños es la que tiene el plazo de Airbnb más cerca de vencerse.
   return alertas.sort((a, b) => a.fecha.localeCompare(b.fecha));
@@ -159,6 +177,20 @@ export function reservaAReclamar(
   if (vinculada) return vinculada;
 
   return delDepto.find((r) => r.fecha_checkout === limpieza.fecha) ?? null;
+}
+
+/**
+ * Las limpiezas cuyo daño se le reclama a esta reserva: el camino inverso de
+ * `reservaAReclamar`. El reclamo toma de acá el texto y las fotos, así que
+ * sale exactamente de las limpiezas que Alertas le atribuye a esa reserva, y
+ * no de las que solo están atadas a ella (la de entrada es del que llega).
+ */
+export function limpiezasDeLaReserva<L extends LimpiezaDeFoto>(
+  reservaId: string,
+  limpiezas: L[],
+  reservas: ReservaDelDepto[],
+): L[] {
+  return limpiezas.filter((l) => reservaAReclamar(l, reservas)?.id === reservaId);
 }
 
 // ---------------------------------------------------------------------------

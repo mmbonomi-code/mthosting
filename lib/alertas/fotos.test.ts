@@ -4,6 +4,7 @@ import {
   alertasDeFotos,
   CLASE_ARREGLO,
   firmaFotos,
+  limpiezasDeLaReserva,
   reservaAReclamar,
   type FotoCruda,
   type LimpiezaDeFoto,
@@ -106,6 +107,63 @@ describe("alertasDeFotos", () => {
 
   it("sin fotos no hay alertas", () => {
     expect(alertasDeFotos("olvido", [], limpiezas, [])).toEqual([]);
+  });
+});
+
+describe("alertasDeFotos: daño contado sin foto", () => {
+  const conTexto = limpieza({ id: "L7", danio_huesped: "rompieron la mesa de vidrio" });
+
+  it("el texto solo, sin fotos, también es una alerta", () => {
+    const [a] = alertasDeFotos("huesped", [], [conTexto], []);
+    expect(a).toMatchObject({ limpieza_id: "L7", cantidad: 0 });
+  });
+
+  it("un texto en blanco no enciende nada", () => {
+    expect(alertasDeFotos("huesped", [], [limpieza({ danio_huesped: "   " })], [])).toEqual([]);
+  });
+
+  it("con texto y fotos sigue siendo UNA alerta, contando las fotos", () => {
+    const fotos = [foto("L7", "huesped", "2026-09-01T10:00:00Z")];
+    const alertas = alertasDeFotos("huesped", fotos, [conTexto], []);
+    expect(alertas).toHaveLength(1);
+    expect(alertas[0].cantidad).toBe(1);
+  });
+
+  it("dada por revisada sin fotos, vuelve si después se suma una foto", () => {
+    const revisada = { clase: "huesped", limpieza_id: "L7", firma: firmaFotos([]) };
+    expect(alertasDeFotos("huesped", [], [conTexto], [revisada])).toEqual([]);
+    const fotos = [foto("L7", "huesped", "2026-09-01T10:00:00Z")];
+    expect(alertasDeFotos("huesped", fotos, [conTexto], [revisada])).toHaveLength(1);
+  });
+
+  it("el texto de daño no enciende la alerta de olvidos", () => {
+    expect(alertasDeFotos("olvido", [], [conTexto], [])).toEqual([]);
+  });
+});
+
+describe("limpiezasDeLaReserva", () => {
+  const sale: ReservaDelDepto = {
+    id: "R1",
+    codigo_reserva: "HMABC",
+    depto_id: "D1",
+    fecha_checkin: "2026-08-28",
+    fecha_checkout: "2026-09-01",
+  };
+  const entra: ReservaDelDepto = {
+    id: "R2",
+    codigo_reserva: "HMXYZ",
+    depto_id: "D1",
+    fecha_checkin: "2026-09-01",
+    fecha_checkout: "2026-09-05",
+  };
+  const recambio = limpieza({ id: "L5", rol_reserva: "entrada", reserva_id: "R2" });
+
+  it("la limpieza de entrada atada a la que LLEGA aporta al reclamo de la que salió", () => {
+    expect(limpiezasDeLaReserva("R1", [recambio], [sale, entra]).map((l) => l.id)).toEqual(["L5"]);
+  });
+
+  it("y no al reclamo de la que llega", () => {
+    expect(limpiezasDeLaReserva("R2", [recambio], [sale, entra])).toEqual([]);
   });
 });
 

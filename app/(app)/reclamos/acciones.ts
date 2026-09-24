@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
-import { danioDeLimpieza, fotosDeLimpieza } from "@/lib/reclamos/fotos-limpieza";
+import {
+  fotosDeLimpieza,
+  limpiezasDelReclamo,
+  motivoDelDanio,
+} from "@/lib/reclamos/fotos-limpieza";
 import { camposAlCambiar, faltaParaPresentar, puedeIr } from "@/lib/reclamos/estados";
 import type { EstadoReclamo } from "@/lib/reclamos/plazos";
 import type { Database } from "@/lib/database.types";
@@ -57,9 +61,12 @@ export async function crearReclamo(reservaId: string) {
 
   if (existente) redirect(`/reclamos/${existente.id}`);
 
+  // Las limpiezas cuyo daño es de esta reserva, con la misma regla que
+  // Alertas. De ahí salen el texto y las fotos.
+  const limpiezas = await limpiezasDelReclamo(supabase, reservaId);
   // El motivo arranca con lo que contó quien limpió, si lo escribió. Antes se
   // escribía de cero mirando las fotos.
-  const motivo = await danioDeLimpieza(supabase, reservaId);
+  const motivo = motivoDelDanio(limpiezas);
 
   const { data: creado, error } = await supabase
     .from("reclamos")
@@ -71,7 +78,7 @@ export async function crearReclamo(reservaId: string) {
 
   // Las fotos de daño que sacó la limpieza en el check-out vienen solas,
   // copiadas al bucket del reclamo (lib/reclamos/fotos-limpieza.ts).
-  const fotos = await fotosDeLimpieza(supabase, reservaId, creado.id);
+  const fotos = await fotosDeLimpieza(supabase, limpiezas, creado.id);
   if (fotos.length > 0) {
     await supabase.from("reclamo_fotos").insert(
       fotos.map((f, i) => ({

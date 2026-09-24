@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import type { Database } from "../lib/database.types";
-import { fotosDeLimpieza } from "../lib/reclamos/fotos-limpieza";
+import { fotosDeLimpieza, limpiezasDelReclamo } from "../lib/reclamos/fotos-limpieza";
 import { BUCKET } from "../lib/reclamos/storage";
 import { BUCKET_LIMPIEZAS } from "../lib/limpiezas/storage";
 
@@ -45,8 +45,11 @@ describe.skipIf(!url || !clave)("fotos de limpieza → reclamo (base dev)", () =
       .insert({
         depto_id: reserva!.depto_id!,
         reserva_id: reservaId,
+        // "durante" admite varias por reserva (la de salida es única), y con
+        // huéspedes el daño es de esa misma reserva: el reclamo la encuentra.
+        rol_reserva: "durante",
         fecha: "2099-12-31",
-        tipo: "normal",
+        tipo: "con_huespedes",
         estado: "hecha",
       })
       .select("id")
@@ -71,7 +74,9 @@ describe.skipIf(!url || !clave)("fotos de limpieza → reclamo (base dev)", () =
       });
     }
 
-    const copiadas = await fotosDeLimpieza(s, reservaId!, reclamoId);
+    const limpiezas = await limpiezasDelReclamo(s, reservaId!);
+    expect(limpiezas.map((l) => l.id)).toContain(limpiezaId);
+    const copiadas = await fotosDeLimpieza(s, limpiezas, reclamoId);
     rutasCopiadas.push(...copiadas.map((f) => f.storage_path));
 
     // Se cargaron cuatro, pero solo las dos de DAÑO viajan al reclamo. El
@@ -97,6 +102,7 @@ describe.skipIf(!url || !clave)("fotos de limpieza → reclamo (base dev)", () =
   });
 
   it("una reserva sin limpiezas no devuelve nada y no rompe", async () => {
-    expect(await fotosDeLimpieza(s, randomUUID(), reclamoId)).toEqual([]);
+    expect(await limpiezasDelReclamo(s, randomUUID())).toEqual([]);
+    expect(await fotosDeLimpieza(s, [], reclamoId)).toEqual([]);
   });
 });

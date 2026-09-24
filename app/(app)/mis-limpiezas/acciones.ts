@@ -142,11 +142,17 @@ export async function guardarDanioHuesped(
   if (!descripcion) return { error: "Contá qué dejó mal el huésped." };
 
   const supabase = await crearClienteServidor();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("limpiezas")
     .update({ danio_huesped: descripcion })
-    .eq("id", limpiezaId);
+    .eq("id", limpiezaId)
+    .select("id");
   if (error) return { error: "No se pudo guardar. Probá de nuevo." };
+  // RLS no da error cuando filtra la fila: la actualización simplemente no
+  // toca nada. Pasa si la limpieza se reasignó con la pantalla abierta.
+  if (!data || data.length === 0) {
+    return { error: "No se pudo guardar: esta limpieza ya no está a tu nombre." };
+  }
 
   revalidatePath(`/mis-limpiezas/${limpiezaId}`);
   revalidatePath(`/limpiezas/${limpiezaId}`);

@@ -224,7 +224,7 @@ export default async function Alertas({
               titulo={`${nombreDepto(d.depto_id)} · ${formatearFechaAR(d.fecha)}`}
               sub={[
                 d.descripcion,
-                contarFotos(d.cantidad),
+                d.cantidad > 0 ? contarFotos(d.cantidad) : "sin fotos",
                 d.reserva
                   ? `se le reclama a ${d.reserva.codigo_reserva}`
                   : "no se pudo identificar a qué reserva reclamarle",

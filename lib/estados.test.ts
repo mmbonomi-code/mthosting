@@ -8,6 +8,7 @@ import {
   TONO_RECLAMO,
   TONO_RESERVA,
   TONO_VENCIMIENTO,
+  limpiezaTerminada,
 } from "./estados";
 
 describe("el mapa de estados", () => {
@@ -110,5 +111,15 @@ describe("la lógica de color es la misma en los tres dominios", () => {
     expect(TONO_LIMPIEZA.en_curso.clases).toContain("ahora");
     expect(TONO_VENCIMIENTO.clases).toContain("alerta");
     expect(TONO_VENCIMIENTO.clases).not.toBe(TONO_LIMPIEZA.en_curso.clases);
+  });
+});
+
+describe("limpiezaTerminada", () => {
+  it("completada y verificada llevan el tilde; el resto no", () => {
+    expect(limpiezaTerminada("hecha")).toBe(true);
+    expect(limpiezaTerminada("verificada")).toBe(true);
+    for (const e of ["pendiente", "asignada", "en_curso", "cancelada"]) {
+      expect(limpiezaTerminada(e), e).toBe(false);
+    }
   });
 });

@@ -115,6 +115,14 @@ export const ETIQUETA_LIMPIEZA: Record<EstadoLimpieza, string> = {
   cancelada: "Cancelada",
 };
 
+/**
+ * ¿La limpieza ya se terminó? Completada o verificada: las dos que llevan el
+ * tilde verde en las listas (pedido del dueño, 24/09/2026).
+ */
+export function limpiezaTerminada(estado: string): boolean {
+  return estado === "hecha" || estado === "verificada";
+}
+
 // ---------------------------------------------------------------------------
 // Reclamos por daños
 // ---------------------------------------------------------------------------

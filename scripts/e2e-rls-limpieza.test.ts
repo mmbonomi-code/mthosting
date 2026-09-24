@@ -24,6 +24,7 @@ describe.skipIf(!url || !anon || !clave)("RLS del rol limpieza (base dev)", () =
   let usuarioId: string | null = null;
   let personaId: string | null = null;
   let limpia: SupabaseClient<Database>;
+  const limpiezasCreadas: string[] = [];
 
   async function entrar(): Promise<{ cliente: SupabaseClient<Database>; error: unknown }> {
     const cliente = createClient<Database>(url!, anon!, { auth: { persistSession: false } });
@@ -54,6 +55,10 @@ describe.skipIf(!url || !anon || !clave)("RLS del rol limpieza (base dev)", () =
   });
 
   afterAll(async () => {
+    if (limpiezasCreadas.length > 0) {
+      await admin.from("limpieza_checklist").delete().in("limpieza_id", limpiezasCreadas);
+      await admin.from("limpiezas").delete().in("id", limpiezasCreadas);
+    }
     if (personaId) await admin.from("personas").delete().eq("id", personaId);
     if (usuarioId) await admin.auth.admin.deleteUser(usuarioId);
   });
@@ -103,5 +108,63 @@ describe.skipIf(!url || !anon || !clave)("RLS del rol limpieza (base dev)", () =
     await admin.auth.admin.updateUserById(usuarioId!, { ban_duration: "none" });
     const devuelta = await entrar();
     expect(devuelta.error).toBeNull();
+  });
+
+  it("ve la limpieza anterior del depto y sus tareas periódicas aunque las haya hecho otra", async () => {
+    const [{ data: depto }, { data: tarea }] = await Promise.all([
+      admin.from("departamentos").select("id").limit(1).single(),
+      admin.from("tareas_periodicas_catalogo").select("id, item").eq("activo", true).limit(1).single(),
+    ]);
+    // La anterior, de nadie (o de otra): RLS no se la muestra por la tabla.
+    const { data: previa } = await admin
+      .from("limpiezas")
+      .insert({
+        depto_id: depto!.id,
+        fecha: "2099-12-20",
+        tipo: "normal",
+        estado: "hecha",
+        observacion_proxima: "PRUEBA: la llave de la terraza está en el cajón",
+      })
+      .select("id")
+      .single();
+    limpiezasCreadas.push(previa!.id);
+    await admin.from("limpieza_checklist").insert({
+      limpieza_id: previa!.id,
+      seccion: "Periódica",
+      item: tarea!.item,
+      hecho: true,
+      tarea_periodica_id: tarea!.id,
+    });
+    // La suya.
+    const { data: mia } = await admin
+      .from("limpiezas")
+      .insert({ depto_id: depto!.id, fecha: "2099-12-30", tipo: "normal", estado: "pendiente", asignado_a: personaId! })
+      .select("id")
+      .single();
+    limpiezasCreadas.push(mia!.id);
+
+    const { data: porTabla } = await limpia.from("limpiezas").select("id").eq("id", previa!.id);
+    expect(porTabla ?? []).toEqual([]);
+
+    const { data: anteriores, error } = await limpia.rpc("limpiezas_anteriores", { p_ids: [mia!.id] });
+    expect(error).toBeNull();
+    expect(anteriores).toEqual([
+      {
+        limpieza_id: mia!.id,
+        fecha: "2099-12-20",
+        observacion_proxima: "PRUEBA: la llave de la terraza está en el cajón",
+      },
+    ]);
+
+    const { data: periodicas } = await limpia.rpc("periodicas_del_depto", { p_limpieza_id: mia!.id });
+    expect(periodicas).toContainEqual({ tarea_periodica_id: tarea!.id, fecha: "2099-12-20" });
+  });
+
+  it("no le cuenta nada de una limpieza que no es suya", async () => {
+    const ajena = limpiezasCreadas[0];
+    const { data: anteriores } = await limpia.rpc("limpiezas_anteriores", { p_ids: [ajena] });
+    expect(anteriores ?? []).toEqual([]);
+    const { data: periodicas } = await limpia.rpc("periodicas_del_depto", { p_limpieza_id: ajena });
+    expect(periodicas ?? []).toEqual([]);
   });
 });

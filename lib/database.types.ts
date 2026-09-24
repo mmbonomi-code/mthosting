@@ -2920,17 +2920,33 @@ export type Database = {
         Args: { p_filas: Json; p_firma: string }
         Returns: number
       }
+      limpiezas_anteriores: {
+        Args: { p_ids: string[] }
+        Returns: {
+          fecha: string
+          limpieza_id: string
+          observacion_proxima: string
+        }[]
+      }
       mi_persona_id: { Args: never; Returns: string }
       mi_rol: {
         Args: never
         Returns: Database["public"]["Enums"]["rol_usuario"]
       }
       mis_deptos: { Args: never; Returns: string[] }
+      periodicas_del_depto: {
+        Args: { p_limpieza_id: string }
+        Returns: {
+          fecha: string
+          tarea_periodica_id: string
+        }[]
+      }
       puede_editar_checklist: { Args: never; Returns: boolean }
       puede_escribir_reporte: { Args: never; Returns: boolean }
       puede_gestionar_reclamos: { Args: never; Returns: boolean }
       puede_ver_caja: { Args: never; Returns: boolean }
       puede_ver_economico: { Args: never; Returns: boolean }
+      puede_ver_limpieza: { Args: { p_asignado_a: string }; Returns: boolean }
       saldo_caja: { Args: { p_hasta?: string }; Returns: number }
       saldo_caja_antes: { Args: { p_fecha: string }; Returns: number }
     }

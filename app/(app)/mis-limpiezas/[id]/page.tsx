@@ -8,7 +8,7 @@ import { diasSinLimpiar, tareaPeriodicaVencida } from "@/lib/limpiezas/diasSinLi
 import { calcularQueLlevar } from "@/lib/limpiezas/quellevar";
 import { AYUDA_FOTO, ETIQUETA_FOTO, TIPOS_FOTO } from "@/lib/limpiezas/fotos";
 import ReporteTexto from "../ReporteTexto";
-import { ultimaLimpiezaDelDepto } from "@/lib/limpiezas/ultimaLimpieza";
+import { limpiezasAnteriores } from "@/lib/limpiezas/ultimaLimpieza";
 import { TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
 import { traerInteracciones } from "@/lib/limpiezas/interaccion-db";
 import { formatearFechaAR } from "@/lib/fechas";
@@ -81,35 +81,24 @@ async function asegurarChecklist(
  * Hace cuántos días se hizo cada tarea periódica en este depto, la última vez
  * antes de esta limpieza. Null si no hay registro.
  *
- * Una sola consulta para todas las tareas, y el máximo se saca acá. Antes era
- * una por tarea, y el `order` sobre la tabla embebida no ordenaba las filas
- * de checklist: con `limit(1)` salía una fecha cualquiera, no la última.
+ * Va por `periodicas_del_depto()`: cuenta lo que hizo cualquier persona, no
+ * solo quien mira (decisión del dueño, 24/09/2026). Con la tabla, RLS le
+ * escondía a la limpiadora las tareas hechas por otra, y se las marcaba
+ * vencidas. Una sola consulta para todas las tareas.
  */
 async function diasDesdePeriodicas(
   supabase: Awaited<ReturnType<typeof crearClienteServidor>>,
   tareaIds: string[],
-  deptoId: string,
   limpiezaId: string,
   fechaReferencia: string,
 ): Promise<Map<string, number | null>> {
   const ultima = new Map<string, string>();
   if (tareaIds.length > 0) {
-    const { data } = await supabase
-      .from("limpieza_checklist")
-      .select("tarea_periodica_id, limpieza:limpiezas!inner(fecha, depto_id)")
-      .in("tarea_periodica_id", tareaIds)
-      .eq("hecho", true)
-      .eq("activo", true)
-      .eq("limpieza.depto_id", deptoId)
-      .lte("limpieza.fecha", fechaReferencia)
-      .neq("limpieza_id", limpiezaId);
-
-    for (const fila of data ?? []) {
-      const fecha = fila.limpieza?.fecha;
-      if (!fila.tarea_periodica_id || !fecha) continue;
-      const previa = ultima.get(fila.tarea_periodica_id);
-      if (!previa || fecha > previa) ultima.set(fila.tarea_periodica_id, fecha);
-    }
+    const { data, error } = await supabase.rpc("periodicas_del_depto", {
+      p_limpieza_id: limpiezaId,
+    });
+    if (error) throw new Error(`No se pudieron leer las tareas periódicas: ${error.message}`);
+    for (const fila of data ?? []) ultima.set(fila.tarea_periodica_id, fila.fecha);
   }
   return new Map(
     tareaIds.map((id) => {
@@ -158,7 +147,7 @@ export default async function DetalleMiLimpieza({
   ] = await Promise.all([
     supabase.from("banos_depto").select("id", { count: "exact", head: true }).eq("depto_id", depto.id),
     traerInteracciones(supabase, [limpieza]),
-    ultimaLimpiezaDelDepto(supabase, depto.id, limpieza.fecha, id),
+    limpiezasAnteriores(supabase, [id]).then((m) => m.get(id) ?? null),
     supabase
       .from("limpieza_checklist")
       .select("id, seccion, item, hecho, tarea_periodica_id")
@@ -177,7 +166,6 @@ export default async function DetalleMiLimpieza({
   const diasPorTarea = await diasDesdePeriodicas(
     supabase,
     (tareasActivas ?? []).map((t) => t.id),
-    depto.id,
     id,
     limpieza.fecha,
   );

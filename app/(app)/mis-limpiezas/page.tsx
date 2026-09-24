@@ -3,7 +3,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { puedeVerMisLimpiezas, miPersonaId } from "@/lib/limpiezas/permisos";
 import { hoyAR, mananaAR, sumarDias, formatearFechaAR } from "@/lib/fechas";
 import { diasSinLimpiar } from "@/lib/limpiezas/diasSinLimpiar";
-import { ultimaLimpiezaDelDepto } from "@/lib/limpiezas/ultimaLimpieza";
+import { limpiezasAnteriores } from "@/lib/limpiezas/ultimaLimpieza";
 import { TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
 import { traerInteracciones } from "@/lib/limpiezas/interaccion-db";
 import { claveOrden } from "@/lib/limpiezas/interaccion";
@@ -79,9 +79,10 @@ export default async function MisLimpiezas({
     claveOrden(interacciones.get(a.id)!).localeCompare(claveOrden(interacciones.get(b.id)!)),
   );
 
-  const diasSin = await Promise.all(
-    lista.map((l) => ultimaLimpiezaDelDepto(supabase, l.depto_id, fechaElegida)),
-  );
+  // Una sola consulta para toda la lista, y cuenta la limpieza anterior
+  // aunque la haya hecho otra persona.
+  const anteriores = await limpiezasAnteriores(supabase, lista.map((l) => l.id));
+  const diasSin = lista.map((l) => anteriores.get(l.id) ?? null);
 
   const esHoy = fechaElegida === hoy;
   const esManana = fechaElegida === manana;

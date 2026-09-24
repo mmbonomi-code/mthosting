@@ -19,8 +19,14 @@ import {
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const clave = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-/** El saldo que tiene que dar el histórico de Ninox al 10/08/2026. */
+/**
+ * El saldo que tiene que dar el histórico de Ninox al 10/08/2026, el último
+ * día importado. Se compara el saldo A ESA FECHA y no el de hoy: la caja
+ * siguió cargándose después, y comparar el total dejaba la prueba en rojo
+ * aunque el histórico estuviera intacto.
+ */
 const SALDO_ESPERADO = 226_417;
+const CORTE_NINOX = "2026-08-10";
 
 describe.skipIf(!url || !clave)("caja (base dev)", () => {
   const s = createClient<Database>(url!, clave!, { auth: { persistSession: false } });
@@ -71,9 +77,9 @@ describe.skipIf(!url || !clave)("caja (base dev)", () => {
   }
 
   it("el saldo de la base coincide con el del histórico de Ninox", async () => {
-    const { data, error } = await s.rpc("saldo_caja");
+    const { data, error } = await s.rpc("saldo_caja", { p_hasta: CORTE_NINOX });
     expect(error).toBeNull();
-    console.log(`saldo en la base: ${pesos(Number(data))}`);
+    console.log(`saldo al ${CORTE_NINOX}: ${pesos(Number(data))}`);
     expect(Math.round(Number(data))).toBe(SALDO_ESPERADO);
   });
 
@@ -87,7 +93,12 @@ describe.skipIf(!url || !clave)("caja (base dev)", () => {
   it("el saldo acumulado del último movimiento es el saldo total", async () => {
     const movimientos = await todos();
     const conSaldo = acumular(movimientos, 0);
-    expect(Math.round(conSaldo[conSaldo.length - 1].saldo)).toBe(SALDO_ESPERADO);
+    const { data } = await s.rpc("saldo_caja");
+    expect(Math.round(conSaldo[conSaldo.length - 1].saldo)).toBe(Math.round(Number(data)));
+
+    // Y el acumulado del histórico cierra donde cerraba Ninox.
+    const historico = acumular(movimientos.filter((m) => m.fecha <= CORTE_NINOX), 0);
+    expect(Math.round(historico[historico.length - 1].saldo)).toBe(SALDO_ESPERADO);
   });
 
   it("«saldo antes de» arranca donde termina lo anterior", async () => {
@@ -138,9 +149,12 @@ describe.skipIf(!url || !clave)("caja (base dev)", () => {
         `solo agosto: ${soloAgosto!.length}`,
     );
 
-    // El total que muestra el indicador tiene que ser el de toda la deuda.
+    // El total que muestra el indicador tiene que ser el de toda la deuda:
+    // el mismo que suma el agrupado por departamento. (Antes se comparaba
+    // contra un monto fijo, que cambia cada vez que se cobra algo.)
     expect(todaLaDeuda!.length).toBeGreaterThan(soloAgosto!.length);
-    expect(Math.round(total)).toBe(1_193_500);
+    const agrupado = deudaPorDepartamento(await todos()).reduce((a, d) => a + d.total, 0);
+    expect(Math.round(total)).toBe(Math.round(agrupado));
   });
 
   it("un movimiento con cotización se convierte y sin ella no inventa", async () => {

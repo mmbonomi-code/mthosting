@@ -20,6 +20,10 @@ export async function ingresar(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    // Una persona dada de baja tiene el usuario bloqueado (personas/acciones.ts).
+    if (error.code === "user_banned") {
+      return { error: "Tu acceso está desactivado. Hablá con administración." };
+    }
     return { error: "Email o contraseña incorrectos." };
   }
 

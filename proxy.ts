@@ -51,7 +51,24 @@ export async function proxy(request: NextRequest) {
   }
 
   // --- Con sesión: qué puede abrir según su rol ---
-  const rol = user ? await leerRol(supabase, user.id) : null;
+  const { rol, inactiva } = user
+    ? await leerRol(supabase, user.id)
+    : { rol: null, inactiva: false };
+
+  // Dada de baja: afuera, aunque la sesión siga viva hasta que venza. "Sin
+  // rol" no puede significar "sin restricción" para ella: esa excepción es
+  // solo para el primer uso, cuando todavía no existe ninguna ficha.
+  if (user && inactiva) {
+    await supabase.auth.signOut();
+    if (enIngresar) return respuesta;
+    const url = request.nextUrl.clone();
+    url.pathname = "/ingresar";
+    url.search = "";
+    const salida = NextResponse.redirect(url);
+    // El cierre de sesión viaja en las cookies que dejó `setAll`.
+    respuesta.cookies.getAll().forEach((c) => salida.cookies.set(c));
+    return salida;
+  }
 
   if (user && enIngresar) {
     const url = request.nextUrl.clone();
@@ -75,26 +92,29 @@ export async function proxy(request: NextRequest) {
 }
 
 /**
- * El rol de quien entra. Una persona desactivada no tiene rol aunque lo tenga
- * escrito en la ficha, igual que en `lib/permisos.ts`.
+ * El rol de quien entra, y si su ficha está dada de baja.
  *
- * Si la consulta falla se devuelve null, que es "sin restricción": ante una
- * caída de la base es preferible dejar pasar a dejar a todo el equipo afuera.
- * Lo que protege la plata y los datos de los huéspedes no es esto, son las
- * políticas de la base y los controles de cada acción.
+ * Si la consulta falla, o no hay ficha, se devuelve rol null, que es "sin
+ * restricción": ante una caída de la base es preferible dejar pasar a dejar
+ * a todo el equipo afuera. Lo que protege la plata y los datos de los
+ * huéspedes no es esto, son las políticas de la base (que para quien no tiene
+ * rol cierran todo) y los controles de cada acción.
+ *
+ * Una ficha que EXISTE y está inactiva es otra cosa: esa persona se va.
  */
 async function leerRol(
   supabase: ReturnType<typeof createServerClient>,
   usuarioId: string,
-): Promise<Rol | null> {
+): Promise<{ rol: Rol | null; inactiva: boolean }> {
   const { data } = await supabase
     .from("personas")
     .select("rol, activo")
     .eq("profile_id", usuarioId)
     .maybeSingle();
 
-  if (!data?.activo) return null;
-  return (data.rol as Rol | null) ?? null;
+  if (!data) return { rol: null, inactiva: false };
+  if (!data.activo) return { rol: null, inactiva: true };
+  return { rol: (data.rol as Rol | null) ?? null, inactiva: false };
 }
 
 export const config = {

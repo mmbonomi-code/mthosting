@@ -65,11 +65,45 @@ export async function actualizarPersona(
     return { error: "Solo manager y administración pueden editar personas." };
   }
 
-  const { error } = await supabase.from("personas").update(datos).eq("id", id);
+  const { data: guardada, error } = await supabase
+    .from("personas")
+    .update(datos)
+    .eq("id", id)
+    .select("profile_id")
+    .maybeSingle();
   if (error) return { error: "No se pudo guardar. Probá de nuevo." };
+
+  // Dar de baja a alguien le corta el ingreso, y reactivarlo se lo devuelve
+  // (decisión del dueño, 23/09/2026). Sin esto, una persona desactivada
+  // seguía entrando con su contraseña.
+  if (guardada?.profile_id) {
+    const error = await sincronizarIngreso(guardada.profile_id, datos.activo);
+    if (error) return { error };
+  }
 
   revalidatePath("/personas");
   redirect("/personas");
+}
+
+/** Cien años: Auth no tiene un "para siempre", y reactivar lo levanta. */
+const BLOQUEO_INDEFINIDO = "876000h";
+
+/**
+ * Bloquea o desbloquea el usuario de Auth según la ficha esté activa.
+ * Devuelve el mensaje de error, o null si salió bien.
+ */
+async function sincronizarIngreso(profileId: string, activo: boolean): Promise<string | null> {
+  const admin = crearClienteAdmin();
+  if (!admin) {
+    return "La ficha se guardó, pero falta la clave de servidor (SUPABASE_SERVICE_ROLE_KEY) para cortarle o devolverle el ingreso.";
+  }
+  const { error } = await admin.auth.admin.updateUserById(profileId, {
+    ban_duration: activo ? "none" : BLOQUEO_INDEFINIDO,
+  });
+  if (error) {
+    return `La ficha se guardó, pero no se pudo ${activo ? "devolverle" : "cortarle"} el ingreso: ${error.message}`;
+  }
+  return null;
 }
 
 // --- Acceso al sistema -------------------------------------------------------

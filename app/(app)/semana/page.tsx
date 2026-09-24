@@ -1,12 +1,6 @@
 import Link from "next/link";
 import Badge from "@/app/componentes/Badge";
-import {
-  ETIQUETA_LIMPIEZA,
-  ETIQUETA_MARCA,
-  TONO_MARCA,
-  limpiezaTerminada,
-  type EstadoLimpieza,
-} from "@/lib/estados";
+import { ETIQUETA_MARCA, TONO_MARCA, avanceDeLimpieza } from "@/lib/estados";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR, sumarDias } from "@/lib/fechas";
 import { traerTodo } from "@/lib/economico/consultar";
@@ -316,6 +310,7 @@ export default async function Semana({
                       tieneResponsable: !!l.asignado_a,
                     });
                     const revisar = alertas.get(l.id) ?? [];
+                    const avance = avanceDeLimpieza(l.estado);
 
                     return (
                       <li
@@ -331,15 +326,8 @@ export default async function Semana({
                             <span className="font-mono text-sm font-semibold text-tinta">
                               {l.depto?.codigo}
                             </span>
-                            {/* El mismo tilde que en Día: esta ya está hecha. */}
-                            {limpiezaTerminada(l.estado) && (
-                              <span
-                                title={`Limpieza ${ETIQUETA_LIMPIEZA[l.estado as EstadoLimpieza].toLowerCase()}`}
-                                className="text-sm text-exito-text"
-                              >
-                                ✓<span className="sr-only"> Limpieza terminada</span>
-                              </span>
-                            )}
+                            {/* Lo que marcó la persona de limpieza: empezó o terminó. */}
+                            {avance && <Badge tono={avance.tono}>{avance.texto}</Badge>}
                             {mismoDia && (
                               <Badge tono={TONO_MARCA.check_in_out}>{ETIQUETA_MARCA.check_in_out}</Badge>
                             )}

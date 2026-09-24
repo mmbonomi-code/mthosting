@@ -116,11 +116,17 @@ export const ETIQUETA_LIMPIEZA: Record<EstadoLimpieza, string> = {
 };
 
 /**
- * ¿La limpieza ya se terminó? Completada o verificada: las dos que llevan el
- * tilde verde en las listas (pedido del dueño, 24/09/2026).
+ * Lo que la persona de limpieza ya marcó desde el celular, para las listas
+ * de la oficina (pedido del dueño, 24/09/2026): "Empezar" la deja iniciada y
+ * "Finalizar", finalizada. Verificada también cuenta como finalizada. Antes
+ * de empezar no se muestra nada: eso ya lo dice el responsable asignado.
  */
-export function limpiezaTerminada(estado: string): boolean {
-  return estado === "hecha" || estado === "verificada";
+export function avanceDeLimpieza(estado: string): { texto: string; tono: Tono } | null {
+  if (estado === "en_curso") return { texto: "Limpieza iniciada", tono: TONO_LIMPIEZA.en_curso };
+  if (estado === "hecha" || estado === "verificada") {
+    return { texto: "Limpieza finalizada", tono: TONO_LIMPIEZA.hecha };
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------

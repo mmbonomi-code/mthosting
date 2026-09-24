@@ -247,6 +247,8 @@ async function calcularPanel(
       fecha_checkin: r.fecha_checkin,
       fecha_checkout: r.fecha_checkout,
       lateCheckout: eventoCheckout?.late_checkout ?? false,
+      salidaCoordinada: eventoCheckout?.fecha_coordinada ?? null,
+      entradaCoordinada: eventoCheckin?.fecha_coordinada ?? null,
     });
   }
 

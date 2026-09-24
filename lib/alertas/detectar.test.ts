@@ -11,6 +11,32 @@ import {
 describe("ventanasInsuficientesGlobal", () => {
   const umbrales = { horaLimiteCheckout: "11:00", horaMinimaCheckin: "12:00" };
 
+  it("la salida y la llegada de la MISMA reserva no son un recambio", () => {
+    // ED TALC 09, 24/09/2026: llegó a la 01:00 (reserva del 23) y se fue el
+    // mismo 24 a las 18:00, un día antes de lo reservado.
+    const alertas = ventanasInsuficientesGlobal(
+      [
+        { reserva_id: "r1", codigo_reserva: "HMYP", depto_id: "d1", tipo: "checkout", fecha: "2026-09-24", hora: "18:00" },
+        { reserva_id: "r1", codigo_reserva: "HMYP", depto_id: "d1", tipo: "checkin", fecha: "2026-09-24", hora: "01:00" },
+      ],
+      umbrales,
+    );
+    expect(alertas).toEqual([]);
+  });
+
+  it("con otra reserva entrando ese día, la de la misma sigue sin contar", () => {
+    const alertas = ventanasInsuficientesGlobal(
+      [
+        { reserva_id: "r1", codigo_reserva: "HMYP", depto_id: "d1", tipo: "checkout", fecha: "2026-09-24", hora: "18:00" },
+        { reserva_id: "r1", codigo_reserva: "HMYP", depto_id: "d1", tipo: "checkin", fecha: "2026-09-24", hora: "01:00" },
+        { reserva_id: "r2", codigo_reserva: "HMOTRA", depto_id: "d1", tipo: "checkin", fecha: "2026-09-24", hora: "17:00" },
+      ],
+      umbrales,
+    );
+    expect(alertas).toHaveLength(1);
+    expect(alertas[0].entrada.codigo_reserva).toBe("HMOTRA");
+  });
+
   it("no alerta si la llegada temprana es solo para dejar las valijas", () => {
     const alertas = ventanasInsuficientesGlobal(
       [
@@ -374,6 +400,43 @@ describe("conflictosCancelacionOFecha", () => {
 });
 
 describe("conflictosLateCheckout", () => {
+  it("el que llega pasada la medianoche no choca con el late de la tarde anterior", () => {
+    const conflictos = conflictosLateCheckout([
+      { id: "r1", codigo_reserva: "HM1", depto_id: "d1", fecha_checkin: "2026-09-22", fecha_checkout: "2026-09-23", lateCheckout: true },
+      {
+        id: "r2", codigo_reserva: "HM2", depto_id: "d1", fecha_checkin: "2026-09-23", fecha_checkout: "2026-09-25",
+        lateCheckout: false, entradaCoordinada: "2026-09-24",
+      },
+    ]);
+    expect(conflictos).toEqual([]);
+  });
+
+  it("el que se va un día antes no choca con quien entra el día de la reserva", () => {
+    const conflictos = conflictosLateCheckout([
+      {
+        id: "r1", codigo_reserva: "HM1", depto_id: "d1", fecha_checkin: "2026-09-20", fecha_checkout: "2026-09-25",
+        lateCheckout: true, salidaCoordinada: "2026-09-24",
+      },
+      { id: "r2", codigo_reserva: "HM2", depto_id: "d1", fecha_checkin: "2026-09-25", fecha_checkout: "2026-09-28", lateCheckout: false },
+    ]);
+    expect(conflictos).toEqual([]);
+  });
+
+  it("y sí choca si la salida coordinada cae el día que entra otro", () => {
+    const conflictos = conflictosLateCheckout([
+      {
+        id: "r1", codigo_reserva: "HM1", depto_id: "d1", fecha_checkin: "2026-09-20", fecha_checkout: "2026-09-25",
+        lateCheckout: true, salidaCoordinada: "2026-09-24",
+      },
+      {
+        id: "r2", codigo_reserva: "HM2", depto_id: "d1", fecha_checkin: "2026-09-25", fecha_checkout: "2026-09-28",
+        lateCheckout: false, entradaCoordinada: "2026-09-24",
+      },
+    ]);
+    expect(conflictos).toHaveLength(1);
+    expect(conflictos[0].fecha).toBe("2026-09-24");
+  });
+
   it("late check-out con entrada el mismo día en el mismo depto: conflicto", () => {
     const conflictos = conflictosLateCheckout([
       {

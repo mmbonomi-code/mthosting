@@ -66,6 +66,11 @@ export function ventanasInsuficientesGlobal(
     const entradas = grupo.filter((m) => m.tipo === "checkin");
     for (const salida of salidas) {
       for (const entrada of entradas) {
+        // La salida y la llegada de la MISMA reserva no son un recambio: es
+        // un huésped que llegó pasada la medianoche y se fue antes, el mismo
+        // día coordinado (24/09/2026, ED TALC 09). Compararlas daba "entra a
+        // la 01:00 antes de que salga a las 18:00".
+        if (salida.reserva_id === entrada.reserva_id) continue;
         const imposible = ventanaInsuficiente({
           fechaSalida: salida.fecha,
           horaSalida: salida.hora,
@@ -315,6 +320,10 @@ export type ReservaLate = {
   fecha_checkin: string;
   fecha_checkout: string;
   lateCheckout: boolean;
+  /** Día coordinado de la salida, si difiere del de la reserva. */
+  salidaCoordinada?: string | null;
+  /** Día coordinado de la llegada (p. ej. pasada la medianoche). */
+  entradaCoordinada?: string | null;
 };
 
 export type ConflictoLate = {
@@ -331,22 +340,28 @@ export type ConflictoLate = {
  * marcar el late, pero mirando TODAS las reservas en vez de una sola.
  */
 export function conflictosLateCheckout(reservas: ReservaLate[]): ConflictoLate[] {
+  // Los días que valen son los coordinados, igual que en la ventana: el que
+  // llega pasada la medianoche no se cruza con el late de la tarde anterior,
+  // y el que se va un día antes no choca con quien entra el día de la reserva.
+  const salidaDe = (r: ReservaLate) => r.salidaCoordinada ?? r.fecha_checkout;
+  const entradaDe = (r: ReservaLate) => r.entradaCoordinada ?? r.fecha_checkin;
+
   const porDeptoCheckin = new Map<string, ReservaLate[]>();
   for (const r of reservas) {
-    const clave = `${r.depto_id}|${r.fecha_checkin}`;
+    const clave = `${r.depto_id}|${entradaDe(r)}`;
     porDeptoCheckin.set(clave, [...(porDeptoCheckin.get(clave) ?? []), r]);
   }
 
   const conflictos: ConflictoLate[] = [];
   for (const r of reservas) {
     if (!r.lateCheckout) continue;
-    const entrantes = (porDeptoCheckin.get(`${r.depto_id}|${r.fecha_checkout}`) ?? []).filter(
+    const entrantes = (porDeptoCheckin.get(`${r.depto_id}|${salidaDe(r)}`) ?? []).filter(
       (e) => e.id !== r.id,
     );
     for (const entra of entrantes) {
       conflictos.push({
         depto_id: r.depto_id,
-        fecha: r.fecha_checkout,
+        fecha: salidaDe(r),
         sale: { reserva_id: r.id, codigo_reserva: r.codigo_reserva },
         entra: { reserva_id: entra.id, codigo_reserva: entra.codigo_reserva },
       });

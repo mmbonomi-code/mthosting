@@ -18,7 +18,7 @@ type Tilde = {
   etiqueta: string;
   detalle?: string;
   activo: boolean;
-  accion: (valor: boolean) => Promise<void>;
+  accion: (valor: boolean) => Promise<{ error: string } | null>;
   /** Aviso que aparece al tildarlo, cuando hay un conflicto conocido. */
   avisoAlActivar?: string | null;
 };
@@ -285,6 +285,7 @@ export default function PanelCoordinacion({
 function Casilla({ tilde }: { tilde: Tilde }) {
   const [pendiente, iniciar] = useTransition();
   const [activo, setActivo] = useState(tilde.activo);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-1">
@@ -302,8 +303,20 @@ function Casilla({ tilde }: { tilde: Tilde }) {
           onChange={(e) => {
             const valor = e.target.checked;
             setActivo(valor);
+            setError(null);
             iniciar(async () => {
-              await tilde.accion(valor);
+              // Si no se guardó, el tilde vuelve a como estaba: que no
+              // parezca hecho algo que en la base no quedó.
+              let resultado: { error: string } | null;
+              try {
+                resultado = await tilde.accion(valor);
+              } catch {
+                resultado = { error: "No se pudo guardar: revisá la conexión." };
+              }
+              if (resultado) {
+                setActivo(!valor);
+                setError(resultado.error);
+              }
             });
           }}
           className="size-5 shrink-0 accent-primary"
@@ -315,6 +328,11 @@ function Casilla({ tilde }: { tilde: Tilde }) {
           )}
         </span>
       </label>
+      {error && (
+        <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
+          {error}
+        </p>
+      )}
       {activo && tilde.avisoAlActivar && (
         <p className="rounded-lg bg-aviso-soft/60 px-3 py-2 text-sm text-aviso-text-fuerte">
           {tilde.avisoAlActivar}

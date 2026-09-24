@@ -93,12 +93,18 @@ export async function coordinarEvento(
   return null;
 }
 
+/**
+ * Resultado de una casilla: si no se pudo guardar, la pantalla la vuelve
+ * atrás y lo dice. Antes el tilde quedaba marcado aunque no se guardara.
+ */
+export type ResultadoCasilla = { error: string } | null;
+
 /** Marca los pendientes de la llegada: registro, aviso a seguridad, sobre. */
 export async function marcarItem(
   reservaId: string,
   campo: "registro_hecho" | "aviso_seguridad_hecho" | "sobre_ok",
   valor: boolean,
-) {
+): Promise<ResultadoCasilla> {
   const supabase = await crearClienteServidor();
   // Las tres columnas son booleanas; el campo llega acotado por el tipo.
   const cambio =
@@ -108,16 +114,27 @@ export async function marcarItem(
         ? { aviso_seguridad_hecho: valor }
         : { sobre_ok: valor };
 
-  await supabase.from("reservas").update(cambio).eq("id", reservaId);
-  revalidatePath("/dia");
+  const { error } = await supabase.from("reservas").update(cambio).eq("id", reservaId);
+  if (error) return { error: `No se pudo guardar: ${error.message}` };
+  // La ficha también: ahí se ve el "Falta:" que esta casilla resuelve.
+  revalidatePath("/dia", "layout");
+  return null;
 }
 
 /** Confirmación manual de que el equipo dejó la llave o el sobre. */
-export async function marcarAccesoDejado(eventoId: string, valor: boolean) {
+export async function marcarAccesoDejado(
+  eventoId: string,
+  valor: boolean,
+): Promise<ResultadoCasilla> {
   const supabase = await crearClienteServidor();
-  await supabase.from("eventos_estadia").update({ acceso_dejado: valor }).eq("id", eventoId);
+  const { error } = await supabase
+    .from("eventos_estadia")
+    .update({ acceso_dejado: valor })
+    .eq("id", eventoId);
+  if (error) return { error: `No se pudo guardar: ${error.message}` };
   revalidatePath("/dia");
   revalidatePath(`/dia/${eventoId}`);
+  return null;
 }
 
 
@@ -126,7 +143,10 @@ export async function marcarAccesoDejado(eventoId: string, valor: boolean) {
  * Sin nadie entrando, la limpieza se mueve sola al día siguiente. Con
  * alguien entrando, el sistema no decide: avisa y lo resuelve una persona.
  */
-export async function alternarLateCheckout(eventoId: string, valor: boolean) {
+export async function alternarLateCheckout(
+  eventoId: string,
+  valor: boolean,
+): Promise<ResultadoCasilla> {
   const supabase = await crearClienteServidor();
 
   const { data: evento } = await supabase
@@ -134,23 +154,36 @@ export async function alternarLateCheckout(eventoId: string, valor: boolean) {
     .select("id, tipo, reserva:reservas(id, depto_id, fecha_checkout)")
     .eq("id", eventoId)
     .maybeSingle();
-  if (!evento || evento.tipo !== "checkout" || !evento.reserva) return;
+  if (!evento || evento.tipo !== "checkout" || !evento.reserva) {
+    return { error: "No se encontró la salida." };
+  }
 
-  await supabase
+  const { error } = await supabase
     .from("eventos_estadia")
     .update({ late_checkout: valor })
     .eq("id", eventoId);
+  if (error) return { error: `No se pudo guardar: ${error.message}` };
+
+  const refrescar = () => {
+    revalidatePath("/dia");
+    revalidatePath(`/dia/${eventoId}`);
+    revalidatePath("/limpiezas");
+  };
 
   // Solo al marcarlo se evalúa mover la limpieza; al desmarcarlo no se
-  // vuelve atrás sola: ya puede haber sido reprogramada a mano.
+  // vuelve atrás sola: ya puede haber sido reprogramada a mano. La lista
+  // del día sí se refresca, si no seguía mostrando "Late".
   if (!valor) {
-    revalidatePath(`/dia/${eventoId}`);
-    return;
+    refrescar();
+    return null;
   }
 
   const fechaCheckout = evento.reserva.fecha_checkout;
   const deptoId = evento.reserva.depto_id;
-  if (!fechaCheckout || !deptoId) return;
+  if (!fechaCheckout || !deptoId) {
+    refrescar();
+    return null;
+  }
 
   const [{ count: entradas }, { data: limpieza }] = await Promise.all([
     supabase
@@ -197,7 +230,6 @@ export async function alternarLateCheckout(eventoId: string, valor: boolean) {
       .eq("id", limpieza.id);
   }
 
-  revalidatePath("/dia");
-  revalidatePath(`/dia/${eventoId}`);
-  revalidatePath("/limpiezas");
+  refrescar();
+  return null;
 }

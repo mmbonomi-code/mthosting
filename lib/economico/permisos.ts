@@ -14,21 +14,13 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { personaActual } from "@/lib/permisos";
 
 export async function puedeVerEconomico(
   supabase: SupabaseClient<Database>,
 ): Promise<boolean> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { data: persona } = await supabase
-    .from("personas")
-    .select("rol, activo")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
-  if (!persona?.activo) return false;
+  // Una persona desactivada no tiene rol, aunque lo tenga escrito en su ficha.
+  const persona = await personaActual(supabase);
+  if (!persona) return false;
   return persona.rol === "admin";
 }

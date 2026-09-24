@@ -7,7 +7,7 @@ import { puedeVerEconomico } from "@/lib/economico/permisos";
 import { rolPuedeVerAlertas } from "@/lib/alertas/permisos";
 import { rolPuedeVerMisLimpiezas } from "@/lib/limpiezas/permisos";
 import { calcularPanelAlertas, contarCriticas, contarResto } from "@/lib/alertas/consultar";
-import { esManagerOAdmin, rolDelUsuario } from "@/lib/permisos";
+import { esManagerOAdmin, personaActual, rolDelUsuario } from "@/lib/permisos";
 import { inicioDelRol, puedeEntrar } from "@/lib/secciones";
 import Sidebar, { type ItemNav } from "./Sidebar";
 
@@ -15,12 +15,11 @@ export default async function LayoutApp({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const supabase = await crearClienteServidor();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
+  // Todos los permisos de abajo salen de esta misma lectura (lib/permisos.ts):
+  // una vuelta a Auth y una a `personas`, no una por permiso.
   const [
-    { data: persona },
+    persona,
     { count: sinAsignar },
     verReclamos,
     verCaja,
@@ -28,11 +27,7 @@ export default async function LayoutApp({
     esConfiguracion,
     rol,
   ] = await Promise.all([
-    supabase
-      .from("personas")
-      .select("nombre")
-      .eq("profile_id", user!.id)
-      .maybeSingle(),
+    personaActual(supabase),
     supabase
       .from("reservas")
       .select("id", { count: "exact", head: true })
@@ -110,7 +105,7 @@ export default async function LayoutApp({
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-fondo md:flex-row">
-      <Sidebar items={items} nombre={persona?.nombre ?? user?.email ?? ""} inicio={inicioDelRol(rol)} />
+      <Sidebar items={items} nombre={persona?.nombre ?? persona?.email ?? ""} inicio={inicioDelRol(rol)} />
       <div className="flex min-w-0 flex-1 flex-col">{children}</div>
     </div>
   );

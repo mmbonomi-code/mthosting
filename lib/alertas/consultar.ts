@@ -10,6 +10,7 @@
  * económico: un total guardado puede quedar viejo, uno recalculado no).
  */
 
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { hoyAR, sumarDias } from "@/lib/fechas";
@@ -82,7 +83,13 @@ export type FilaDanioHuesped = AlertaFotos & {
   descripcion: string | null;
 };
 
-export async function calcularPanelAlertas(
+/**
+ * Se recuerda durante el pedido (`cache`): el menú y la pantalla de Alertas
+ * lo piden los dos, y son unas quince consultas.
+ */
+export const calcularPanelAlertas = cache(calcularPanel);
+
+async function calcularPanel(
   supabase: SupabaseClient<Database>,
 ): Promise<PanelAlertas> {
   const hoy = hoyAR();

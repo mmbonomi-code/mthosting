@@ -5,6 +5,7 @@ import FormularioPersona from "../../FormularioPersona";
 import FormularioAcceso from "./FormularioAcceso";
 import FormularioClave from "./FormularioClave";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
+import { rolDelUsuario } from "@/lib/permisos";
 import {
   actualizarPersona,
   darAcceso,
@@ -29,15 +30,7 @@ export default async function EditarPersona({
   if (!persona) notFound();
 
   // Solo administración crea usuarios (spec §3.8).
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: yo } = await supabase
-    .from("personas")
-    .select("rol")
-    .eq("profile_id", user!.id)
-    .maybeSingle();
-  const puedeGestionarAcceso = yo?.rol === "admin";
+  const puedeGestionarAcceso = (await rolDelUsuario(supabase)) === "admin";
 
   // Con qué email entra: administración lo necesita para pasárselo junto con
   // la contraseña nueva, y nadie se acuerda cuál cargó.

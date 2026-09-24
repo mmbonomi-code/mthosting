@@ -14,7 +14,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
-import type { Rol } from "@/lib/permisos";
+import { personaActual, type Rol } from "@/lib/permisos";
 
 const ROLES: readonly Rol[] = ["admin", "manager", "coordinador"];
 
@@ -30,18 +30,8 @@ export function rolPuedeEditarReservas(rol: Rol | null): boolean {
 export async function puedeEditarReservas(
   supabase: SupabaseClient<Database>,
 ): Promise<boolean> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { data: persona } = await supabase
-    .from("personas")
-    .select("rol, activo")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
   // Una persona desactivada no tiene rol, aunque lo tenga escrito en su ficha.
-  if (!persona?.activo) return false;
+  const persona = await personaActual(supabase);
+  if (!persona) return false;
   return rolPuedeEditarReservas(persona.rol);
 }

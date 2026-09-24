@@ -6,7 +6,13 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import { faltantesDeEvento } from "@/lib/eventos/faltantes";
-import { departamentoListo, momentoDeEvento, type EstadoLimpieza } from "@/lib/eventos/reglas";
+import {
+  eventosDelDia,
+  fechaOperativa,
+  listoParaLlegadas,
+  ordenarEventos,
+  patronBusqueda,
+} from "@/lib/eventos/dia";
 import { puedeEditarReservas } from "@/lib/reservas/permisos";
 import { describirAcceso, esAccesoPresencial } from "@/lib/eventos/etiquetas";
 import BuscadorDia from "./BuscadorDia";
@@ -85,15 +91,28 @@ type Evento = {
 };
 
 /**
- * El día en el que figura el evento es SIEMPRE el de la reserva de Airbnb.
- * Coordinar la llegada para otro día no lo mueve de lugar: se sigue
- * trabajando sobre el día contractual, y la fecha acordada se muestra
- * aparte con la marca "Movido".
+ * Lo que falta para dar el evento por coordinado. La misma cuenta pinta la
+ * fila y suma el "sin coordinar" de arriba: si no, podían no coincidir.
  */
-function fechaOperativa(e: Evento): string | null {
-  return e.tipo === "checkin"
-    ? (e.reserva?.fecha_checkin ?? null)
-    : (e.reserva?.fecha_checkout ?? null);
+function faltantesDeFila(evento: Evento): string[] {
+  const r = evento.reserva!;
+  const esLlegada = evento.tipo === "checkin";
+  const punto = esLlegada ? evento.punto : evento.punto_devolucion;
+  const persona = esLlegada ? evento.responsable : evento.responsable_devolucion;
+  return faltantesDeEvento({
+    tipo: evento.tipo,
+    horaCoordinada: evento.hora_coordinada,
+    acceso: punto
+      ? { clase: "punto", metodo: punto.metodo }
+      : persona
+        ? { clase: "persona" }
+        : null,
+    accesoDejado: evento.acceso_dejado,
+    requiereRegistro: r.depto?.requiere_registro ?? false,
+    registroHecho: r.registro_hecho,
+    requiereAviso: r.depto?.requiere_aviso_seguridad ?? false,
+    avisoHecho: r.aviso_seguridad_hecho,
+  });
 }
 
 function Fila({ evento, listo }: { evento: Evento; listo?: boolean }) {
@@ -111,20 +130,7 @@ function Fila({ evento, listo }: { evento: Evento; listo?: boolean }) {
     evento.fecha_coordinada !== (esLlegada ? r.fecha_checkin : r.fecha_checkout);
 
   // Lo que falta se calcula acá: no hace falta entrar a la ficha para saberlo.
-  const faltantes = faltantesDeEvento({
-    tipo: evento.tipo,
-    horaCoordinada: evento.hora_coordinada,
-    acceso: punto
-      ? { clase: "punto", metodo: punto.metodo }
-      : persona
-        ? { clase: "persona" }
-        : null,
-    accesoDejado: evento.acceso_dejado,
-    requiereRegistro: r.depto?.requiere_registro ?? false,
-    registroHecho: r.registro_hecho,
-    requiereAviso: r.depto?.requiere_aviso_seguridad ?? false,
-    avisoHecho: r.aviso_seguridad_hecho,
-  });
+  const faltantes = faltantesDeFila(evento);
   const coordinado = faltantes.length === 0;
 
   return (
@@ -135,9 +141,25 @@ function Fila({ evento, listo }: { evento: Evento; listo?: boolean }) {
           coordinado ? "border-l-exito" : "border-l-aviso"
         }`}
       >
-        <span className="w-16 shrink-0">
+        <span className="w-20 shrink-0">
           <span className="block text-base font-semibold tabular-nums text-tinta">
             {hora ?? "—"}
+            {/* Las marcas van en esta columna, que no se corta nunca: al
+                final del nombre del depto quedaban afuera cuando el depto y
+                el acceso eran largos. */}
+            {listo && (
+              <span
+                title="Departamento listo: ya se limpió después de la última salida"
+                className="ml-1.5 font-normal text-exito-text"
+              >
+                ✓<span className="sr-only"> Departamento listo</span>
+              </span>
+            )}
+            {evento.observaciones && (
+              <span title={evento.observaciones} className="ml-1.5 font-normal text-dato-text">
+                ✎<span className="sr-only"> Tiene observaciones</span>
+              </span>
+            )}
           </span>
           {fechaEvento && (
             <span className="block text-xs tabular-nums text-tinta-etiqueta">
@@ -159,24 +181,6 @@ function Fila({ evento, listo }: { evento: Evento; listo?: boolean }) {
               >
                 {" "}
                 · {textoAcceso}
-              </span>
-            )}
-            {/* Hay algo escrito en las observaciones: se avisa acá para que
-                no haya que entrar a cada ficha a buscarlo. */}
-            {evento.observaciones && (
-              <span title={evento.observaciones} className="ml-2 text-dato-text">
-                ✎
-              </span>
-            )}
-            {/* Marca chica: el depto ya se limpió después de la última salida,
-                así que el huésped que llega puede entrar. Antes esto solo se
-                veía entrando a la ficha (spec §3.5.bis). */}
-            {listo && (
-              <span
-                title="Departamento listo: ya se limpió después de la última salida"
-                className="ml-2 text-exito-text"
-              >
-                ✓
               </span>
             )}
           </span>
@@ -229,151 +233,73 @@ export default async function DelDia({
   const supabase = await crearClienteServidor();
   const puedeEditar = await puedeEditarReservas(supabase);
 
-  let eventos: Evento[] = [];
+  let llegadas: Evento[] = [];
+  let salidas: Evento[] = [];
 
   if (q) {
     // Búsqueda libre: no importa el día, importa encontrar la reserva.
-    const patron = `%${q}%`;
-    const { data: reservas } = await supabase
-      .from("reservas")
-      .select("id")
-      .or(
-        `codigo_reserva.ilike.${patron},huesped_nombre.ilike.${patron},huesped_contacto.ilike.${patron}`,
-      )
-      .eq("descartada", false)
-      .limit(40);
-
-    const { data: porDepto } = await supabase
-      .from("departamentos")
-      .select("id")
-      .or(`codigo.ilike.${patron},nombre_interno.ilike.${patron}`)
-      .limit(20);
+    const patron = patronBusqueda(q);
+    const [{ data: reservas }, { data: porDepto }] = await Promise.all([
+      supabase
+        .from("reservas")
+        .select("id")
+        .or(
+          `codigo_reserva.ilike.${patron},huesped_nombre.ilike.${patron},huesped_contacto.ilike.${patron}`,
+        )
+        .eq("descartada", false)
+        .limit(40),
+      supabase
+        .from("departamentos")
+        .select("id")
+        .or(`codigo.ilike.${patron},nombre_interno.ilike.${patron}`)
+        .limit(20),
+    ]);
 
     const idsReserva = (reservas ?? []).map((r) => r.id);
     const idsDepto = (porDepto ?? []).map((d) => d.id);
 
-    if (idsReserva.length > 0 || idsDepto.length > 0) {
-      let consulta = supabase.from("eventos_estadia").select(CAMPOS).limit(80);
-      if (idsDepto.length > 0 && idsReserva.length > 0) {
-        const { data: masReservas } = await supabase
-          .from("reservas")
-          .select("id")
-          .in("depto_id", idsDepto)
-          .eq("descartada", false)
-          .gte("fecha_checkout", hoy)
-          .limit(40);
-        consulta = consulta.in("reserva_id", [
-          ...new Set([...idsReserva, ...(masReservas ?? []).map((r) => r.id)]),
-        ]);
-      } else if (idsDepto.length > 0) {
-        const { data: masReservas } = await supabase
-          .from("reservas")
-          .select("id")
-          .in("depto_id", idsDepto)
-          .eq("descartada", false)
-          .gte("fecha_checkout", hoy)
-          .limit(40);
-        consulta = consulta.in("reserva_id", (masReservas ?? []).map((r) => r.id));
-      } else {
-        consulta = consulta.in("reserva_id", idsReserva);
-      }
-      const { data } = await consulta;
-      eventos = ((data ?? []) as unknown as Evento[]).filter((e) => !e.reserva?.descartada);
+    // De un depto, las estadías que siguen abiertas: de hoy en adelante.
+    const { data: delDepto } =
+      idsDepto.length > 0
+        ? await supabase
+            .from("reservas")
+            .select("id")
+            .in("depto_id", idsDepto)
+            .eq("descartada", false)
+            .gte("fecha_checkout", hoy)
+            .limit(40)
+        : { data: [] as { id: string }[] };
+
+    const ids = [...new Set([...idsReserva, ...(delDepto ?? []).map((r) => r.id)])];
+    if (ids.length > 0) {
+      const { data } = await supabase
+        .from("eventos_estadia")
+        .select(CAMPOS)
+        .in("reserva_id", ids)
+        .limit(80);
+      ({ llegadas, salidas } = ordenarEventos(
+        ((data ?? []) as unknown as Evento[]).filter((e) => !e.reserva?.descartada),
+      ));
     }
   } else {
     // El día operativo es el de la reserva de Airbnb, siempre.
-    const { data } = await supabase
-      .from("eventos_estadia")
-      .select(CAMPOS)
-      .or(`fecha_checkin.eq.${fecha},fecha_checkout.eq.${fecha}`, {
-        referencedTable: "reservas",
-      })
-      .neq("estado", "cancelado");
-
-    eventos = ((data ?? []) as unknown as Evento[]).filter(
-      (e) => e.reserva && !e.reserva.descartada && fechaOperativa(e) === fecha,
-    );
+    ({ llegadas, salidas } = await eventosDelDia<Evento>(supabase, fecha, CAMPOS));
   }
 
-  // Se ordena por el momento acordado, no por la hora suelta: las 02:00 del
-  // día siguiente van al fondo, no al principio.
-  const momento = (e: Evento) =>
-    momentoDeEvento({
-      fechaCoordinada: e.fecha_coordinada,
-      horaCoordinada: e.hora_coordinada,
-      fechaContractual: fechaOperativa(e),
-    });
+  const eventos = [...llegadas, ...salidas];
 
-  const ordenar = (a: Evento, b: Evento) =>
-    momento(a).localeCompare(momento(b)) ||
-    (a.reserva?.depto?.codigo ?? "").localeCompare(b.reserva?.depto?.codigo ?? "");
+  // "Departamento listo" para cada llegada (spec §3.5.bis), con la misma
+  // cuenta que la ficha.
+  const listoPorEvento = await listoParaLlegadas(
+    supabase,
+    llegadas.flatMap((e) => {
+      const deptoId = e.reserva?.depto?.id;
+      const fechaLlegada = fechaOperativa(e);
+      return deptoId && fechaLlegada ? [{ eventoId: e.id, deptoId, fechaLlegada }] : [];
+    }),
+  );
 
-  const llegadas = eventos.filter((e) => e.tipo === "checkin").sort(ordenar);
-  const salidas = eventos.filter((e) => e.tipo === "checkout").sort(ordenar);
-
-  // "Departamento listo" para cada llegada (spec §3.5.bis). Se calculaba solo
-  // adentro de la ficha de un evento, así que había que entrar a cada una
-  // para saberlo. Acá se resuelve para todas juntas: dos consultas para toda
-  // la lista, no dos por fila.
-  const deptosQueLlegan = [...new Set(llegadas.map((e) => e.reserva?.depto?.id).filter(Boolean))] as string[];
-
-  const [{ data: limpiezasDeptos }, { data: salidasPrevias }] =
-    deptosQueLlegan.length > 0
-      ? await Promise.all([
-          supabase
-            .from("limpiezas")
-            .select("depto_id, fecha, estado")
-            .in("depto_id", deptosQueLlegan)
-            .in("estado", ["hecha", "verificada"])
-            .lte("fecha", fecha),
-          supabase
-            .from("reservas")
-            .select("depto_id, fecha_checkout")
-            .in("depto_id", deptosQueLlegan)
-            .eq("cancelada", false)
-            .eq("descartada", false)
-            .lte("fecha_checkout", fecha),
-        ])
-      : [{ data: [] }, { data: [] }];
-
-  const limpiezasPorDepto = new Map<string, { fecha: string; estado: EstadoLimpieza }[]>();
-  for (const l of limpiezasDeptos ?? []) {
-    if (!l.depto_id) continue;
-    limpiezasPorDepto.set(l.depto_id, [
-      ...(limpiezasPorDepto.get(l.depto_id) ?? []),
-      { fecha: l.fecha, estado: l.estado as EstadoLimpieza },
-    ]);
-  }
-
-  // La última salida de cada depto: es la referencia contra la que se mide si
-  // la limpieza sirve todavía.
-  const ultimaSalidaPorDepto = new Map<string, string>();
-  for (const r of salidasPrevias ?? []) {
-    if (!r.depto_id || !r.fecha_checkout) continue;
-    const previa = ultimaSalidaPorDepto.get(r.depto_id);
-    if (!previa || r.fecha_checkout > previa) {
-      ultimaSalidaPorDepto.set(r.depto_id, r.fecha_checkout);
-    }
-  }
-
-  const listoPorEvento = new Map<string, boolean>();
-  for (const e of llegadas) {
-    const deptoId = e.reserva?.depto?.id;
-    const llegada = fechaOperativa(e);
-    if (!deptoId || !llegada) continue;
-    listoPorEvento.set(
-      e.id,
-      departamentoListo({
-        limpiezas: limpiezasPorDepto.get(deptoId) ?? [],
-        ultimoCheckout: ultimaSalidaPorDepto.get(deptoId) ?? null,
-        fechaLlegada: llegada,
-      }),
-    );
-  }
-
-  const sinCoordinar = eventos.filter(
-    (e) => !e.hora_coordinada || (!e.punto && !e.responsable && !e.punto_devolucion && !e.responsable_devolucion),
-  ).length;
+  const sinCoordinar = eventos.filter((e) => faltantesDeFila(e).length > 0).length;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">

@@ -17,12 +17,15 @@ import {
 import { ETIQUETA_AMBIENTES } from "@/lib/etiquetas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import { METODOS_ACCESO, METODOS_FISICOS } from "@/lib/eventos/etiquetas";
+import { ventanaDisponible, ventanaInsuficiente } from "@/lib/eventos/reglas";
 import {
-  departamentoListo,
-  ventanaDisponible,
-  ventanaInsuficiente,
-  type EstadoLimpieza,
-} from "@/lib/eventos/reglas";
+  CAMPOS_SECUENCIA,
+  eventosDelDia,
+  listoParaLlegadas,
+  posicionEnDia,
+  type EventoDelDia,
+} from "@/lib/eventos/dia";
+import NavegacionDia from "./NavegacionDia";
 import { faltantesDeEvento } from "@/lib/eventos/faltantes";
 import BotonCopiar from "@/app/componentes/BotonCopiar";
 import Wifi from "@/app/componentes/Wifi";
@@ -110,6 +113,10 @@ export default async function FichaEvento({
     { data: personas },
     { data: parametros },
     { data: eventoOpuesto },
+    delDia,
+    verReclamos,
+    puedeEditar,
+    listoPorEvento,
   ] = await Promise.all([
     supabase
       .from("puntos_acceso")
@@ -128,7 +135,24 @@ export default async function FichaEvento({
       .eq("reserva_id", r.id)
       .neq("id", id)
       .maybeSingle(),
+    // La secuencia del día, para las flechas. Liviana: sin los joins de la
+    // lista, solo lo que hace falta para ordenar igual que ella.
+    fechaReserva
+      ? eventosDelDia<EventoDelDia>(supabase, fechaReserva, CAMPOS_SECUENCIA)
+      : Promise.resolve({ llegadas: [] as EventoDelDia[], salidas: [] as EventoDelDia[] }),
+    // No dependen de nada: van en la misma tanda y no suman una espera más.
+    puedeGestionarReclamos(supabase),
+    puedeEditarReservas(supabase),
+    // Con la misma cuenta que la lista: si no, una decía "listo" y la otra no.
+    esLlegada && depto && fechaReserva
+      ? listoParaLlegadas(supabase, [
+          { eventoId: id, deptoId: depto.id, fechaLlegada: fechaReserva },
+        ])
+      : Promise.resolve(new Map<string, boolean>()),
   ]);
+
+  const posicion = posicionEnDia([...delDia.llegadas, ...delDia.salidas], id);
+  const listo = listoPorEvento.get(id) ?? false;
 
   const config = Object.fromEntries((parametros ?? []).map((p) => [p.clave, p.valor]));
 
@@ -139,7 +163,6 @@ export default async function FichaEvento({
     hora: string | null;
     soloValijas: boolean;
   } | null = null;
-  let listo = false;
   let hayEntradaEseDia = false;
 
   if (depto) {
@@ -201,19 +224,6 @@ export default async function FichaEvento({
         hora: ev?.hora_coordinada ?? null,
         soloValijas: ev?.punto?.metodo === "valijas",
       };
-    }
-
-    if (esLlegada) {
-      const { data: limpiezas } = await supabase
-        .from("limpiezas")
-        .select("fecha, estado")
-        .eq("depto_id", depto.id)
-        .lte("fecha", evento.fecha_coordinada ?? fechaReserva);
-      listo = departamentoListo({
-        limpiezas: (limpiezas ?? []) as { fecha: string; estado: EstadoLimpieza }[],
-        ultimoCheckout: salidaAnterior?.fecha ?? null,
-        fechaLlegada: evento.fecha_coordinada ?? fechaReserva,
-      });
     }
   }
 
@@ -296,10 +306,6 @@ export default async function FichaEvento({
   const telefono = soloDigitos(r.huesped_contacto);
 
   // Reclamo de daños de esta reserva, si lo hay y si quien mira puede verlo.
-  const [verReclamos, puedeEditar] = await Promise.all([
-    puedeGestionarReclamos(supabase),
-    puedeEditarReservas(supabase),
-  ]);
   const { data: reclamo } = verReclamos
     ? await supabase
         .from("reclamos")
@@ -378,12 +384,10 @@ export default async function FichaEvento({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-      <Link
-        href={`/dia?fecha=${evento.fecha_coordinada ?? fechaReserva}`}
-        className="text-sm text-tinta-tenue hover:text-tinta"
-      >
-        ← Volver al día
-      </Link>
+      {/* Vuelve a la fecha de Airbnb, que es donde figura en la lista:
+          con la coordinada, una reserva "Movida" volvía a un día en el que
+          no aparecía. */}
+      <NavegacionDia fecha={fechaReserva || hoyAR()} tipo={evento.tipo} posicion={posicion} />
 
       <div>
         <div className="flex flex-wrap items-center gap-2">
@@ -426,14 +430,24 @@ export default async function FichaEvento({
 
       {/* Contacto: lo primero que se necesita en la calle */}
       {telefono ? (
-        <a
-          href={`https://wa.me/${telefono}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={clsBoton("primario", "grande")}
-        >
-          WhatsApp
-        </a>
+        <div className="grid grid-cols-2 gap-2">
+          <a
+            href={`https://wa.me/${telefono}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={clsBoton("primario", "grande")}
+          >
+            WhatsApp
+          </a>
+          {/* Tap-to-call (spec §3.1). El "+" se conserva si venía: sin él,
+              un número internacional se marca como local. */}
+          <a
+            href={`tel:${r.huesped_contacto?.trim().startsWith("+") ? "+" : ""}${telefono}`}
+            className={clsBoton("secundario", "grande")}
+          >
+            Llamar
+          </a>
+        </div>
       ) : (
         <p className="rounded-lg bg-superficie-alt px-3 py-2 text-sm text-tinta-tenue">
           Sin teléfono cargado

@@ -40,7 +40,7 @@ const formatearMonto = (monto: number, moneda: string | null) =>
 export default async function Semana({
   searchParams,
 }: {
-  searchParams: Promise<{ desde?: string; dias?: string }>;
+  searchParams: Promise<{ desde?: string; dias?: string; persona?: string }>;
 }) {
   const params = await searchParams;
   const hoy = hoyAR();
@@ -136,8 +136,34 @@ export default async function Semana({
   );
   const fechasFeriado = new Set((feriados ?? []).map((f) => f.fecha));
 
+  const carga = cargaPorPersona(limpiezas ?? []);
+  const opciones: PersonaOpcion[] = personas ?? [];
+
+  // Filtrar por persona: se toca su nombre en la fila de carga (pedido del
+  // dueño, 25/09/2026). Sirve para repasar con cada una lo que le tocó, sin
+  // leer el día entero. La fila de carga NO se filtra: es el propio selector.
+  const persona = carga.some((c) => c.personaId === params.persona) ? params.persona! : null;
+  const personaNombre = carga.find((c) => c.personaId === persona)?.nombre ?? null;
+  const visibles = persona
+    ? (limpiezas ?? []).filter((l) => l.asignado_a === persona)
+    : (limpiezas ?? []);
+
+  /** Lo que no es la fecha: viaja igual cuando se cambia de semana. */
+  const otrosParams = new URLSearchParams();
+  if (params.dias) otrosParams.set("dias", params.dias);
+  if (persona) otrosParams.set("persona", persona);
+
+  /** Mantiene el período al cambiar de persona. */
+  const enlace = (cambio: { persona: string | null }) => {
+    const qs = new URLSearchParams();
+    if (desde !== hoy) qs.set("desde", desde);
+    if (params.dias) qs.set("dias", params.dias);
+    if (cambio.persona) qs.set("persona", cambio.persona);
+    return qs.size > 0 ? `/semana?${qs}` : "/semana";
+  };
+
   const porDia = new Map<string, NonNullable<typeof limpiezas>>();
-  for (const l of limpiezas ?? []) {
+  for (const l of visibles) {
     if (!porDia.has(l.fecha)) porDia.set(l.fecha, []);
     porDia.get(l.fecha)!.push(l);
   }
@@ -160,10 +186,8 @@ export default async function Semana({
     (estadias ?? []) as EstadiaRevisar[],
   );
 
-  const total = (limpiezas ?? []).length;
-  const totalSinAsignar = (limpiezas ?? []).filter((l) => !l.asignado_a).length;
-  const carga = cargaPorPersona(limpiezas ?? []);
-  const opciones: PersonaOpcion[] = personas ?? [];
+  const total = visibles.length;
+  const totalSinAsignar = visibles.filter((l) => !l.asignado_a).length;
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
@@ -185,7 +209,7 @@ export default async function Semana({
         </Link>
       </div>
 
-      <NavegadorSemana desde={desde} />
+      <NavegadorSemana desde={desde} extra={otrosParams.toString()} />
 
       {alertas.size > 0 && (
         <div className="rounded-xl border border-aviso-borde bg-aviso-soft/30 px-4 py-3">
@@ -203,19 +227,49 @@ export default async function Semana({
       {/* Cuánto lleva cada persona: se mira antes de darle una más a alguien */}
       {carga.length > 0 && (
         <div className="flex flex-wrap gap-2 rounded-xl border border-borde bg-elevada/30 p-3">
-          {carga.map((c) => (
-            <span key={c.personaId} className="rounded-lg bg-elevada px-3 py-1.5 text-sm">
-              <span className="text-tinta-media">{c.nombre}</span>
-              <span className="ml-2 text-tinta-tenue">
-                {c.cantidad} {c.cantidad === 1 ? "limpieza" : "limpiezas"}
-              </span>
-              {c.monto > 0 && (
-                <span className="ml-2 text-exito-text">
-                  {formatearMonto(c.monto, c.moneda)}
+          {carga.map((c) => {
+            const elegida = c.personaId === persona;
+            return (
+              /* Tocar un nombre deja abajo solo sus limpiezas; tocarlo de
+                 nuevo vuelve a mostrar todas. */
+              <Link
+                key={c.personaId}
+                href={enlace({ persona: elegida ? null : c.personaId })}
+                aria-pressed={elegida}
+                className={`flex h-11 items-center rounded-lg px-3 text-sm transition-colors sm:h-9 ${
+                  elegida
+                    ? "bg-primary-soft text-primary-soft-text"
+                    : "bg-elevada hover:bg-elevada-hover"
+                }`}
+              >
+                <span className={elegida ? "font-medium" : "text-tinta-media"}>{c.nombre}</span>
+                <span className={`ml-2 ${elegida ? "" : "text-tinta-tenue"}`}>
+                  {c.cantidad} {c.cantidad === 1 ? "limpieza" : "limpiezas"}
                 </span>
-              )}
-            </span>
-          ))}
+                {c.monto > 0 && (
+                  <span className={`ml-2 ${elegida ? "" : "text-exito-text"}`}>
+                    {formatearMonto(c.monto, c.moneda)}
+                  </span>
+                )}
+                {elegida && <span className="ml-2 text-xs">✕</span>}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {persona && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-primary/40 bg-primary-soft/30 px-4 py-3">
+          <p className="text-sm text-tinta-media">
+            Viendo solo las limpiezas de <strong className="text-tinta">{personaNombre}</strong>.
+            {total === 0 && " No tiene ninguna en este período."}
+          </p>
+          <Link
+            href={enlace({ persona: null })}
+            className="ml-auto flex h-11 items-center rounded-lg border border-borde-control px-3 text-sm text-tinta-media transition-colors hover:bg-elevada-hover sm:h-9"
+          >
+            Ver todas
+          </Link>
         </div>
       )}
 
@@ -237,7 +291,10 @@ export default async function Semana({
                hoy arranca abierto porque es el que se mira primero. */
             <details
               key={fecha}
-              open={fecha === hoy && delDia.length > 0}
+              /* Filtrando por una persona, los días arrancan abiertos: son
+                 pocas limpiezas y lo que se quiere ver es la lista, no los
+                 días. Sin filtro, solo hoy. */
+              open={(fecha === hoy || persona !== null) && delDia.length > 0}
               className={`group rounded-xl border-y border-r border-y-borde border-r-borde border-l-4 bg-elevada/30 ${
                 delDia.length === 0 ? "border-l-borde opacity-60" : BORDE_SEMAFORO[semaforoDia]
               }`}

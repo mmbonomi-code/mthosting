@@ -50,6 +50,18 @@ const SIN_PRESENTAR: ReadonlySet<EstadoReclamo> = new Set(["borrador", "por_pres
 /** Ya está en manos de Airbnb: se espera respuesta. */
 const ESPERANDO: ReadonlySet<EstadoReclamo> = new Set(["presentado", "escalado"]);
 
+/**
+ * Valor del filtro de estado que junta todo lo que no está cerrado. Es el
+ * filtro con el que abre la lista: lo cobrado, rechazado o descartado ya no
+ * pide nada.
+ */
+export const ESTADO_ABIERTOS = "abiertos";
+
+/** Valor explícito de "todos los estados": sin él, la lista vuelve a abiertos. */
+export const ESTADO_TODOS = "todos";
+
+const ABIERTOS: ReadonlySet<EstadoReclamo> = new Set([...SIN_PRESENTAR, ...ESPERANDO]);
+
 /** Le agrega a cada reclamo su plazo vigente y su color. */
 export function conPlazos(reclamos: ReclamoEnLista[], hoy: string): ReclamoConPlazo[] {
   return reclamos.map((r) => ({
@@ -134,7 +146,9 @@ function coincideTexto(r: ReclamoConPlazo, q: string): boolean {
 export function filtrar(reclamos: ReclamoConPlazo[], filtros: Filtros): ReclamoConPlazo[] {
   return reclamos.filter((r) => {
     if (!coincideTexto(r, filtros.q)) return false;
-    if (filtros.estado !== "" && r.estado !== filtros.estado) return false;
+    if (filtros.estado === ESTADO_ABIERTOS) {
+      if (!ABIERTOS.has(r.estado)) return false;
+    } else if (filtros.estado !== "" && r.estado !== filtros.estado) return false;
     if (filtros.depto !== "" && r.depto_id !== filtros.depto) return false;
 
     switch (filtros.foco) {

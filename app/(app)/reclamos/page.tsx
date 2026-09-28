@@ -6,6 +6,8 @@ import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import {
   calcularKpis,
   conPlazos,
+  ESTADO_ABIERTOS,
+  ESTADO_TODOS,
   filtrar,
   formatearMonto,
   ordenarPorUrgencia,
@@ -136,9 +138,12 @@ export default async function Reclamos({
   const kpis = calcularKpis(todos, hoy);
 
   const foco = (params.foco ?? null) as Foco;
+  // Sin estado elegido, la lista abre con los abiertos. Si se tocó un KPI,
+  // manda el KPI: "Cobrado (mes)" no puede quedar vacío por el filtro.
+  const estadoElegido = params.estado ?? (foco ? ESTADO_TODOS : ESTADO_ABIERTOS);
   const filtros = {
     q: params.q ?? "",
-    estado: params.estado ?? "",
+    estado: estadoElegido === ESTADO_TODOS ? "" : estadoElegido,
     depto: params.depto ?? "",
     foco,
   };
@@ -148,7 +153,7 @@ export default async function Reclamos({
   const conFoco = (valor: Foco) => {
     const p = new URLSearchParams();
     if (filtros.q) p.set("q", filtros.q);
-    if (filtros.estado) p.set("estado", filtros.estado);
+    if (params.estado) p.set("estado", params.estado);
     if (filtros.depto) p.set("depto", filtros.depto);
     if (valor && valor !== foco) p.set("foco", valor);
     const qs = p.toString();
@@ -216,7 +221,7 @@ export default async function Reclamos({
 
       <FiltrosReclamos
         q={filtros.q}
-        estado={filtros.estado}
+        estado={estadoElegido}
         depto={filtros.depto}
         foco={foco}
         departamentos={deptos ?? []}

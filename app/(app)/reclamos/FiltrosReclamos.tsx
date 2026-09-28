@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { clsEntrada } from "@/lib/ui";
 import { ETIQUETA_ESTADO } from "@/lib/reclamos/estados";
 import type { EstadoReclamo } from "@/lib/reclamos/plazos";
-import type { Foco } from "@/lib/reclamos/lista";
+import { ESTADO_ABIERTOS, ESTADO_TODOS, type Foco } from "@/lib/reclamos/lista";
 
 const ESTADOS: EstadoReclamo[] = [
   "borrador",
@@ -17,7 +17,10 @@ const ESTADOS: EstadoReclamo[] = [
   "descartado",
 ];
 
-/** Buscador y filtros de la lista. Escribir filtra sin apretar nada. */
+/**
+ * Buscador y filtros de la lista. Escribir filtra sin apretar nada.
+ * `estado` llega ya resuelto (abiertos por defecto) y viaja siempre en la URL.
+ */
 export default function FiltrosReclamos({
   q,
   estado,
@@ -69,7 +72,8 @@ export default function FiltrosReclamos({
         aria-label="Filtrar por estado"
         className={clsEntrada}
       >
-        <option value="">Todos los estados</option>
+        <option value={ESTADO_ABIERTOS}>Abiertos</option>
+        <option value={ESTADO_TODOS}>Todos los estados</option>
         {ESTADOS.map((e) => (
           <option key={e} value={e}>
             {ETIQUETA_ESTADO[e]}

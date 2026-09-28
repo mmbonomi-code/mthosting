@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calcularKpis,
   conPlazos,
+  ESTADO_ABIERTOS,
   filtrar,
   formatearMonto,
   ordenarPorUrgencia,
@@ -204,6 +205,10 @@ describe("filtrar", () => {
   it("filtra por estado y por departamento", () => {
     expect(ids({ estado: "presentado" })).toEqual(["b"]);
     expect(ids({ depto: "d2" })).toEqual(["b", "c"]);
+  });
+
+  it("\"abiertos\" deja afuera lo cerrado", () => {
+    expect(ids({ estado: ESTADO_ABIERTOS })).toEqual(["a", "b"]);
   });
 
   it("los KPIs filtran lo mismo que cuentan", () => {

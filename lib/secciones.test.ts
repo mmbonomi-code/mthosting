@@ -90,6 +90,42 @@ describe("los demás roles", () => {
   });
 });
 
+describe("logística", () => {
+  it("aterriza en su pantalla", () => {
+    expect(inicioDelRol("logistica")).toBe("/logistica");
+    expect(puedeEntrar("logistica", inicioDelRol("logistica"))).toBe(true);
+    expect(tieneAccesoLimitado("logistica")).toBe(true);
+  });
+
+  it("consulta las fichas de departamento, pero no las crea ni las edita", () => {
+    expect(puedeEntrar("logistica", "/departamentos/abc-123")).toBe(true);
+    expect(puedeEntrar("logistica", "/departamentos/nuevo")).toBe(false);
+    expect(puedeEntrar("logistica", "/departamentos/abc-123/editar")).toBe(false);
+    expect(puedeEntrar("logistica", "/departamentos/abc-123/equipamiento")).toBe(false);
+  });
+
+  it("no ve el resto del sistema, ni el reporte entero: sus pendientes están en su pantalla", () => {
+    for (const ruta of [
+      "/",
+      "/alertas",
+      "/dia",
+      "/reporte",
+      "/reclamos",
+      "/caja",
+      "/economico",
+      "/semana",
+      "/limpiezas",
+      "/mis-limpiezas",
+      "/personas",
+      "/puntos-acceso",
+      "/exportar",
+      "/api/exportar/contactos",
+    ]) {
+      expect(puedeEntrar("logistica", ruta), ruta).toBe(false);
+    }
+  });
+});
+
 describe("limpieza", () => {
   it("aterriza en sus propias limpiezas, no en una pantalla vacía", () => {
     expect(inicioDelRol("limpieza")).toBe("/mis-limpiezas");

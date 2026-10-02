@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import SelectorHora from "@/app/componentes/SelectorHora";
 import { ventanaInsuficiente } from "@/lib/eventos/reglas";
-import { clsAreaTexto, clsEntrada, clsEtiqueta } from "@/lib/ui";
+import { clsAreaTexto, clsEnlace, clsEntrada, clsEtiqueta } from "@/lib/ui";
 
 export type OpcionAcceso = {
   valor: string;
@@ -17,6 +17,8 @@ type Tilde = {
   clave: string;
   etiqueta: string;
   detalle?: string;
+  /** Un enlace debajo del detalle: hoy, la foto de la llave que subió logística. */
+  enlace?: { href: string; texto: string } | null;
   activo: boolean;
   accion: (valor: boolean) => Promise<{ error: string } | null>;
   /** Aviso que aparece al tildarlo, cuando hay un conflicto conocido. */
@@ -328,6 +330,16 @@ function Casilla({ tilde }: { tilde: Tilde }) {
           )}
         </span>
       </label>
+      {tilde.enlace && (
+        <a
+          href={tilde.enlace.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${clsEnlace} ml-8 text-sm`}
+        >
+          {tilde.enlace.texto}
+        </a>
+      )}
       {error && (
         <p role="alert" className="rounded-lg bg-error-soft px-3 py-2 text-sm text-error-text">
           {error}

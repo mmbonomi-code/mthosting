@@ -129,6 +129,17 @@ export function avanceDeLimpieza(estado: string): { texto: string; tono: Tono } 
   return null;
 }
 
+/**
+ * Las tareas de logística (ropa blanca, llave en el candado, cuna o silla):
+ * ámbar mientras falta, verde cuando se hizo.
+ */
+export type EstadoTarea = "pendiente" | "hecha";
+
+export const TONO_TAREA: Record<EstadoTarea, Tono> = {
+  pendiente: { clases: AVISO },
+  hecha: { clases: CERRADO_BIEN },
+};
+
 // ---------------------------------------------------------------------------
 // Reclamos por daños
 // ---------------------------------------------------------------------------

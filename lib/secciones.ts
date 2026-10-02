@@ -93,6 +93,23 @@ const ACCESO: Partial<Record<Rol, Acceso>> = {
     prefijos: ["/mis-limpiezas", "/reporte", "/departamentos"],
     vedadas: FICHA_SOLO_LECTURA,
   },
+
+  /**
+   * Logística: lleva la ropa blanca, saca la sucia, deja llaves en los
+   * candados y lleva y retira cunas y sillas (decisión del dueño, 02/10/2026).
+   *
+   * Todo su día está en "/logistica": limpiezas con horarios, llegadas con
+   * candado, cunas y sillas, y sus pendientes del reporte. Al reporte entero
+   * NO entra: ve solo lo que tiene a su nombre, y lo ve ahí mismo.
+   *
+   * Las fichas de departamento las CONSULTA, sin lo comercial, igual que
+   * limpieza: necesita la dirección, el encargado y cómo se entra.
+   */
+  logistica: {
+    inicio: "/logistica",
+    prefijos: ["/logistica", "/departamentos"],
+    vedadas: FICHA_SOLO_LECTURA,
+  },
 };
 
 /** Dónde aterriza al entrar. Sin restricción, la pantalla de inicio. */

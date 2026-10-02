@@ -22,6 +22,7 @@ const ROLES: Record<string, string> = {
   gobernanta: "Gobernanta",
   coordinador: "Coordinación",
   limpieza: "Limpieza",
+  logistica: "Logística",
   propietario: "Propietario",
 };
 

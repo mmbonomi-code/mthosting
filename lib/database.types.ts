@@ -998,6 +998,9 @@ export type Database = {
       eventos_estadia: {
         Row: {
           acceso_dejado: boolean
+          acceso_dejado_at: string | null
+          acceso_dejado_por: string | null
+          acceso_foto: string | null
           created_at: string
           estado: Database["public"]["Enums"]["evento_estado"]
           fecha_coordinada: string | null
@@ -1015,6 +1018,9 @@ export type Database = {
         }
         Insert: {
           acceso_dejado?: boolean
+          acceso_dejado_at?: string | null
+          acceso_dejado_por?: string | null
+          acceso_foto?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["evento_estado"]
           fecha_coordinada?: string | null
@@ -1032,6 +1038,9 @@ export type Database = {
         }
         Update: {
           acceso_dejado?: boolean
+          acceso_dejado_at?: string | null
+          acceso_dejado_por?: string | null
+          acceso_foto?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["evento_estado"]
           fecha_coordinada?: string | null
@@ -1430,6 +1439,8 @@ export type Database = {
       limpiezas: {
         Row: {
           asignado_a: string | null
+          blanco_entregado_at: string | null
+          blanco_entregado_por: string | null
           cancelada_manual: boolean
           conflicto_resuelto: string | null
           created_at: string
@@ -1450,6 +1461,8 @@ export type Database = {
           prox_checkin: string | null
           reserva_id: string | null
           rol_reserva: Database["public"]["Enums"]["rol_reserva_tipo"] | null
+          sucio_retirado_at: string | null
+          sucio_retirado_por: string | null
           tarifa_id: string | null
           tipo: Database["public"]["Enums"]["limpieza_tipo"]
           updated_at: string
@@ -1460,6 +1473,8 @@ export type Database = {
         }
         Insert: {
           asignado_a?: string | null
+          blanco_entregado_at?: string | null
+          blanco_entregado_por?: string | null
           cancelada_manual?: boolean
           conflicto_resuelto?: string | null
           created_at?: string
@@ -1480,6 +1495,8 @@ export type Database = {
           prox_checkin?: string | null
           reserva_id?: string | null
           rol_reserva?: Database["public"]["Enums"]["rol_reserva_tipo"] | null
+          sucio_retirado_at?: string | null
+          sucio_retirado_por?: string | null
           tarifa_id?: string | null
           tipo?: Database["public"]["Enums"]["limpieza_tipo"]
           updated_at?: string
@@ -1490,6 +1507,8 @@ export type Database = {
         }
         Update: {
           asignado_a?: string | null
+          blanco_entregado_at?: string | null
+          blanco_entregado_por?: string | null
           cancelada_manual?: boolean
           conflicto_resuelto?: string | null
           created_at?: string
@@ -1510,6 +1529,8 @@ export type Database = {
           prox_checkin?: string | null
           reserva_id?: string | null
           rol_reserva?: Database["public"]["Enums"]["rol_reserva_tipo"] | null
+          sucio_retirado_at?: string | null
+          sucio_retirado_por?: string | null
           tarifa_id?: string | null
           tipo?: Database["public"]["Enums"]["limpieza_tipo"]
           updated_at?: string
@@ -2928,6 +2949,25 @@ export type Database = {
           observacion_proxima: string
         }[]
       }
+      logistica_dejar_llave: {
+        Args: { p_evento: string; p_foto: string }
+        Returns: undefined
+      }
+      logistica_deshacer_llave: {
+        Args: { p_evento: string }
+        Returns: undefined
+      }
+      logistica_marcar_equipamiento: {
+        Args: {
+          p_estado: Database["public"]["Enums"]["equipamiento_estado"]
+          p_id: string
+        }
+        Returns: undefined
+      }
+      logistica_marcar_ropa: {
+        Args: { p_limpieza: string; p_que: string; p_valor: boolean }
+        Returns: undefined
+      }
       mi_persona_id: { Args: never; Returns: string }
       mi_rol: {
         Args: never
@@ -2944,6 +2984,7 @@ export type Database = {
       puede_editar_checklist: { Args: never; Returns: boolean }
       puede_escribir_reporte: { Args: never; Returns: boolean }
       puede_gestionar_reclamos: { Args: never; Returns: boolean }
+      puede_hacer_logistica: { Args: never; Returns: boolean }
       puede_ver_caja: { Args: never; Returns: boolean }
       puede_ver_economico: { Args: never; Returns: boolean }
       puede_ver_limpieza: { Args: { p_asignado_a: string }; Returns: boolean }
@@ -3039,6 +3080,7 @@ export type Database = {
         | "coordinador"
         | "limpieza"
         | "propietario"
+        | "logistica"
       self_checkout_tipo: "siempre" | "solo_multiples" | "no"
       tipo_bano: "completo_banera" | "completo_ducha" | "toilette"
     }
@@ -3267,6 +3309,7 @@ export const Constants = {
         "coordinador",
         "limpieza",
         "propietario",
+        "logistica",
       ],
       self_checkout_tipo: ["siempre", "solo_multiples", "no"],
       tipo_bano: ["completo_banera", "completo_ducha", "toilette"],

@@ -4,7 +4,8 @@ import Badge from "@/app/componentes/Badge";
 import { ETIQUETA_MARCA, TONO_MARCA } from "@/lib/estados";
 import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import { formatearFechaAR, hoyAR } from "@/lib/fechas";
+import { formatearFechaAR, horaARDe, hoyAR } from "@/lib/fechas";
+import { BUCKET_LOGISTICA } from "@/lib/logistica/storage";
 import MarcaCalendario, { AvisoCalendario } from "@/app/componentes/MarcaCalendario";
 import { puedeGestionarReclamos } from "@/lib/reclamos/permisos";
 import { puedeEditarReservas } from "@/lib/reservas/permisos";
@@ -65,6 +66,7 @@ export default async function FichaEvento({
     .from("eventos_estadia")
     .select(
       `id, tipo, fecha_coordinada, hora_coordinada, estado, late_checkout, acceso_dejado, observaciones,
+       acceso_dejado_at, acceso_foto,
        punto_acceso_id, responsable_id, punto_devolucion_id, responsable_devolucion_id,
        reserva:reservas(
          id, codigo_reserva, huesped_nombre, huesped_contacto, noches, adultos, ninos, bebes,
@@ -332,6 +334,13 @@ export default async function FichaEvento({
     avisoHecho: r.aviso_seguridad_hecho,
   });
 
+  // La foto que subió logística al dejar la llave en el candado.
+  const { data: fotoLlave } =
+    esLlegada && evento.acceso_foto
+      ? await supabase.storage.from(BUCKET_LOGISTICA).createSignedUrl(evento.acceso_foto, 3600)
+      : { data: null };
+  const horaLlave = horaARDe(evento.acceso_dejado_at);
+
   // Las casillas que corresponden a este evento, todas dentro del panel.
   const tildes = esLlegada
     ? [
@@ -340,7 +349,13 @@ export default async function FichaEvento({
               {
                 clave: "acceso_dejado",
                 etiqueta: `Dejé ${METODOS_ACCESO[puntoElegido.metodo].toLowerCase()} ${[puntoElegido.ubicacion, puntoElegido.identificador].filter(Boolean).join(" ")}`,
-                detalle: "Confirmación de que el equipo ya lo dejó en el punto de acceso",
+                detalle:
+                  evento.acceso_dejado && horaLlave
+                    ? `Marcado a las ${horaLlave}`
+                    : "Confirmación de que el equipo ya lo dejó en el punto de acceso",
+                enlace: fotoLlave?.signedUrl
+                  ? { href: fotoLlave.signedUrl, texto: "Ver la foto de la llave" }
+                  : null,
                 activo: evento.acceso_dejado,
                 accion: marcarAccesoDejado.bind(null, id),
               },

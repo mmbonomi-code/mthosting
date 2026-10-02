@@ -115,8 +115,8 @@ export default async function FichaDepartamento({
   const puedeEditar = puedeEntrar(rol, `/departamentos/${id}/editar`);
   // El personal de limpieza consulta la ficha sin lo comercial: propietario,
   // comisión, acuerdo de pago, publicación, anuncios y credenciales
-  // (decisión del dueño, 22/09/2026).
-  const veComercial = rol !== "limpieza";
+  // (decisión del dueño, 22/09/2026). Logística, lo mismo (02/10/2026).
+  const veComercial = rol !== "limpieza" && rol !== "logistica";
 
   const [{ data: publica }, { data: comercial }] = await Promise.all([
     supabase.from("departamentos_ficha").select("*").eq("id", id).maybeSingle(),

@@ -884,6 +884,28 @@ Referencias: ✓ puede · — no ve la pantalla · ✗ ve pero no puede
 
 Notas:
 
+- **Rol `logistica`, agregado el 02/10/2026 (decisión del dueño).** Es quien
+  lleva la ropa blanca y saca la sucia, deja las llaves en los candados y
+  lleva y retira cunas y sillas. No tiene columna en la tabla porque su
+  alcance es angosto y entra entero en este párrafo:
+  - Tiene **una sola pantalla, "Logística"** (`/logistica`), por día: las
+    limpiezas con horario de salida y de entrada, las llegadas con candado,
+    las cunas y sillas que hay que llevar o retirar, y sus pendientes del
+    reporte.
+  - **Marca:** "dejé lo blanco" y "saqué lo sucio" en cada limpieza; "dejé
+    la llave" en cada llegada con candado, **con foto obligatoria**; cuna o
+    silla entregada / retirada. Todo se puede deshacer.
+  - **Lee, sin marcar,** los pendientes del reporte que tiene a su nombre.
+    El reporte entero no lo ve; los pendientes los cierra el back office.
+  - **Consulta las fichas de departamento** sin lo comercial, igual que
+    limpieza. No ve el Día, la Semana, reservas, datos del huésped ni nada
+    de configuración.
+  - En la base **no escribe directo en ninguna tabla** (política
+    restrictiva): lo que marca pasa por funciones que tocan solo esas
+    columnas (`20261002100100_logistica.sql`). La lectura sigue abierta
+    como el resto de la Fase 1.
+  - Coordinación, manager y administración también abren "Logística" y
+    pueden marcar, para cubrirla cuando falta.
 - **«Back office» es el rol `coordinador`** (decisión del dueño, 11/08/2026).
   No son dos cosas distintas. La columna `personas.es_backoffice` existe desde
   la migración inicial pero ya no decide permisos: el permiso sale del rol y

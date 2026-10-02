@@ -6,6 +6,7 @@ import { puedeVerCaja } from "@/lib/caja/permisos";
 import { puedeVerEconomico } from "@/lib/economico/permisos";
 import { rolPuedeVerAlertas } from "@/lib/alertas/permisos";
 import { rolPuedeVerMisLimpiezas } from "@/lib/limpiezas/permisos";
+import { rolPuedeVerLogistica } from "@/lib/logistica/tareas";
 import { calcularPanelAlertas, contarCriticas, contarResto } from "@/lib/alertas/consultar";
 import { esManagerOAdmin, personaActual, rolDelUsuario } from "@/lib/permisos";
 import { inicioDelRol, puedeEntrar } from "@/lib/secciones";
@@ -44,6 +45,7 @@ export default async function LayoutApp({
   // el link.
   const verAlertas = rolPuedeVerAlertas(rol);
   const verMisLimpiezas = rolPuedeVerMisLimpiezas(rol);
+  const verLogistica = rolPuedeVerLogistica(rol);
 
   // El menú avisa cuántas cosas hay que mirar hoy, sin entrar a la pantalla.
   // No se cuenta lo que este rol no va a ver.
@@ -88,6 +90,7 @@ export default async function LayoutApp({
     ...(verMisLimpiezas
       ? [{ href: "/mis-limpiezas", texto: "Mis limpiezas", pendientes: 0 }]
       : []),
+    ...(verLogistica ? [{ href: "/logistica", texto: "Logística", pendientes: 0 }] : []),
     { href: "/propietarios", texto: "Propietarios", pendientes: 0 },
     // Configuración del sistema: manager y administración (spec §3.8).
     ...(esConfiguracion

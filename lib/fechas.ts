@@ -31,6 +31,23 @@ export function diaARDe(instante: string | null): string | null {
   return Number.isNaN(momento.getTime()) ? null : formatoISO.format(momento);
 }
 
+const formatoHora = new Intl.DateTimeFormat("es-AR", {
+  timeZone: ZONA_HORARIA,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/**
+ * La hora de Buenos Aires de un instante (`timestamptz`), como `hh:mm`. Para
+ * mostrar a qué hora se marcó algo, no para fechas de negocio.
+ */
+export function horaARDe(instante: string | null): string | null {
+  if (!instante) return null;
+  const momento = new Date(instante);
+  return Number.isNaN(momento.getTime()) ? null : formatoHora.format(momento);
+}
+
 /** Fecha de mañana en Buenos Aires, como `yyyy-mm-dd`. */
 export function mananaAR(): string {
   return sumarDias(hoyAR(), 1);

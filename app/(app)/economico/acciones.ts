@@ -55,6 +55,7 @@ export async function procesarArchivo(
       filas_nuevas: 0,
       filas_duplicadas: 0,
       filas_sin_mapear: 0,
+      filas_fuera_de_gestion: 0,
       cuentas_nuevas: 0,
       avisos: [],
       error: e instanceof Error ? e.message : "No se pudo procesar el archivo.",

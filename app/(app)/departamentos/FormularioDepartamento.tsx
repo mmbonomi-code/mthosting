@@ -34,6 +34,7 @@ type Valores = {
   camas_twin?: number | null;
   sillon_cama?: number | null;
   comision_pct?: number | null;
+  en_gestion_desde?: string | null;
   acuerdo_pago?: string | null;
   wifi_ssid?: string | null;
   wifi_pass?: string | null;
@@ -117,6 +118,7 @@ export default function FormularioDepartamento({
   banos = [],
   propietarios,
   urlCancelar,
+  editaGestion = false,
 }: {
   accion: (
     estadoPrevio: EstadoFormulario,
@@ -126,6 +128,8 @@ export default function FormularioDepartamento({
   banos?: BanoCargado[];
   propietarios: PropietarioOpcion[];
   urlCancelar: string;
+  /** Solo administración ve y cambia la fecha de alta en gestión. */
+  editaGestion?: boolean;
 }) {
   const [estado, enviar, pendiente] = useActionState<EstadoFormulario, FormData>(
     accion,
@@ -365,6 +369,19 @@ export default function FormularioDepartamento({
             className={clsEntrada}
           />
         </Campo>
+        {editaGestion && (
+          <Campo etiqueta="En gestión desde">
+            <input
+              name="en_gestion_desde"
+              type="date"
+              defaultValue={valores.en_gestion_desde ?? ""}
+              className={`${clsEntrada} tabular-nums`}
+            />
+            <span className="text-sm text-tinta-tenue">
+              Los cobros de estadías anteriores no cuentan en el económico.
+            </span>
+          </Campo>
+        )}
         <Campo etiqueta="Acuerdo de pago">
           <select
             name="acuerdo_pago"

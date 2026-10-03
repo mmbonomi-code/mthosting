@@ -14,6 +14,7 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../database.types";
+import { filasFueraDeGestion } from "./gestion";
 import { armarMapa } from "./mapeo";
 import {
   ErrorArchivoEconomico,
@@ -33,6 +34,8 @@ export type ResultadoArchivoImportado = {
   filas_nuevas: number;
   filas_duplicadas: number;
   filas_sin_mapear: number;
+  /** Ya cuentan dentro de `filas_nuevas`: se guardan, pero inactivas. */
+  filas_fuera_de_gestion: number;
   cuentas_nuevas: number;
   avisos: string[];
   error: string | null;
@@ -89,6 +92,7 @@ export async function importarArchivo(
     filas_nuevas: 0,
     filas_duplicadas: 0,
     filas_sin_mapear: 0,
+    filas_fuera_de_gestion: 0,
     cuentas_nuevas: 0,
     avisos: [],
     error: null,
@@ -149,6 +153,12 @@ export async function importarArchivo(
           mapa.resolver,
           cuentaPorClave,
         );
+
+  if (resultado.filas_fuera_de_gestion > 0) {
+    avisos.push(
+      `${resultado.filas_fuera_de_gestion} filas son de antes de que el departamento entrara en gestión. Quedan guardadas pero no cuentan.`,
+    );
+  }
 
   const final: ResultadoArchivoImportado = {
     nombre,
@@ -249,14 +259,16 @@ export async function cerrarLote(
 /**
  * Deshace un lote entero. Baja lógica: las filas quedan con `activo = false`
  * y el archivo se puede volver a importar, porque la deduplicación solo mira
- * las filas vivas.
+ * las filas vivas y las fuera de gestión. A estas se les quita la marca: si
+ * no, bloquearían la reimportación y el cambio de fecha de alta las
+ * revivería aunque el lote esté deshecho.
  */
 export async function deshacerLote(supabase: Cliente, importId: string): Promise<number> {
   const { data, error } = await supabase
     .from("movimientos_economicos")
-    .update({ activo: false })
+    .update({ activo: false, fuera_de_gestion: false })
     .eq("import_id", importId)
-    .eq("activo", true)
+    .or("activo.eq.true,fuera_de_gestion.eq.true")
     .select("id");
   if (error) throw new Error(`No se pudo deshacer: ${error.message}`);
 
@@ -359,7 +371,18 @@ type Conteo = {
   filas_nuevas: number;
   filas_duplicadas: number;
   filas_sin_mapear: number;
+  filas_fuera_de_gestion: number;
 };
+
+/** La fecha de alta de los deptos que la tienen cargada. */
+async function leerFechasDeAlta(supabase: Cliente): Promise<Map<string, string>> {
+  const { data, error } = await supabase
+    .from("departamentos")
+    .select("id, en_gestion_desde")
+    .not("en_gestion_desde", "is", null);
+  if (error) throw new Error("No se pudieron leer las fechas de alta de los departamentos.");
+  return new Map((data ?? []).map((d) => [d.id, d.en_gestion_desde!]));
+}
 
 async function guardarEfectivos(
   supabase: Cliente,
@@ -370,9 +393,18 @@ async function guardarEfectivos(
   cuentaPorClave: Map<string, string>,
 ): Promise<Conteo> {
   const yaEstan = await huellasExistentes(supabase, filas.map((f) => f.huella));
-  const nuevas = filas.filter((f) => !yaEstan.has(f.huella));
+  // Se calcula sobre el archivo entero, no sobre las nuevas: el payout se
+  // decide mirando todo su grupo, aunque parte del grupo ya estuviera cargada.
+  const fuera = filasFueraDeGestion(
+    filas,
+    (f) => resolver(f.anuncio),
+    await leerFechasDeAlta(supabase),
+  );
+  const nuevas = filas
+    .map((f, i) => ({ f, fuera: fuera.has(i) }))
+    .filter(({ f }) => !yaEstan.has(f.huella));
 
-  const aInsertar: FilaMovimiento[] = nuevas.map((f) => ({
+  const aInsertar: FilaMovimiento[] = nuevas.map(({ f, fuera }) => ({
     import_id: importId,
     archivo,
     linea: f.linea,
@@ -402,6 +434,8 @@ async function guardarEfectivos(
     huella: f.huella,
     ocurrencia: f.ocurrencia,
     raw: f.raw,
+    activo: !fuera,
+    fuera_de_gestion: fuera,
   }));
 
   for (let i = 0; i < aInsertar.length; i += TANDA) {
@@ -417,6 +451,7 @@ async function guardarEfectivos(
     filas_duplicadas: filas.length - aInsertar.length,
     // Las filas sin anuncio (los payouts) no cuentan: se imputan por el grupo.
     filas_sin_mapear: aInsertar.filter((f) => f.anuncio && !f.depto_id).length,
+    filas_fuera_de_gestion: aInsertar.filter((f) => f.fuera_de_gestion).length,
   };
 }
 
@@ -479,10 +514,15 @@ async function guardarProgramados(
     filas_nuevas: aInsertar.length,
     filas_duplicadas: filas.length - aInsertar.length,
     filas_sin_mapear: aInsertar.filter((f) => f.anuncio && !f.depto_id).length,
+    filas_fuera_de_gestion: 0,
   };
 }
 
-/** Las huellas ya guardadas y vivas, de a tandas para no armar un `in` gigante. */
+/**
+ * Las huellas ya guardadas, de a tandas para no armar un `in` gigante. Cuentan
+ * las vivas y las fuera de gestión: estas están inactivas a propósito, y si no
+ * se miraran cada reimportación las volvería a cargar.
+ */
 async function huellasExistentes(
   supabase: Cliente,
   huellas: string[],
@@ -492,7 +532,7 @@ async function huellasExistentes(
     const { data, error } = await supabase
       .from("movimientos_economicos")
       .select("huella")
-      .eq("activo", true)
+      .or("activo.eq.true,fuera_de_gestion.eq.true")
       .in("huella", huellas.slice(i, i + 200));
     if (error) throw new Error(`No se pudo verificar duplicados: ${error.message}`);
     for (const f of data ?? []) encontradas.add(f.huella);

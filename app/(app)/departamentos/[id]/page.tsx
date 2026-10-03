@@ -14,6 +14,7 @@ import {
 import BotonCopiar from "@/app/componentes/BotonCopiar";
 import Wifi from "@/app/componentes/Wifi";
 import type { Tables } from "@/lib/database.types";
+import { formatearFechaAR } from "@/lib/fechas";
 import FormularioAlias from "./FormularioAlias";
 import { agregarAlias, alternarAlias } from "../acciones";
 
@@ -124,7 +125,7 @@ export default async function FichaDepartamento({
       ? supabase
           .from("departamentos")
           .select(
-            "propietario_telefono, url_publicacion, comision_pct, acuerdo_pago, airbnb_user, airbnb_pass, propietario:propietarios(id, nombre)",
+            "propietario_telefono, url_publicacion, comision_pct, en_gestion_desde, acuerdo_pago, airbnb_user, airbnb_pass, propietario:propietarios(id, nombre)",
           )
           .eq("id", id)
           .maybeSingle()
@@ -325,6 +326,13 @@ export default async function FichaDepartamento({
                 {comercial.comision_pct !== null
                   ? `${comercial.comision_pct}%`
                   : "—"}
+              </Dato>
+              <Dato etiqueta="En gestión desde">
+                {comercial.en_gestion_desde && (
+                  <span className="tabular-nums">
+                    {formatearFechaAR(comercial.en_gestion_desde)}
+                  </span>
+                )}
               </Dato>
               <Dato etiqueta="Acuerdo de pago">
                 {comercial.acuerdo_pago

@@ -758,6 +758,7 @@ export type Database = {
           comision_pct: number | null
           created_at: string
           direccion: string | null
+          en_gestion_desde: string | null
           encargado_nombre: string | null
           encargado_telefono: string | null
           estado: Database["public"]["Enums"]["depto_estado"]
@@ -799,6 +800,7 @@ export type Database = {
           comision_pct?: number | null
           created_at?: string
           direccion?: string | null
+          en_gestion_desde?: string | null
           encargado_nombre?: string | null
           encargado_telefono?: string | null
           estado?: Database["public"]["Enums"]["depto_estado"]
@@ -840,6 +842,7 @@ export type Database = {
           comision_pct?: number | null
           created_at?: string
           direccion?: string | null
+          en_gestion_desde?: string | null
           encargado_nombre?: string | null
           encargado_telefono?: string | null
           estado?: Database["public"]["Enums"]["depto_estado"]
@@ -1985,6 +1988,7 @@ export type Database = {
           fecha_fin: string | null
           fecha_inicio: string | null
           fecha_reserva: string | null
+          fuera_de_gestion: boolean
           ganancia_usd: number | null
           grupo_con_coanfitrion: boolean
           grupo_payout: number | null
@@ -2030,6 +2034,7 @@ export type Database = {
           fecha_fin?: string | null
           fecha_inicio?: string | null
           fecha_reserva?: string | null
+          fuera_de_gestion?: boolean
           ganancia_usd?: number | null
           grupo_con_coanfitrion?: boolean
           grupo_payout?: number | null
@@ -2075,6 +2080,7 @@ export type Database = {
           fecha_fin?: string | null
           fecha_inicio?: string | null
           fecha_reserva?: string | null
+          fuera_de_gestion?: boolean
           ganancia_usd?: number | null
           grupo_con_coanfitrion?: boolean
           grupo_payout?: number | null
@@ -2936,6 +2942,10 @@ export type Database = {
       }
     }
     Functions: {
+      aplicar_en_gestion_desde: {
+        Args: { p_depto: string }
+        Returns: undefined
+      }
       firma_caja: { Args: never; Returns: string }
       guardar_cobertura: {
         Args: { p_filas: Json; p_firma: string }

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import FormularioDepartamento from "../../FormularioDepartamento";
 import { actualizarDepartamento } from "../../acciones";
+import { puedeVerEconomico } from "@/lib/economico/permisos";
 
 export default async function EditarDepartamento({
   params,
@@ -19,7 +20,7 @@ export default async function EditarDepartamento({
 
   if (!depto) notFound();
 
-  const [{ data: propietarios }, { data: banos }] = await Promise.all([
+  const [{ data: propietarios }, { data: banos }, editaGestion] = await Promise.all([
     supabase
       .from("propietarios")
       .select("id, nombre")
@@ -30,6 +31,7 @@ export default async function EditarDepartamento({
       .select("tipo, detalle")
       .eq("depto_id", id)
       .order("orden"),
+    puedeVerEconomico(supabase),
   ]);
 
   return (
@@ -43,6 +45,7 @@ export default async function EditarDepartamento({
         banos={banos ?? []}
         propietarios={propietarios ?? []}
         urlCancelar={`/departamentos/${id}`}
+        editaGestion={editaGestion}
       />
     </main>
   );

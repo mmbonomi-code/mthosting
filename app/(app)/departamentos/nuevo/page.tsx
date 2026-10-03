@@ -1,6 +1,7 @@
 import { crearClienteServidor } from "@/lib/supabase/server";
 import FormularioDepartamento from "../FormularioDepartamento";
 import { crearDepartamento } from "../acciones";
+import { puedeVerEconomico } from "@/lib/economico/permisos";
 
 export default async function NuevoDepartamento() {
   const supabase = await crearClienteServidor();
@@ -19,6 +20,7 @@ export default async function NuevoDepartamento() {
         accion={crearDepartamento}
         propietarios={propietarios ?? []}
         urlCancelar="/departamentos"
+        editaGestion={await puedeVerEconomico(supabase)}
       />
     </main>
   );

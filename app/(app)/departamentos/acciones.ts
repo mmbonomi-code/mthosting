@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { rolDelUsuario } from "@/lib/permisos";
 import { puedeEntrar } from "@/lib/secciones";
+import { puedeVerEconomico } from "@/lib/economico/permisos";
 import type { Database } from "@/lib/database.types";
 
 type Ambientes = Database["public"]["Enums"]["ambientes_tipo"];
@@ -90,6 +91,20 @@ function datosDepartamento(fd: FormData) {
   };
 }
 
+/**
+ * La fecha de alta en gestión decide qué cobros cuentan en el económico, así
+ * que la toca solo administración. Para el resto el campo no se manda y la
+ * fecha que había queda como estaba. La puerta de verdad es la base: el
+ * trigger de la fecha rechaza a quien no ve el económico.
+ */
+async function enGestionDesde(
+  supabase: Cliente,
+  fd: FormData,
+): Promise<{ en_gestion_desde?: string | null }> {
+  if (!(await puedeVerEconomico(supabase))) return {};
+  return { en_gestion_desde: texto(fd, "en_gestion_desde") };
+}
+
 type TipoBano = Database["public"]["Enums"]["tipo_bano"];
 
 /**
@@ -168,7 +183,7 @@ export async function crearDepartamento(
   if (!(await puedeEditar(supabase))) return SIN_PERMISO;
   const { data, error } = await supabase
     .from("departamentos")
-    .insert(datos)
+    .insert({ ...datos, ...(await enGestionDesde(supabase, fd)) })
     .select("id")
     .single();
 
@@ -201,7 +216,7 @@ export async function actualizarDepartamento(
   if (!(await puedeEditar(supabase))) return SIN_PERMISO;
   const { error } = await supabase
     .from("departamentos")
-    .update(datos)
+    .update({ ...datos, ...(await enGestionDesde(supabase, fd)) })
     .eq("id", id);
 
   if (error) {

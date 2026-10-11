@@ -87,6 +87,9 @@ export default async function LayoutApp({
     // enlace a un manager lo mandaría a un cartel de "no tenés acceso", que
     // es peor que no verlo.
     ...(verEconomico ? [{ href: "/economico", texto: "Económico", pendientes: 0 }] : []),
+    // Calidad: manager y administración (decisión del dueño, 07/10/2026). Es
+    // la misma regla que la configuración, por eso usa el mismo permiso.
+    ...(esConfiguracion ? [{ href: "/calidad", texto: "Calidad", pendientes: 0 }] : []),
     ...(verMisLimpiezas
       ? [{ href: "/mis-limpiezas", texto: "Mis limpiezas", pendientes: 0 }]
       : []),

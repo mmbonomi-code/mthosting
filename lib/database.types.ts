@@ -76,6 +76,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "alerta_revisada_limpieza_id_fkey"
+            columns: ["limpieza_id"]
+            isOneToOne: false
+            referencedRelation: "resenas_atribuidas"
+            referencedColumns: ["limpieza_id"]
+          },
+          {
             foreignKeyName: "alerta_revisada_revisada_por_fkey"
             columns: ["revisada_por"]
             isOneToOne: false
@@ -233,6 +240,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "limpiezas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arreglos_limpieza_id_fkey"
+            columns: ["limpieza_id"]
+            isOneToOne: false
+            referencedRelation: "resenas_atribuidas"
+            referencedColumns: ["limpieza_id"]
           },
           {
             foreignKeyName: "arreglos_prestador_id_fkey"
@@ -746,6 +760,7 @@ export type Database = {
         Row: {
           activo: boolean
           acuerdo_pago: Database["public"]["Enums"]["acuerdo_pago"] | null
+          airbnb_listing_id: string | null
           airbnb_pass: string | null
           airbnb_user: string | null
           ambientes: Database["public"]["Enums"]["ambientes_tipo"] | null
@@ -788,6 +803,7 @@ export type Database = {
         Insert: {
           activo?: boolean
           acuerdo_pago?: Database["public"]["Enums"]["acuerdo_pago"] | null
+          airbnb_listing_id?: string | null
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
@@ -830,6 +846,7 @@ export type Database = {
         Update: {
           activo?: boolean
           acuerdo_pago?: Database["public"]["Enums"]["acuerdo_pago"] | null
+          airbnb_listing_id?: string | null
           airbnb_pass?: string | null
           airbnb_user?: string | null
           ambientes?: Database["public"]["Enums"]["ambientes_tipo"] | null
@@ -1223,6 +1240,54 @@ export type Database = {
         }
         Relationships: []
       }
+      importaciones_resenas: {
+        Row: {
+          actualizadas: number
+          archivo_hash: string
+          archivo_nombre: string
+          avisos: Json
+          created_at: string
+          filas_leidas: number
+          id: string
+          nuevas: number
+          sin_cambios: number
+          sin_depto: number
+          sin_reserva: number
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          actualizadas?: number
+          archivo_hash: string
+          archivo_nombre: string
+          avisos?: Json
+          created_at?: string
+          filas_leidas?: number
+          id?: string
+          nuevas?: number
+          sin_cambios?: number
+          sin_depto?: number
+          sin_reserva?: number
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          actualizadas?: number
+          archivo_hash?: string
+          archivo_nombre?: string
+          avisos?: Json
+          created_at?: string
+          filas_leidas?: number
+          id?: string
+          nuevas?: number
+          sin_cambios?: number
+          sin_depto?: number
+          sin_reserva?: number
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       inventario_depto: {
         Row: {
           created_at: string
@@ -1348,6 +1413,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "limpieza_checklist_limpieza_id_fkey"
+            columns: ["limpieza_id"]
+            isOneToOne: false
+            referencedRelation: "resenas_atribuidas"
+            referencedColumns: ["limpieza_id"]
+          },
+          {
             foreignKeyName: "limpieza_checklist_tarea_periodica_id_fkey"
             columns: ["tarea_periodica_id"]
             isOneToOne: false
@@ -1399,6 +1471,13 @@ export type Database = {
             referencedRelation: "limpiezas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "limpieza_faltantes_limpieza_id_fkey"
+            columns: ["limpieza_id"]
+            isOneToOne: false
+            referencedRelation: "resenas_atribuidas"
+            referencedColumns: ["limpieza_id"]
+          },
         ]
       }
       limpieza_fotos: {
@@ -1436,6 +1515,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "limpiezas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "limpieza_fotos_limpieza_id_fkey"
+            columns: ["limpieza_id"]
+            isOneToOne: false
+            referencedRelation: "resenas_atribuidas"
+            referencedColumns: ["limpieza_id"]
           },
         ]
       }
@@ -1576,6 +1662,61 @@ export type Database = {
             columns: ["tarifa_id"]
             isOneToOne: false
             referencedRelation: "tarifas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      limpiezas_historicas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          depto_id: string
+          fecha: string
+          id: string
+          origen: string
+          persona_id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          depto_id: string
+          fecha: string
+          id?: string
+          origen: string
+          persona_id: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          depto_id?: string
+          fecha?: string
+          id?: string
+          origen?: string
+          persona_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "limpiezas_historicas_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "limpiezas_historicas_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "limpiezas_historicas_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
             referencedColumns: ["id"]
           },
         ]
@@ -2408,54 +2549,6 @@ export type Database = {
         }
         Relationships: []
       }
-      puntajes_calidad: {
-        Row: {
-          codigo_reserva: string
-          comentario: string | null
-          created_at: string
-          fecha: string | null
-          id: string
-          import_id: string | null
-          puntaje: number
-          updated_at: string
-        }
-        Insert: {
-          codigo_reserva: string
-          comentario?: string | null
-          created_at?: string
-          fecha?: string | null
-          id?: string
-          import_id?: string | null
-          puntaje: number
-          updated_at?: string
-        }
-        Update: {
-          codigo_reserva?: string
-          comentario?: string | null
-          created_at?: string
-          fecha?: string | null
-          id?: string
-          import_id?: string | null
-          puntaje?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "puntajes_calidad_codigo_reserva_fkey"
-            columns: ["codigo_reserva"]
-            isOneToOne: false
-            referencedRelation: "reservas"
-            referencedColumns: ["codigo_reserva"]
-          },
-          {
-            foreignKeyName: "puntajes_calidad_import_id_fkey"
-            columns: ["import_id"]
-            isOneToOne: false
-            referencedRelation: "importaciones"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       puntos_acceso: {
         Row: {
           activo: boolean
@@ -2608,6 +2701,210 @@ export type Database = {
             foreignKeyName: "reclamos_reserva_id_fkey"
             columns: ["reserva_id"]
             isOneToOne: true
+            referencedRelation: "reservas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resena_etiquetas: {
+        Row: {
+          categoria: Database["public"]["Enums"]["resena_categoria"]
+          created_at: string
+          id: string
+          resena_id: string
+          signo: Database["public"]["Enums"]["resena_signo"]
+          texto: string
+        }
+        Insert: {
+          categoria: Database["public"]["Enums"]["resena_categoria"]
+          created_at?: string
+          id?: string
+          resena_id: string
+          signo: Database["public"]["Enums"]["resena_signo"]
+          texto: string
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["resena_categoria"]
+          created_at?: string
+          id?: string
+          resena_id?: string
+          signo?: Database["public"]["Enums"]["resena_signo"]
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resena_etiquetas_resena_id_fkey"
+            columns: ["resena_id"]
+            isOneToOne: false
+            referencedRelation: "resenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resena_etiquetas_resena_id_fkey"
+            columns: ["resena_id"]
+            isOneToOne: false
+            referencedRelation: "resenas_atribuidas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resena_revisada: {
+        Row: {
+          created_at: string
+          firma: string
+          id: string
+          resena_id: string
+          revisada_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          firma: string
+          id?: string
+          resena_id: string
+          revisada_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          firma?: string
+          id?: string
+          resena_id?: string
+          revisada_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resena_revisada_resena_id_fkey"
+            columns: ["resena_id"]
+            isOneToOne: true
+            referencedRelation: "resenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resena_revisada_resena_id_fkey"
+            columns: ["resena_id"]
+            isOneToOne: true
+            referencedRelation: "resenas_atribuidas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resena_revisada_revisada_por_fkey"
+            columns: ["revisada_por"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resenas: {
+        Row: {
+          activo: boolean
+          airbnb_listing_id: string
+          airbnb_resena_id: string
+          anuncio_raw: string | null
+          comentario_privado: string | null
+          created_at: string
+          depto_id: string | null
+          fecha_checkin: string
+          fecha_checkout: string
+          huesped_nombre: string | null
+          id: string
+          idioma: string | null
+          import_id: string | null
+          puntaje_checkin: number | null
+          puntaje_comunicacion: number | null
+          puntaje_general: number
+          puntaje_limpieza: number | null
+          puntaje_precio: number | null
+          puntaje_ubicacion: number | null
+          puntaje_veracidad: number | null
+          raw: Json | null
+          resena_publica: string | null
+          reserva_id: string | null
+          respuesta_anfitrion: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          airbnb_listing_id: string
+          airbnb_resena_id: string
+          anuncio_raw?: string | null
+          comentario_privado?: string | null
+          created_at?: string
+          depto_id?: string | null
+          fecha_checkin: string
+          fecha_checkout: string
+          huesped_nombre?: string | null
+          id?: string
+          idioma?: string | null
+          import_id?: string | null
+          puntaje_checkin?: number | null
+          puntaje_comunicacion?: number | null
+          puntaje_general: number
+          puntaje_limpieza?: number | null
+          puntaje_precio?: number | null
+          puntaje_ubicacion?: number | null
+          puntaje_veracidad?: number | null
+          raw?: Json | null
+          resena_publica?: string | null
+          reserva_id?: string | null
+          respuesta_anfitrion?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          airbnb_listing_id?: string
+          airbnb_resena_id?: string
+          anuncio_raw?: string | null
+          comentario_privado?: string | null
+          created_at?: string
+          depto_id?: string | null
+          fecha_checkin?: string
+          fecha_checkout?: string
+          huesped_nombre?: string | null
+          id?: string
+          idioma?: string | null
+          import_id?: string | null
+          puntaje_checkin?: number | null
+          puntaje_comunicacion?: number | null
+          puntaje_general?: number
+          puntaje_limpieza?: number | null
+          puntaje_precio?: number | null
+          puntaje_ubicacion?: number | null
+          puntaje_veracidad?: number | null
+          raw?: Json | null
+          resena_publica?: string | null
+          reserva_id?: string | null
+          respuesta_anfitrion?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resenas_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resenas_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resenas_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "importaciones_resenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resenas_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
             referencedRelation: "reservas"
             referencedColumns: ["id"]
           },
@@ -2940,6 +3237,70 @@ export type Database = {
         }
         Relationships: []
       }
+      resenas_atribuidas: {
+        Row: {
+          activo: boolean | null
+          airbnb_listing_id: string | null
+          airbnb_resena_id: string | null
+          anuncio_raw: string | null
+          checkout_anterior: string | null
+          comentario_privado: string | null
+          created_at: string | null
+          depto_id: string | null
+          fecha_checkin: string | null
+          fecha_checkout: string | null
+          huesped_nombre: string | null
+          id: string | null
+          idioma: string | null
+          import_id: string | null
+          limpieza_fecha: string | null
+          limpieza_id: string | null
+          origen_responsable: string | null
+          puntaje_checkin: number | null
+          puntaje_comunicacion: number | null
+          puntaje_general: number | null
+          puntaje_limpieza: number | null
+          puntaje_precio: number | null
+          puntaje_ubicacion: number | null
+          puntaje_veracidad: number | null
+          raw: Json | null
+          resena_publica: string | null
+          reserva_id: string | null
+          responsable_id: string | null
+          respuesta_anfitrion: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resenas_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resenas_depto_id_fkey"
+            columns: ["depto_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos_ficha"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resenas_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "importaciones_resenas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resenas_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "reservas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       aplicar_en_gestion_desde: {
@@ -2996,6 +3357,7 @@ export type Database = {
       puede_gestionar_reclamos: { Args: never; Returns: boolean }
       puede_hacer_logistica: { Args: never; Returns: boolean }
       puede_ver_caja: { Args: never; Returns: boolean }
+      puede_ver_calidad: { Args: never; Returns: boolean }
       puede_ver_economico: { Args: never; Returns: boolean }
       puede_ver_limpieza: { Args: { p_asignado_a: string }; Returns: boolean }
       saldo_caja: { Args: { p_hasta?: string }; Returns: number }
@@ -3082,6 +3444,14 @@ export type Database = {
       reclamo_foto_origen: "limpieza" | "manual"
       reporte_estado: "pendiente" | "hecho"
       reporte_seccion: "anuncio" | "pendiente"
+      resena_categoria:
+        | "limpieza"
+        | "veracidad"
+        | "checkin"
+        | "comunicacion"
+        | "ubicacion"
+        | "precio"
+      resena_signo: "positiva" | "negativa" | "otro"
       rol_reserva_tipo: "salida" | "entrada" | "durante"
       rol_usuario:
         | "admin"
@@ -3311,6 +3681,15 @@ export const Constants = {
       reclamo_foto_origen: ["limpieza", "manual"],
       reporte_estado: ["pendiente", "hecho"],
       reporte_seccion: ["anuncio", "pendiente"],
+      resena_categoria: [
+        "limpieza",
+        "veracidad",
+        "checkin",
+        "comunicacion",
+        "ubicacion",
+        "precio",
+      ],
+      resena_signo: ["positiva", "negativa", "otro"],
       rol_reserva_tipo: ["salida", "entrada", "durante"],
       rol_usuario: [
         "admin",

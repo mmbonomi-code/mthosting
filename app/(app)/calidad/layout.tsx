@@ -30,6 +30,7 @@ export default async function LayoutCalidad({
         {[
           { href: "/calidad", texto: "Resumen" },
           { href: "/calidad/limpieza", texto: "Ranking de limpieza" },
+          { href: "/calidad/alertas", texto: "Alertas" },
           { href: "/calidad/importar", texto: "Importar" },
         ].map((item) => (
           <Link

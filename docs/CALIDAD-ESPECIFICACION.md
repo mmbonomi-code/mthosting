@@ -325,7 +325,10 @@ limpieza anterior y origen. Botón **Revisada**.
 
 Si la etiqueta es de mantenimiento o de algo roto (`Necesita mantenimiento`,
 `<Equipo>: Estaba roto…`), la tarjeta ofrece **Crear arreglo** con el
-departamento ya elegido.
+departamento ya elegido. El arreglo se ata a la limpieza anterior a la estadía
+(el panel de Alertas muestra los arreglos por limpieza) o, si no hay una en el
+sistema, a la próxima limpieza del departamento. En `notas` queda
+`resena:<id>`, que impide crearlo dos veces.
 
 Contador en el menú: `aviso`.
 

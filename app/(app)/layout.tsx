@@ -8,6 +8,7 @@ import { rolPuedeVerAlertas } from "@/lib/alertas/permisos";
 import { rolPuedeVerMisLimpiezas } from "@/lib/limpiezas/permisos";
 import { rolPuedeVerLogistica } from "@/lib/logistica/tareas";
 import { calcularPanelAlertas, contarCriticas, contarResto } from "@/lib/alertas/consultar";
+import { contarAlertasCalidad } from "@/lib/calidad/consultar";
 import { esManagerOAdmin, personaActual, rolDelUsuario } from "@/lib/permisos";
 import { inicioDelRol, puedeEntrar } from "@/lib/secciones";
 import Sidebar, { type ItemNav } from "./Sidebar";
@@ -49,12 +50,14 @@ export default async function LayoutApp({
 
   // El menú avisa cuántas cosas hay que mirar hoy, sin entrar a la pantalla.
   // No se cuenta lo que este rol no va a ver.
-  const [reclamosUrgentes, reporteUrgente, panelAlertas] = await Promise.all([
+  const [reclamosUrgentes, reporteUrgente, panelAlertas, alertasCalidad] = await Promise.all([
     verReclamos ? contarReclamosUrgentes(supabase) : Promise.resolve(0),
     puedeEntrar(rol, "/reporte")
       ? contarPendientesUrgentes(supabase)
       : Promise.resolve(0),
     verAlertas ? calcularPanelAlertas(supabase) : Promise.resolve(null),
+    // Calidad: manager y administración, como la configuración.
+    esConfiguracion ? contarAlertasCalidad(supabase).catch(() => 0) : Promise.resolve(0),
   ]);
   const alertasCriticas = panelAlertas ? contarCriticas(panelAlertas) : 0;
   const alertasResto = panelAlertas ? contarResto(panelAlertas) : 0;
@@ -89,7 +92,7 @@ export default async function LayoutApp({
     ...(verEconomico ? [{ href: "/economico", texto: "Económico", pendientes: 0 }] : []),
     // Calidad: manager y administración (decisión del dueño, 07/10/2026). Es
     // la misma regla que la configuración, por eso usa el mismo permiso.
-    ...(esConfiguracion ? [{ href: "/calidad", texto: "Calidad", pendientes: 0 }] : []),
+    ...(esConfiguracion ? [{ href: "/calidad", texto: "Calidad", pendientes: alertasCalidad }] : []),
     ...(verMisLimpiezas
       ? [{ href: "/mis-limpiezas", texto: "Mis limpiezas", pendientes: 0 }]
       : []),

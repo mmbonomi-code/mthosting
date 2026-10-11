@@ -6,6 +6,8 @@ const DEPTOS = [
   { id: "d-marcelo1", codigo: "MARCELO T 1" },
   { id: "d-aguero", codigo: "AGÜERO 2" },
   { id: "d-busta", codigo: "BUSTAMANTE 2" },
+  { id: "d-juncal1", codigo: "JUNCAL 1" },
+  { id: "d-juncal2", codigo: "JUNCAL 2" },
 ];
 const PERSONAS = [
   { id: "p-emily", nombre: "EMILY" },
@@ -38,6 +40,11 @@ describe("leerListado", () => {
       { fila: 3, fecha: "2026-08-25", deptoId: "d-marcelo1", personaId: "p-lore" },
       { fila: 4, fecha: "2026-06-02", deptoId: "d-aguero", personaId: "p-emily" },
     ]);
+  });
+
+  it("la equivalencia gana aunque el nombre exista en el sistema: JUNCAL 1 del listado es JUNCAL 2", () => {
+    const { cargar } = leerListado([ENC, ["2026-07-04", "JUNCAL 1", "EMILY"]], DEPTOS, PERSONAS);
+    expect(cargar[0].deptoId).toBe("d-juncal2");
   });
 
   it("persona fuera de Personal, depto desconocido o fecha mala: se informa", () => {

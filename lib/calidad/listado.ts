@@ -19,6 +19,10 @@ import { parsearFecha } from "./parser.ts";
  */
 export const EQUIVALENCIAS_DEPTO: Record<string, string> = {
   "ED TALC 10": "ED TALC 33",
+  // En el listado figura como JUNCAL 1 hasta el 17/08 y como JUNCAL 2 desde
+  // el 22/08: es el mismo departamento, el JUNCAL 2 del sistema (dueño,
+  // 11/10/2026). El JUNCAL 1 del sistema no tuvo reservas en ese período.
+  "JUNCAL 1": "JUNCAL 2",
 };
 
 /** Mayúsculas, sin tildes, sin puntos y con un solo espacio. */

@@ -88,9 +88,44 @@ for (let i = 0; i < cargar.length; i += 500) {
   if (error) throw new Error(error.message);
 }
 
-const { count } = await s.from("limpiezas_historicas").select("id", { count: "exact", head: true });
+// Lo que ya estaba cargado de este archivo y el listado ya no respalda (por
+// ejemplo, una equivalencia de nombre que se agregó después) se da de BAJA,
+// no se borra (CLAUDE.md regla 3). Y lo que vuelve a respaldar, se reactiva.
+const clave = (d: string, f: string, p: string) => `${d}|${f}|${p}`;
+const vigentes = new Set(cargar.map((c) => clave(c.deptoId, c.fecha, c.personaId)));
+const cargadas: { id: string; depto_id: string; fecha: string; persona_id: string; activo: boolean }[] = [];
+for (let desde = 0; ; desde += 1000) {
+  const { data, error } = await s
+    .from("limpiezas_historicas")
+    .select("id, depto_id, fecha, persona_id, activo")
+    .eq("origen", origen)
+    .order("id")
+    .range(desde, desde + 999);
+  if (error) throw new Error(error.message);
+  cargadas.push(...(data ?? []));
+  if (!data || data.length < 1000) break;
+}
+const bajas = cargadas.filter((c) => c.activo && !vigentes.has(clave(c.depto_id, c.fecha, c.persona_id)));
+const altas = cargadas.filter((c) => !c.activo && vigentes.has(clave(c.depto_id, c.fecha, c.persona_id)));
+for (const [lista, activo] of [[bajas, false], [altas, true]] as const) {
+  for (let i = 0; i < lista.length; i += 200) {
+    const { error } = await s
+      .from("limpiezas_historicas")
+      .update({ activo })
+      .in("id", lista.slice(i, i + 200).map((c) => c.id));
+    if (error) throw new Error(error.message);
+  }
+}
+if (bajas.length || altas.length) {
+  console.log(`\nDadas de baja: ${bajas.length} · reactivadas: ${altas.length}.`);
+}
+
+const { count } = await s
+  .from("limpiezas_historicas")
+  .select("id", { count: "exact", head: true })
+  .eq("activo", true);
 const despues = await atribuidas();
-console.log(`\nCargado. limpiezas_historicas tiene ${count} filas.`);
+console.log(`\nCargado. limpiezas_historicas tiene ${count} filas activas.`);
 console.log(
   `Reseñas ahora: ${despues.sistema} por el sistema, ${despues.listado} por el listado, ${despues.sin} sin atribuir.`,
 );

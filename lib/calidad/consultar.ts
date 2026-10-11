@@ -76,11 +76,22 @@ export async function consultarCalidad(
             .range(a, b),
         )
       : Promise.resolve([]),
-    todas((a, b) => supabase.from("departamentos").select("id, codigo").order("id").range(a, b)),
+    // Solo los departamentos en operación, el mismo criterio que el
+    // Dashboard: los que ya no se administran no cuentan (dueño, 11/10/2026).
+    todas((a, b) =>
+      supabase
+        .from("departamentos")
+        .select("id, codigo")
+        .eq("activo", true)
+        .eq("estado", "activo")
+        .order("id")
+        .range(a, b),
+    ),
   ]);
 
+  const enOperacion = new Set(deptos.map((d) => d.id));
   const resumen = resumirCalidad({
-    resenas: resenas.map(
+    resenas: resenas.filter((r) => r.depto_id && enOperacion.has(r.depto_id)).map(
       (r): ResenaResumen => ({
         id: r.id,
         depto_id: r.depto_id,
@@ -93,7 +104,9 @@ export async function consultarCalidad(
     ),
     quejas: quejas.map((q): Queja => ({ resena_id: q.resena_id, categoria: q.categoria, texto: q.texto })),
     revisadas: new Map(revisadas.map((r) => [r.resena_id, r.firma])),
-    estadias: estadias.map((e): Estadia => ({ id: e.id, depto_id: e.depto_id! })),
+    estadias: estadias
+      .filter((e) => enOperacion.has(e.depto_id!))
+      .map((e): Estadia => ({ id: e.id, depto_id: e.depto_id! })),
     deptos,
   });
 

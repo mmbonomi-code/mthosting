@@ -29,6 +29,7 @@ export default async function LayoutCalidad({
       <nav className="flex gap-1 overflow-x-auto border-b border-borde px-4 py-2 sm:px-6">
         {[
           { href: "/calidad", texto: "Resumen" },
+          { href: "/calidad/limpieza", texto: "Ranking de limpieza" },
           { href: "/calidad/importar", texto: "Importar" },
         ].map((item) => (
           <Link

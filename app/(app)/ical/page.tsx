@@ -29,11 +29,15 @@ export default async function ICal() {
       .select("id, codigo, nombre_interno, ical_url, ical_ultima_sync")
       .eq("activo", true)
       .order("codigo"),
+    // Las que de verdad esperan datos: una cancelada o descartada no tiene
+    // nada que completar. Contándolas, el número no coincidía con el Excel de
+    // tentativas (decían 28 y el archivo traía 4).
     supabase
       .from("reservas")
       .select("id", { count: "exact", head: true })
-      .eq("origen", "ical")
-      .eq("datos_completos", false),
+      .eq("datos_completos", false)
+      .eq("cancelada", false)
+      .eq("descartada", false),
   ]);
 
   const conCalendario = (departamentos ?? []).filter((d) => d.ical_url);

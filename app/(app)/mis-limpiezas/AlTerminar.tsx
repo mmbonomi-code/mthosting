@@ -27,6 +27,7 @@ export default function AlTerminar({
   finalizarLimpieza,
   puedeFinalizar,
   monedaMonto,
+  terminada = false,
 }: {
   limpiezaId: string;
   observacionInicial: string;
@@ -38,6 +39,8 @@ export default function AlTerminar({
   finalizarLimpieza: (estadoPrevio: EstadoFormulario) => Promise<EstadoFormulario>;
   puedeFinalizar: boolean;
   monedaMonto: string;
+  /** Ya está marcada como terminada: se sigue editando, pero no se cierra de nuevo. */
+  terminada?: boolean;
 }) {
   const [, guardarObs] = useTransition();
   const [, guardarMonto] = useTransition();
@@ -53,7 +56,9 @@ export default function AlTerminar({
 
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-borde-control bg-superficie p-4">
-      <h2 className="font-medium text-tinta">Al terminar</h2>
+      <h2 className="font-medium text-tinta">
+        {terminada ? "Para sumar algo más" : "Al terminar"}
+      </h2>
 
       <label className="flex flex-col gap-1.5">
         <span className={clsEtiqueta}>
@@ -131,6 +136,7 @@ export default function AlTerminar({
         )}
       </div>
 
+      {terminada ? null : (
       <form action={enviarFinal} className="flex flex-col gap-2">
         <button
           type="submit"
@@ -150,6 +156,7 @@ export default function AlTerminar({
           </p>
         )}
       </form>
+      )}
     </section>
   );
 }

@@ -11,7 +11,7 @@ import ReporteTexto from "../ReporteTexto";
 import { limpiezasAnteriores } from "@/lib/limpiezas/ultimaLimpieza";
 import { TIPOS_LIMPIEZA } from "@/lib/limpiezas/etiquetas";
 import { traerInteracciones } from "@/lib/limpiezas/interaccion-db";
-import { formatearFechaAR } from "@/lib/fechas";
+import { formatearFechaAR, hoyAR } from "@/lib/fechas";
 import InteraccionHuespedes from "../InteraccionHuespedes";
 import SinPermiso from "@/app/componentes/SinPermiso";
 import ItemChecklist from "../ItemChecklist";
@@ -184,6 +184,14 @@ export default async function DetalleMiLimpieza({
     capacidad: depto.capacidad,
     cantidadBanos: cantidadBanos ?? 0,
   });
+
+  const terminada = limpieza.estado === "hecha" || limpieza.estado === "verificada";
+  // Terminar no cierra la puerta: hasta que termine el día se siguen cargando
+  // fotos y texto (pedido del dueño, 13/10/2026). Antes, marcar "terminada" y
+  // acordarse después de la mancha del sillón eran incompatibles: había que
+  // pedirle a la gobernanta que la reabriera.
+  const sigueAbierta =
+    limpieza.estado === "en_curso" || (terminada && limpieza.fecha === hoyAR());
 
   const interaccion = interacciones.get(limpieza.id)!;
   // Si nadie entra ese día, igual sirve saber cuándo llega el próximo.
@@ -387,7 +395,7 @@ export default async function DetalleMiLimpieza({
         </form>
       )}
 
-      {limpieza.estado === "en_curso" && (
+      {sigueAbierta && (
         <>
           {TIPOS_FOTO.map((t) => (
             <SubidorFotos
@@ -428,35 +436,42 @@ export default async function DetalleMiLimpieza({
             subirComprobanteViatico={subirComprobanteViatico.bind(null, id)}
             finalizarLimpieza={finalizarLimpieza.bind(null, id)}
             puedeFinalizar={fotosPorTipo("terminado").length > 0}
+            terminada={terminada}
           />
         </>
       )}
 
-      {(limpieza.estado === "hecha" || limpieza.estado === "verificada") && (
-        <>
-          {TIPOS_FOTO.map((t) =>
-            fotosPorTipo(t).length > 0 ? (
-              <SubidorFotos
-                key={t}
-                fotos={fotosPorTipo(t)}
-                limpiezaId={id}
-                tipo={t}
-                etiqueta={ETIQUETA_FOTO[t]}
-              >
-                {t === "huesped" && limpieza.danio_huesped && (
-                  <p className="whitespace-pre-wrap rounded-lg bg-fondo/60 px-3 py-2 text-sm text-tinta-suave">
-                    {limpieza.danio_huesped}
-                  </p>
-                )}
-              </SubidorFotos>
-            ) : null,
+      {/* Cerrada y pasado el día: queda como estaba, para mirar. */}
+      {terminada && !sigueAbierta &&
+        TIPOS_FOTO.map((t) =>
+          fotosPorTipo(t).length > 0 ? (
+            <SubidorFotos
+              key={t}
+              fotos={fotosPorTipo(t)}
+              limpiezaId={id}
+              tipo={t}
+              etiqueta={ETIQUETA_FOTO[t]}
+            >
+              {t === "huesped" && limpieza.danio_huesped && (
+                <p className="whitespace-pre-wrap rounded-lg bg-fondo/60 px-3 py-2 text-sm text-tinta-suave">
+                  {limpieza.danio_huesped}
+                </p>
+              )}
+            </SubidorFotos>
+          ) : null,
+        )}
+
+      {terminada && (
+        <p className="rounded-lg bg-exito-soft/60 px-4 py-3 text-center text-sm font-medium text-exito-text">
+          ✓ Esta limpieza ya está terminada.
+          {limpieza.monto_pactado != null &&
+            ` Cobrás ${monedaMonto} ${limpieza.monto_pactado.toLocaleString("es-AR")}.`}
+          {sigueAbierta && (
+            <span className="mt-1 block font-normal text-tinta-suave">
+              Hasta que termine el día podés seguir sumando fotos y escribiendo lo que falte.
+            </span>
           )}
-          <p className="rounded-lg bg-exito-soft/60 px-4 py-3 text-center text-sm font-medium text-exito-text">
-            ✓ Esta limpieza ya está terminada.
-            {limpieza.monto_pactado != null &&
-              ` Cobrás ${monedaMonto} ${limpieza.monto_pactado.toLocaleString("es-AR")}.`}
-          </p>
-        </>
+        </p>
       )}
       </PendientesProvider>
     </main>

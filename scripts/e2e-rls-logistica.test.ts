@@ -197,6 +197,47 @@ describe.skipIf(!url || !anon || !clave)("RLS del rol logística (base dev)", ()
     }
   });
 
+  it("una foto que subió tarde guarda la hora en que se sacó, si es creíble", async () => {
+    const { data: evento } = await admin
+      .from("eventos_estadia")
+      .select("id, acceso_dejado, acceso_dejado_at, acceso_dejado_por, acceso_foto")
+      .eq("tipo", "checkin")
+      .limit(1)
+      .maybeSingle();
+    if (!evento) return;
+
+    const horaDe = async () =>
+      (await admin.from("eventos_estadia").select("acceso_dejado_at").eq("id", evento.id).single()).data!
+        .acceso_dejado_at!;
+    const marcar = (cuando: string) =>
+      logistica.rpc("logistica_dejar_llave", { p_evento: evento.id, p_foto: "llaves/prueba/foto.jpg", p_cuando: cuando });
+
+    try {
+      // Sacada hace dos horas, subida ahora: vale la de hace dos horas.
+      const haceDosHoras = new Date(Date.now() - 2 * 3600_000);
+      expect((await marcar(haceDosHoras.toISOString())).error).toBeNull();
+      expect(Math.abs(new Date(await horaDe()).getTime() - haceDosHoras.getTime())).toBeLessThan(1000);
+
+      // En el futuro (reloj del celular mal puesto): vale la del servidor.
+      expect((await marcar(new Date(Date.now() + 86_400_000).toISOString())).error).toBeNull();
+      expect(Math.abs(new Date(await horaDe()).getTime() - Date.now())).toBeLessThan(60_000);
+
+      // De hace una semana: tampoco es creíble.
+      expect((await marcar(new Date(Date.now() - 7 * 86_400_000).toISOString())).error).toBeNull();
+      expect(Math.abs(new Date(await horaDe()).getTime() - Date.now())).toBeLessThan(60_000);
+    } finally {
+      await admin
+        .from("eventos_estadia")
+        .update({
+          acceso_dejado: evento.acceso_dejado,
+          acceso_dejado_at: evento.acceso_dejado_at,
+          acceso_dejado_por: evento.acceso_dejado_por,
+          acceso_foto: evento.acceso_foto,
+        })
+        .eq("id", evento.id);
+    }
+  });
+
   it("una salida no tiene llave que dejar", async () => {
     const { data: salida } = await admin
       .from("eventos_estadia")

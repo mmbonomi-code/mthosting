@@ -906,6 +906,13 @@ Notas:
     como el resto de la Fase 1.
   - Coordinación, manager y administración también abren "Logística" y
     pueden marcar, para cubrirla cuando falta.
+  - **Sin señal** (14/10/2026): la foto de la llave se guarda en el celular
+    y sube sola cuando vuelve la señal, con la hora en que se sacó (si es
+    creíble: no futura y de menos de tres días).
+  - **La oficina lo ve en el Día** (14/10/2026): la llegada muestra en verde
+    "🔑 Llave dejada 10:27 · con foto"; las que faltan siguen en ámbar con
+    "dejar candado". En la ficha de la llegada, quién la
+    dejó y la foto.
 - **«Back office» es el rol `coordinador`** (decisión del dueño, 11/08/2026).
   No son dos cosas distintas. La columna `personas.es_backoffice` existe desde
   la migración inicial pero ya no decide permisos: el permiso sale del rol y

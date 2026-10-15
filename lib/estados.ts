@@ -131,12 +131,14 @@ export function avanceDeLimpieza(estado: string): { texto: string; tono: Tono } 
 
 /**
  * Las tareas de logística (ropa blanca, llave en el candado, cuna o silla):
- * ámbar mientras falta, verde cuando se hizo.
+ * ámbar mientras falta, verde cuando se hizo. Azul ("esperando a otro") la
+ * llave que ya se dejó pero cuya foto espera señal para subir.
  */
-export type EstadoTarea = "pendiente" | "hecha";
+export type EstadoTarea = "pendiente" | "en_espera" | "hecha";
 
 export const TONO_TAREA: Record<EstadoTarea, Tono> = {
   pendiente: { clases: AVISO },
+  en_espera: { clases: ESPERANDO },
   hecha: { clases: CERRADO_BIEN },
 };
 

@@ -55,6 +55,11 @@ export async function marcarEquipamiento(
 /**
  * La llave quedó en el candado. La foto llega ya achicada desde el celular;
  * se sube al bucket privado y recién entonces se marca. Sin foto no se marca.
+ *
+ * Si no hay señal, esta acción ni llega a correr: el celular guarda la foto
+ * y la manda después (`LlavesPendientes.tsx`). Por eso la diferencia entre
+ * TIRAR (no se pudo hablar con el servidor: reintentar) y DEVOLVER un error
+ * (el servidor la rechazó: reintentar no la arregla).
  */
 export async function dejarLlave(eventoId: string, fd: FormData): Promise<Resultado> {
   const archivo = fd.get("foto");
@@ -73,9 +78,13 @@ export async function dejarLlave(eventoId: string, fd: FormData): Promise<Result
     .upload(ruta, archivo, { contentType: archivo.type, upsert: false });
   if (errorSubida) return { error: `No se pudo subir la foto: ${errorSubida.message}` };
 
+  // El momento en que se sacó la foto, que puede ser bastante antes de que
+  // suba si no había señal. La base lo descarta si no es creíble.
+  const cuando = fd.get("cuando");
   const { error } = await supabase.rpc("logistica_dejar_llave", {
     p_evento: eventoId,
     p_foto: ruta,
+    p_cuando: typeof cuando === "string" && cuando ? cuando : undefined,
   });
   if (error) {
     // La marca no se guardó: la foto suelta no le sirve a nadie.

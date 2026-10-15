@@ -17,6 +17,7 @@ import {
 import { clsTarjeta } from "@/lib/ui";
 import SinPermiso from "@/app/componentes/SinPermiso";
 import DejarLlave from "./DejarLlave";
+import LlavesPendientes from "./LlavesPendientes";
 import { MarcaEquipamiento, MarcaRopa } from "./Marcas";
 
 /** Hasta dónde se puede mirar para atrás y para adelante. */
@@ -215,158 +216,161 @@ export default async function Logistica({
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-tinta">Logística</h1>
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <Link
-            href={`/logistica?fecha=${sumarDias(fecha, -1)}`}
-            aria-label="Día anterior"
-            className={`${flecha} ${fecha <= minFecha ? "pointer-events-none opacity-25" : ""}`}
-          >
-            ←
-          </Link>
-          <div className="text-center">
-            <p className="text-lg font-medium text-tinta">
-              {esHoy ? "Hoy" : esManana ? "Mañana" : formatearFechaAR(fecha)}
-            </p>
-            {!esHoy && (
-              <Link href="/logistica" className="text-xs text-tinta-etiqueta hover:text-tinta-suave">
-                Volver a hoy
-              </Link>
-            )}
-          </div>
-          <Link
-            href={`/logistica?fecha=${sumarDias(fecha, 1)}`}
-            aria-label="Día siguiente"
-            className={`${flecha} ${fecha >= maxFecha ? "pointer-events-none opacity-25" : ""}`}
-          >
-            →
-          </Link>
-        </div>
-      </div>
-
-      <Seccion titulo="Llaves en candado" cantidad={candados.length} vacio="Ninguna llegada con candado este día.">
-        <ul className="flex flex-col gap-3">
-          {candados.map((e) => (
-            <li key={e.id} className={`${clsTarjeta} flex flex-col gap-3 p-4`}>
-              <div className="flex items-start justify-between gap-3">
-                <Depto depto={e.reserva?.depto ?? null} />
-                <div className="shrink-0 text-right">
-                  <p className="text-base font-semibold tabular-nums text-tinta">
-                    {formatearHora(e.hora_coordinada) ?? "—"}
-                  </p>
-                  <p className="text-xs text-tinta-etiqueta">llega</p>
-                </div>
-              </div>
-              <div className="rounded-lg bg-superficie-alt px-3 py-2 text-sm">
-                <p className="text-tinta-media">
-                  Candado
-                  {e.punto?.ubicacion && <> · {e.punto.ubicacion}</>}
-                  {e.punto?.identificador && (
-                    <span className="font-mono font-semibold text-tinta"> {e.punto.identificador}</span>
-                  )}
-                </p>
-                {e.punto?.instrucciones && (
-                  <p className="mt-1 text-xs text-tinta-etiqueta">{e.punto.instrucciones}</p>
-                )}
-              </div>
-              <DejarLlave
-                eventoId={e.id}
-                hecha={e.acceso_dejado}
-                hora={horaARDe(e.acceso_dejado_at)}
-                fotoUrl={e.acceso_foto ? (urlDeFoto.get(e.acceso_foto) ?? null) : null}
-              />
-            </li>
-          ))}
-        </ul>
-      </Seccion>
-
-      <Seccion titulo="Cunas y sillas" cantidad={equipos.length} vacio="No hay que llevar ni retirar nada este día.">
-        <ul className="flex flex-col gap-3">
-          {equipos.map((e) => (
-            <li key={`${e.id}-${e.tarea.accion}`} className={`${clsTarjeta} flex flex-col gap-3 p-4`}>
-              <div className="flex items-start justify-between gap-3">
-                <Depto depto={e.depto} />
-                <p className="shrink-0 text-sm font-medium text-tinta-media">
-                  {ETIQUETA_TIPO[e.tipo as TipoEquipamiento]}
-                </p>
-              </div>
-              {e.notas && <p className="text-sm text-tinta-tenue">{e.notas}</p>}
-              <MarcaEquipamiento
-                id={e.id}
-                accion={e.tarea.accion}
-                nombre={ETIQUETA_TIPO[e.tipo as TipoEquipamiento].toLowerCase()}
-                hecha={e.tarea.hecha}
-                bloqueada={e.tarea.bloqueada}
-              />
-            </li>
-          ))}
-        </ul>
-      </Seccion>
-
-      <Seccion titulo="Ropa blanca" cantidad={limpiezas.length} vacio="No hay limpiezas este día.">
-        <ul className="flex flex-col gap-3">
-          {limpiezas.map((l) => {
-            const { salida, entrada } = interacciones.get(l.id)!;
-            const otroDiaEntrada = entrada ? null : diaProximaEntrada(l.prox_checkin, fecha);
-            return (
-              <li key={l.id} className={`${clsTarjeta} flex flex-col gap-3 p-4`}>
-                <div className="flex items-start justify-between gap-3">
-                  <Depto depto={l.depto} />
-                  <dl className="grid shrink-0 grid-cols-[auto_auto] gap-x-2 text-right text-sm tabular-nums">
-                    <dt className="text-tinta-etiqueta">
-                      {salida?.otroDia ? `Salió ${formatearFechaAR(salida.otroDia).slice(0, 5)}` : "Sale"}
-                    </dt>
-                    <dd className="font-semibold text-tinta">{salida?.hora ?? "—"}</dd>
-                    {/* Entra alguien ese día: el color de "pasando ahora",
-                        como en Mis limpiezas. No hay margen. */}
-                    <dt className={entrada ? "text-ahora-text" : "text-tinta-etiqueta"}>Entra</dt>
-                    <dd className={`font-semibold ${entrada ? "text-ahora-text-fuerte" : "text-tinta"}`}>
-                      {entrada?.hora ?? (otroDiaEntrada ? `el ${otroDiaEntrada}` : "—")}
-                    </dd>
-                  </dl>
-                </div>
-                <p className="text-xs text-tinta-etiqueta">
-                  {TIPOS_LIMPIEZA[l.tipo] ?? l.tipo}
-                  {l.responsable?.nombre ? ` · limpia ${l.responsable.nombre}` : " · sin asignar"}
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <MarcaRopa limpiezaId={l.id} que="blanco" hora={horaARDe(l.blanco_entregado_at)} />
-                  <MarcaRopa limpiezaId={l.id} que="sucio" hora={horaARDe(l.sucio_retirado_at)} />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </Seccion>
-
-      <Seccion
-        titulo={persona.rol === "logistica" ? "Mis pendientes del reporte" : "Pendientes de logística"}
-        cantidad={notas.length}
-        vacio="Nada pendiente en el reporte."
-      >
-        <ul className="flex flex-col gap-2">
-          {notas.map((n) => (
-            <li key={n.id} className={`${clsTarjeta} px-4 py-3 text-sm`}>
-              <p className="text-tinta">
-                {n.depto?.codigo && <span className="font-medium text-exito-text">{n.depto.codigo} · </span>}
-                {n.titulo}
+      {/* Guarda las fotos de llaves sacadas sin señal y las sube cuando vuelve. */}
+      <LlavesPendientes>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-tinta">Logística</h1>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <Link
+              href={`/logistica?fecha=${sumarDias(fecha, -1)}`}
+              aria-label="Día anterior"
+              className={`${flecha} ${fecha <= minFecha ? "pointer-events-none opacity-25" : ""}`}
+            >
+              ←
+            </Link>
+            <div className="text-center">
+              <p className="text-lg font-medium text-tinta">
+                {esHoy ? "Hoy" : esManana ? "Mañana" : formatearFechaAR(fecha)}
               </p>
-              {n.detalle && <p className="mt-0.5 text-tinta-tenue">{n.detalle}</p>}
-              {n.fecha && (
-                <p
-                  className={`mt-1 text-xs tabular-nums ${
-                    n.fecha <= hoy ? "text-aviso-text" : "text-tinta-etiqueta"
-                  }`}
-                >
-                  {n.fecha < hoy ? "Vencido · " : n.fecha === hoy ? "Hoy · " : ""}
-                  {formatearFechaAR(n.fecha)}
-                </p>
+              {!esHoy && (
+                <Link href="/logistica" className="text-xs text-tinta-etiqueta hover:text-tinta-suave">
+                  Volver a hoy
+                </Link>
               )}
-            </li>
-          ))}
-        </ul>
-      </Seccion>
+            </div>
+            <Link
+              href={`/logistica?fecha=${sumarDias(fecha, 1)}`}
+              aria-label="Día siguiente"
+              className={`${flecha} ${fecha >= maxFecha ? "pointer-events-none opacity-25" : ""}`}
+            >
+              →
+            </Link>
+          </div>
+        </div>
+
+        <Seccion titulo="Llaves en candado" cantidad={candados.length} vacio="Ninguna llegada con candado este día.">
+          <ul className="flex flex-col gap-3">
+            {candados.map((e) => (
+              <li key={e.id} className={`${clsTarjeta} flex flex-col gap-3 p-4`}>
+                <div className="flex items-start justify-between gap-3">
+                  <Depto depto={e.reserva?.depto ?? null} />
+                  <div className="shrink-0 text-right">
+                    <p className="text-base font-semibold tabular-nums text-tinta">
+                      {formatearHora(e.hora_coordinada) ?? "—"}
+                    </p>
+                    <p className="text-xs text-tinta-etiqueta">llega</p>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-superficie-alt px-3 py-2 text-sm">
+                  <p className="text-tinta-media">
+                    Candado
+                    {e.punto?.ubicacion && <> · {e.punto.ubicacion}</>}
+                    {e.punto?.identificador && (
+                      <span className="font-mono font-semibold text-tinta"> {e.punto.identificador}</span>
+                    )}
+                  </p>
+                  {e.punto?.instrucciones && (
+                    <p className="mt-1 text-xs text-tinta-etiqueta">{e.punto.instrucciones}</p>
+                  )}
+                </div>
+                <DejarLlave
+                  eventoId={e.id}
+                  hecha={e.acceso_dejado}
+                  hora={horaARDe(e.acceso_dejado_at)}
+                  fotoUrl={e.acceso_foto ? (urlDeFoto.get(e.acceso_foto) ?? null) : null}
+                />
+              </li>
+            ))}
+          </ul>
+        </Seccion>
+
+        <Seccion titulo="Cunas y sillas" cantidad={equipos.length} vacio="No hay que llevar ni retirar nada este día.">
+          <ul className="flex flex-col gap-3">
+            {equipos.map((e) => (
+              <li key={`${e.id}-${e.tarea.accion}`} className={`${clsTarjeta} flex flex-col gap-3 p-4`}>
+                <div className="flex items-start justify-between gap-3">
+                  <Depto depto={e.depto} />
+                  <p className="shrink-0 text-sm font-medium text-tinta-media">
+                    {ETIQUETA_TIPO[e.tipo as TipoEquipamiento]}
+                  </p>
+                </div>
+                {e.notas && <p className="text-sm text-tinta-tenue">{e.notas}</p>}
+                <MarcaEquipamiento
+                  id={e.id}
+                  accion={e.tarea.accion}
+                  nombre={ETIQUETA_TIPO[e.tipo as TipoEquipamiento].toLowerCase()}
+                  hecha={e.tarea.hecha}
+                  bloqueada={e.tarea.bloqueada}
+                />
+              </li>
+            ))}
+          </ul>
+        </Seccion>
+
+        <Seccion titulo="Ropa blanca" cantidad={limpiezas.length} vacio="No hay limpiezas este día.">
+          <ul className="flex flex-col gap-3">
+            {limpiezas.map((l) => {
+              const { salida, entrada } = interacciones.get(l.id)!;
+              const otroDiaEntrada = entrada ? null : diaProximaEntrada(l.prox_checkin, fecha);
+              return (
+                <li key={l.id} className={`${clsTarjeta} flex flex-col gap-3 p-4`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <Depto depto={l.depto} />
+                    <dl className="grid shrink-0 grid-cols-[auto_auto] gap-x-2 text-right text-sm tabular-nums">
+                      <dt className="text-tinta-etiqueta">
+                        {salida?.otroDia ? `Salió ${formatearFechaAR(salida.otroDia).slice(0, 5)}` : "Sale"}
+                      </dt>
+                      <dd className="font-semibold text-tinta">{salida?.hora ?? "—"}</dd>
+                      {/* Entra alguien ese día: el color de "pasando ahora",
+                          como en Mis limpiezas. No hay margen. */}
+                      <dt className={entrada ? "text-ahora-text" : "text-tinta-etiqueta"}>Entra</dt>
+                      <dd className={`font-semibold ${entrada ? "text-ahora-text-fuerte" : "text-tinta"}`}>
+                        {entrada?.hora ?? (otroDiaEntrada ? `el ${otroDiaEntrada}` : "—")}
+                      </dd>
+                    </dl>
+                  </div>
+                  <p className="text-xs text-tinta-etiqueta">
+                    {TIPOS_LIMPIEZA[l.tipo] ?? l.tipo}
+                    {l.responsable?.nombre ? ` · limpia ${l.responsable.nombre}` : " · sin asignar"}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <MarcaRopa limpiezaId={l.id} que="blanco" hora={horaARDe(l.blanco_entregado_at)} />
+                    <MarcaRopa limpiezaId={l.id} que="sucio" hora={horaARDe(l.sucio_retirado_at)} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Seccion>
+
+        <Seccion
+          titulo={persona.rol === "logistica" ? "Mis pendientes del reporte" : "Pendientes de logística"}
+          cantidad={notas.length}
+          vacio="Nada pendiente en el reporte."
+        >
+          <ul className="flex flex-col gap-2">
+            {notas.map((n) => (
+              <li key={n.id} className={`${clsTarjeta} px-4 py-3 text-sm`}>
+                <p className="text-tinta">
+                  {n.depto?.codigo && <span className="font-medium text-exito-text">{n.depto.codigo} · </span>}
+                  {n.titulo}
+                </p>
+                {n.detalle && <p className="mt-0.5 text-tinta-tenue">{n.detalle}</p>}
+                {n.fecha && (
+                  <p
+                    className={`mt-1 text-xs tabular-nums ${
+                      n.fecha <= hoy ? "text-aviso-text" : "text-tinta-etiqueta"
+                    }`}
+                  >
+                    {n.fecha < hoy ? "Vencido · " : n.fecha === hoy ? "Hoy · " : ""}
+                    {formatearFechaAR(n.fecha)}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Seccion>
+      </LlavesPendientes>
     </main>
   );
 }

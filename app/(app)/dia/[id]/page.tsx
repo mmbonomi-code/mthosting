@@ -66,7 +66,7 @@ export default async function FichaEvento({
     .from("eventos_estadia")
     .select(
       `id, tipo, fecha_coordinada, hora_coordinada, estado, late_checkout, acceso_dejado, observaciones,
-       acceso_dejado_at, acceso_foto,
+       acceso_dejado_at, acceso_dejado_por, acceso_foto,
        punto_acceso_id, responsable_id, punto_devolucion_id, responsable_devolucion_id,
        reserva:reservas(
          id, codigo_reserva, huesped_nombre, huesped_contacto, noches, adultos, ninos, bebes,
@@ -340,6 +340,15 @@ export default async function FichaEvento({
       ? await supabase.storage.from(BUCKET_LOGISTICA).createSignedUrl(evento.acceso_foto, 3600)
       : { data: null };
   const horaLlave = horaARDe(evento.acceso_dejado_at);
+  // Quién la dejó: la marca guarda el usuario, el nombre está en su ficha.
+  const { data: quienLlave } =
+    esLlegada && evento.acceso_dejado && evento.acceso_dejado_por
+      ? await supabase
+          .from("personas")
+          .select("nombre")
+          .eq("profile_id", evento.acceso_dejado_por)
+          .maybeSingle()
+      : { data: null };
 
   // Las casillas que corresponden a este evento, todas dentro del panel.
   const tildes = esLlegada
@@ -351,7 +360,7 @@ export default async function FichaEvento({
                 etiqueta: `Dejé ${METODOS_ACCESO[puntoElegido.metodo].toLowerCase()} ${[puntoElegido.ubicacion, puntoElegido.identificador].filter(Boolean).join(" ")}`,
                 detalle:
                   evento.acceso_dejado && horaLlave
-                    ? `Marcado a las ${horaLlave}`
+                    ? `Marcado a las ${horaLlave}${quienLlave?.nombre ? ` por ${quienLlave.nombre}` : ""}`
                     : "Confirmación de que el equipo ya lo dejó en el punto de acceso",
                 enlace: fotoLlave?.signedUrl
                   ? { href: fotoLlave.signedUrl, texto: "Ver la foto de la llave" }

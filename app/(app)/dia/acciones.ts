@@ -127,9 +127,18 @@ export async function marcarAccesoDejado(
   valor: boolean,
 ): Promise<ResultadoCasilla> {
   const supabase = await crearClienteServidor();
+  // Quién y cuándo, igual que cuando lo marca logística: la lista del Día
+  // muestra la hora, y sin esto la marca hecha desde la oficina no la tenía.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { error } = await supabase
     .from("eventos_estadia")
-    .update({ acceso_dejado: valor })
+    .update({
+      acceso_dejado: valor,
+      acceso_dejado_at: valor ? new Date().toISOString() : null,
+      acceso_dejado_por: valor ? (user?.id ?? null) : null,
+    })
     .eq("id", eventoId);
   if (error) return { error: `No se pudo guardar: ${error.message}` };
   revalidatePath("/dia");

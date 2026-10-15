@@ -3,7 +3,7 @@ import Link from "next/link";
 import Badge from "@/app/componentes/Badge";
 import { ETIQUETA_MARCA, TONO_MARCA } from "@/lib/estados";
 import { crearClienteServidor } from "@/lib/supabase/server";
-import { formatearFechaAR, hoyAR } from "@/lib/fechas";
+import { formatearFechaAR, horaARDe, hoyAR } from "@/lib/fechas";
 import { formatearHora } from "@/lib/limpiezas/etiquetas";
 import { faltantesDeEvento } from "@/lib/eventos/faltantes";
 import {
@@ -14,7 +14,7 @@ import {
   patronBusqueda,
 } from "@/lib/eventos/dia";
 import { puedeEditarReservas } from "@/lib/reservas/permisos";
-import { describirAcceso, esAccesoPresencial } from "@/lib/eventos/etiquetas";
+import { describirAcceso, esAccesoPresencial, METODOS_QUE_SE_DEJAN } from "@/lib/eventos/etiquetas";
 import BuscadorDia from "./BuscadorDia";
 import NavegadorFecha from "./NavegadorFecha";
 import AvisosDelDia from "./AvisosDelDia";
@@ -29,7 +29,7 @@ function nombreDelDia(fechaISO: string): string {
 }
 
 const CAMPOS = `
-  id, tipo, fecha_coordinada, hora_coordinada, estado, late_checkout, acceso_dejado, observaciones,
+  id, tipo, fecha_coordinada, hora_coordinada, estado, late_checkout, acceso_dejado, acceso_dejado_at, acceso_foto, observaciones,
   punto:puntos_acceso!eventos_estadia_punto_acceso_id_fkey(metodo, ubicacion, identificador),
   punto_devolucion:puntos_acceso!eventos_estadia_punto_devolucion_id_fkey(metodo, ubicacion, identificador),
   responsable:personas!eventos_estadia_responsable_id_fkey(nombre),
@@ -51,6 +51,8 @@ type Evento = {
   estado: string;
   late_checkout: boolean;
   acceso_dejado: boolean;
+  acceso_dejado_at: string | null;
+  acceso_foto: string | null;
   observaciones: string | null;
   punto: { metodo: string; ubicacion: string | null; identificador: string | null } | null;
   punto_devolucion: {
@@ -133,6 +135,18 @@ function Fila({ evento, listo }: { evento: Evento; listo?: boolean }) {
   const faltantes = faltantesDeFila(evento);
   const coordinado = faltantes.length === 0;
 
+  // La llave (o el sobre) que el equipo ya dejó, con la hora: la oficina
+  // tiene que poder ver de un vistazo que la llegada está cubierta, no solo
+  // que dejó de faltar algo (decisión del dueño, 14/10/2026).
+  const llaveDejada =
+    esLlegada && evento.acceso_dejado && METODOS_QUE_SE_DEJAN.has(punto?.metodo ?? "")
+      ? {
+          hora: horaARDe(evento.acceso_dejado_at),
+          conFoto: !!evento.acceso_foto,
+          que: punto!.metodo === "sobre" ? "Sobre dejado" : "Llave dejada",
+        }
+      : null;
+
   return (
     <li>
       <Link
@@ -192,6 +206,13 @@ function Fila({ evento, listo }: { evento: Evento; listo?: boolean }) {
           {!coordinado && (
             <span className="mt-0.5 block text-xs text-aviso-text">
               {faltantes.join(" · ")}
+            </span>
+          )}
+          {llaveDejada && (
+            <span className="mt-0.5 block text-xs tabular-nums text-exito-text">
+              🔑 {llaveDejada.que}
+              {llaveDejada.hora && ` ${llaveDejada.hora}`}
+              {llaveDejada.conFoto && " · con foto"}
             </span>
           )}
         </span>

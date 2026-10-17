@@ -14,6 +14,11 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../database.types";
+import {
+  detectarRepetidas,
+  textoDelAviso,
+  type FilaComparable,
+} from "./duplicados";
 import { filasFueraDeGestion } from "./gestion";
 import { armarMapa } from "./mapeo";
 import {
@@ -215,6 +220,14 @@ export async function cerrarLote(
       .map((a) => `"${a.nombre}" no se pudo leer: ${a.error}`),
   ];
 
+  // La huella no alcanza cuando Airbnb cambia como escribe algo: el 17/10/2026
+  // un cambio de nombre de anuncio metio 547 filas repetidas sin que nadie se
+  // enterara. Esto las mira con otro criterio y avisa.
+  if ((lote?.tipo ?? "efectivo") === "efectivo") {
+    const repetidas = await avisoDeRepetidas(supabase, importId);
+    if (repetidas !== null) avisos.push(repetidas);
+  }
+
   const resumen: ResumenLote = {
     import_id: importId,
     tipo: (lote?.tipo ?? "efectivo") as TipoCarga,
@@ -283,6 +296,47 @@ export async function deshacerLote(supabase: Cliente, importId: string): Promise
 // ----------------------------------------------------------------------------
 // Adentro
 // ----------------------------------------------------------------------------
+
+/**
+ * Busca plata del lote que ya estaba cargada de antes.
+ *
+ * Compara por reserva, categoria, fecha e importe, que es lo que no cambia
+ * aunque cambie el texto del archivo. Solo mira las filas vivas: una dada de
+ * baja no duplica nada. Devuelve el aviso listo, o null si esta todo bien.
+ */
+async function avisoDeRepetidas(supabase: Cliente, importId: string): Promise<string | null> {
+  const CAMPOS = "codigo_confirmacion, categoria, fecha, importe, anuncio";
+
+  const nuevas: FilaComparable[] = [];
+  for (let desde = 0; ; desde += 1000) {
+    const { data, error } = await supabase
+      .from("movimientos_economicos")
+      .select(CAMPOS)
+      .eq("import_id", importId)
+      .eq("activo", true)
+      .not("codigo_confirmacion", "is", null)
+      .range(desde, desde + 999);
+    if (error) return null; // un control que falla no puede voltear la importacion
+    nuevas.push(...((data ?? []) as FilaComparable[]));
+    if ((data ?? []).length < 1000) break;
+  }
+  if (nuevas.length === 0) return null;
+
+  const codigos = [...new Set(nuevas.map((n) => n.codigo_confirmacion!))];
+  const existentes: FilaComparable[] = [];
+  for (let i = 0; i < codigos.length; i += 200) {
+    const { data, error } = await supabase
+      .from("movimientos_economicos")
+      .select(CAMPOS)
+      .eq("activo", true)
+      .neq("import_id", importId)
+      .in("codigo_confirmacion", codigos.slice(i, i + 200));
+    if (error) return null;
+    existentes.push(...((data ?? []) as FilaComparable[]));
+  }
+
+  return textoDelAviso(detectarRepetidas(nuevas, existentes));
+}
 
 async function armarMapaDeAnuncios(supabase: Cliente) {
   const { data, error } = await supabase

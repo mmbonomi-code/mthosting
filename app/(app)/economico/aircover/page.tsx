@@ -46,6 +46,7 @@ export default async function AirCover() {
         .select(
           "id, fecha, monto, moneda, codigo_confirmacion, huesped, detalles, archivo, linea, aircover_destino, depto_id",
         )
+        .eq("activo", true)
         .eq("categoria", "aircover")
         .order("fecha", { ascending: false }) as never,
     "los AirCover",

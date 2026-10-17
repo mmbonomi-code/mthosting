@@ -102,7 +102,8 @@ export default async function Rentabilidad({
             .from("movimientos_economicos")
             .select(
               "categoria, monto, cobrado, tarifa_limpieza, moneda, fecha, depto_id, cuenta_id, grupo_con_coanfitrion",
-            ) as never,
+            )
+            .eq("activo", true) as never,
         "los movimientos económicos",
       ),
       traerTodo<{ id: string; comision_pct: number | null }>(

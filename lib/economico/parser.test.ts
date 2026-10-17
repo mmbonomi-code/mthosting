@@ -418,6 +418,55 @@ describe("parsearTransacciones", () => {
     expect(a.filas[0].huella).toBe(b.filas[1].huella);
   });
 
+  it("renombrar el anuncio no vuelve a importar la misma reserva", () => {
+    // El caso real del 17/10/2026: a tres departamentos les agregaron un
+    // punto al nombre y entraron 547 filas repetidas. La reserva es la misma,
+    // así que la huella tiene que ser la misma.
+    const base = {
+      Fecha: "05/17/2026",
+      Tipo: "Reserva",
+      "Código de confirmación": "HMQBEYXE4W",
+      Moneda: "USD",
+      Monto: "80.51",
+    };
+    const antes = parsearTransacciones(
+      [ENCABEZADO_21, fila({ ...base, Anuncio: "Premium depto en Recoleta 09" })].join("\n"),
+    );
+    const despues = parsearTransacciones(
+      [ENCABEZADO_21, fila({ ...base, Anuncio: "Premium depto. en Recoleta 09" })].join("\n"),
+    );
+    expect(despues.filas[0].huella).toBe(antes.filas[0].huella);
+  });
+
+  it("dos reservas distintas del mismo anuncio siguen siendo dos", () => {
+    const base = { Fecha: "05/17/2026", Tipo: "Reserva", Anuncio: "A", Moneda: "USD", Monto: "80.51" };
+    const csv = [
+      ENCABEZADO_21,
+      fila({ ...base, "Código de confirmación": "HMQBEYXE4W" }),
+      fila({ ...base, "Código de confirmación": "HMRKT8BN4E" }),
+    ].join("\n");
+    const { filas } = parsearTransacciones(csv);
+    expect(filas[0].huella).not.toBe(filas[1].huella);
+  });
+
+  it("una fila sin código sí distingue por anuncio: es lo único que la separa", () => {
+    const base = { Fecha: "05/17/2026", Tipo: "Reserva", Moneda: "USD", Monto: "80.51" };
+    const csv = [
+      ENCABEZADO_21,
+      fila({ ...base, Anuncio: "Palermo uno" }),
+      fila({ ...base, Anuncio: "Palermo dos" }),
+    ].join("\n");
+    const { filas } = parsearTransacciones(csv);
+    expect(filas[0].huella).not.toBe(filas[1].huella);
+  });
+
+  it("en una fila sin código, el anuncio se compara sin tildes ni mayúsculas", () => {
+    const base = { Fecha: "05/17/2026", Tipo: "Reserva", Moneda: "USD", Monto: "80.51" };
+    const a = parsearTransacciones([ENCABEZADO_21, fila({ ...base, Anuncio: "Único en Palermo" })].join("\n"));
+    const b = parsearTransacciones([ENCABEZADO_21, fila({ ...base, Anuncio: "UNICO EN  PALERMO" })].join("\n"));
+    expect(b.filas[0].huella).toBe(a.filas[0].huella);
+  });
+
   it("guarda la línea del archivo para poder auditar el número", () => {
     const csv = [
       ENCABEZADO_21,

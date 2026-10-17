@@ -10,7 +10,13 @@
  * de cálculo (etapa 2). Acá se lee el archivo y se lo deja fiel.
  */
 
-import { createHash } from "node:crypto";
+import {
+  claveDeAnuncio,
+  huellaDe,
+  normalizarTexto,
+  repararMojibake,
+  SEPARADOR,
+} from "./huella";
 import { parsearCSV } from "../importador/parser";
 
 /** Rechaza el archivo entero. Nunca "importar lo que se pueda". */
@@ -69,68 +75,9 @@ export type ResultadoArchivo = {
   avisos: string[];
 };
 
-// ----------------------------------------------------------------------------
-// Texto
-// ----------------------------------------------------------------------------
 
-/**
- * Repara el destrozo de codificación heredado: archivos guardados como UTF-8 y
- * releídos como Latin-1 dejan "CÃ³modo" donde decía "Cómodo".
- *
- * Se arregla acá y no normalizando acentos, porque `Ã³` y `ó` son caracteres
- * distintos: sacarle los tildes a "CÃ³modo" da "cã³modo", que no se parece a
- * "comodo" ni de casualidad.
- */
-export function repararMojibake(texto: string): string {
-  if (!/[ÃÂ]/.test(texto)) return texto;
-
-  const bytes: number[] = [];
-  for (const caracter of texto) {
-    const codigo = caracter.codePointAt(0)!;
-    if (codigo <= 0xff) {
-      bytes.push(codigo);
-      continue;
-    }
-    // "Ãšnico" tiene una 'š' (U+0161): la mala lectura fue con Windows-1252,
-    // no con Latin-1, y en esa tabla los códigos 0x80–0x9F son otros signos.
-    // Sin volver a convertirlos a su byte, la mitad de los casos no se arregla.
-    const byte = CP1252.get(codigo);
-    if (byte === undefined) return texto;
-    bytes.push(byte);
-  }
-
-  try {
-    const reparado = new TextDecoder("utf-8", { fatal: true }).decode(
-      Uint8Array.from(bytes),
-    );
-    // Si el resultado sigue teniendo el patrón, no era mojibake: se deja igual.
-    return /[ÃÂ]/.test(reparado) ? texto : reparado;
-  } catch {
-    // No era UTF-8 mal leído. El texto original es el bueno.
-    return texto;
-  }
-}
-
-/** Los códigos 0x80–0x9F de Windows-1252, para deshacer la mala lectura. */
-const CP1252 = new Map<number, number>([
-  [0x20ac, 0x80], [0x201a, 0x82], [0x0192, 0x83], [0x201e, 0x84],
-  [0x2026, 0x85], [0x2020, 0x86], [0x2021, 0x87], [0x02c6, 0x88],
-  [0x2030, 0x89], [0x0160, 0x8a], [0x2039, 0x8b], [0x0152, 0x8c],
-  [0x017d, 0x8e], [0x2018, 0x91], [0x2019, 0x92], [0x201c, 0x93],
-  [0x201d, 0x94], [0x2022, 0x95], [0x2013, 0x96], [0x2014, 0x97],
-  [0x02dc, 0x98], [0x2122, 0x99], [0x0161, 0x9a], [0x203a, 0x9b],
-  [0x0153, 0x9c], [0x017e, 0x9e], [0x0178, 0x9f],
-]);
-
-/** Para comparar anuncios: sin acentos, sin mayúsculas, sin espacios de más. */
-export function normalizarTexto(texto: string): string {
-  return repararMojibake(texto)
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
+// Los traia este archivo desde siempre y medio modulo los importa de aca.
+export { claveDeAnuncio, huellaDe, normalizarTexto, repararMojibake, SEPARADOR } from "./huella";
 
 // ----------------------------------------------------------------------------
 // Fechas y números
@@ -389,6 +336,8 @@ export function parsearTransacciones(contenido: string): ResultadoArchivo {
     // La clave natural, validada sobre los datos reales. `Cobrado` es
     // imprescindible: en los Payout el Monto viene vacío y sin Cobrado dos
     // payouts distintos del mismo día a la misma cuenta colapsan en uno.
+    // El anuncio entra por `claveDeAnuncio`, que lo ignora cuando la fila
+    // tiene codigo de reserva: renombrar la publicacion no es una fila nueva.
     const clave = [
       tipoRaw,
       valor(cruda, col.codigo) ?? "",
@@ -396,9 +345,9 @@ export function parsearTransacciones(contenido: string): ResultadoArchivo {
       valor(cruda, col.monto) ?? "",
       valor(cruda, col.cobrado) ?? "",
       valor(cruda, col.moneda) ?? "",
-      valor(cruda, col.anuncio) ?? "",
+      claveDeAnuncio(valor(cruda, col.codigo), valor(cruda, col.anuncio)),
       detalles ?? "",
-    ].join("");
+    ].join(SEPARADOR);
 
     const ocurrencia = (vistas.get(clave) ?? 0) + 1;
     vistas.set(clave, ocurrencia);
@@ -428,7 +377,7 @@ export function parsearTransacciones(contenido: string): ResultadoArchivo {
       grupo_con_coanfitrion: false, // se resuelve al agrupar, más abajo
       cuenta: esPayout ? parsearCuenta(detalles) : null,
       ocurrencia,
-      huella: createHash("sha256").update(`${clave}${ocurrencia}`).digest("hex"),
+      huella: huellaDe(clave, ocurrencia),
       raw,
     });
   }

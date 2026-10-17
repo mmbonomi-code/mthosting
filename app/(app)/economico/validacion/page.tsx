@@ -70,6 +70,7 @@ export default async function Validacion({
       supabase
         .from("movimientos_economicos")
         .select(CAMPOS)
+        .eq("activo", true)
         .order("archivo")
         .order("orden_en_archivo") as never,
     "los movimientos",

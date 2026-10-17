@@ -74,7 +74,7 @@ export default async function Economico({
   const supabase = await crearClienteServidor();
 
   const crudas = await traerTodo<Cruda>(
-    () => supabase.from("movimientos_economicos").select(CAMPOS) as never,
+    () => supabase.from("movimientos_economicos").select(CAMPOS).eq("activo", true) as never,
     "los movimientos",
   );
 

@@ -2,9 +2,9 @@
 
 import { estadoTrasMarcar, TEXTO_ACCION, type AccionEquipamiento } from "@/lib/logistica/tareas";
 import { marcarEquipamiento, marcarRopa } from "./acciones";
-import Tarea from "./Tarea";
+import BotonMarca from "./BotonMarca";
 
-/** "Dejé lo blanco" / "Saqué lo sucio" de una limpieza. */
+/** "Blanco" / "Sucio" de una limpieza: lo dejó, lo sacó. */
 export function MarcaRopa({
   limpiezaId,
   que,
@@ -16,11 +16,10 @@ export function MarcaRopa({
   hora: string | null;
 }) {
   return (
-    <Tarea
+    <BotonMarca
       hecha={hora !== null}
-      textoPendiente={que === "blanco" ? "Dejé lo blanco" : "Saqué lo sucio"}
-      textoHecha={que === "blanco" ? "Blanco entregado" : "Sucio retirado"}
-      detalleHecha={hora}
+      texto={que === "blanco" ? "Blanco" : "Sucio"}
+      hora={hora}
       alMarcar={(valor) => marcarRopa(limpiezaId, que, valor)}
     />
   );
@@ -30,22 +29,19 @@ export function MarcaRopa({
 export function MarcaEquipamiento({
   id,
   accion,
-  nombre,
   hecha,
   bloqueada,
 }: {
   id: string;
   accion: AccionEquipamiento;
-  /** "cuna", "silla de comer"… en minúscula, para armar la frase. */
-  nombre: string;
   hecha: boolean;
   bloqueada: boolean;
 }) {
   const textos = TEXTO_ACCION[accion];
   return (
-    <Tarea
+    <BotonMarca
       hecha={hecha}
-      textoPendiente={`${textos.pendiente} ${nombre}`}
+      texto={textos.pendiente}
       textoHecha={textos.hecha}
       bloqueada={bloqueada}
       motivoBloqueo="Primero hay que llevarla."

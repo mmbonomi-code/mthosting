@@ -1,23 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { clsBoton } from "@/lib/ui";
-import { TONO_TAREA } from "@/lib/estados";
 import { horaARDe } from "@/lib/fechas";
 import { comprimirImagen } from "@/lib/limpiezas/comprimir";
-import Badge from "@/app/componentes/Badge";
 import { deshacerLlave } from "./acciones";
 import { useLlavesPendientes } from "./LlavesPendientes";
 
 /**
- * "Dejé la llave en el candado", con foto. La foto es obligatoria: el botón
- * abre la cámara.
+ * "Dejé la llave en el candado", con foto, en el costado de la fila.
  *
- * La foto se achica y se GUARDA en el celular antes de intentar subirla:
- * sin señal queda guardada, se ve con su marca de "falta subir" y sube sola
- * cuando vuelve la señal (LlavesPendientes). Para la persona que la sacó ya
- * está hecha; la oficina la ve recién cuando sube, con la hora en que se
- * sacó.
+ *  - Sin dejar: un botón de cámara.
+ *  - Dejada sin señal: la miniatura con borde ámbar y "falta subir". La
+ *    foto está guardada en el celular y sube sola (LlavesPendientes).
+ *  - Dejada: la miniatura con ✓ y la hora. Tocarla abre la foto.
+ *
+ * "Deshacer" va aparte, chico, debajo: tocar la miniatura tiene que abrir la
+ * foto, no borrarla. Sin pregunta de confirmación (pedido del dueño,
+ * 19/10/2026): si se deshace por error, se saca otra foto.
  */
 export default function DejarLlave({
   eventoId,
@@ -70,46 +69,45 @@ export default function DejarLlave({
       if (r?.error) setError(r.error);
     });
 
-  const miniatura = (url: string, atenuada: boolean) => (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`size-16 shrink-0 overflow-hidden rounded-lg border bg-elevada ${
-        atenuada ? "border-aviso-borde" : "border-borde-control"
-      }`}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={url}
-        alt="Llave en el candado"
-        className={`h-full w-full object-cover ${atenuada ? "opacity-60" : ""}`}
-        loading="lazy"
-      />
-    </a>
-  );
-
-  const botonDeshacer = (
-    <button type="button" onClick={deshacer} disabled={enviando} className={clsBoton("discreto", "chico")}>
-      {enviando ? "Guardando…" : "Deshacer"}
-    </button>
-  );
+  const url = enEspera ? urlLocal : hecha ? fotoUrl : null;
+  const marcada = !!enEspera || hecha;
+  const textoHora = enEspera ? horaARDe(enEspera.cuando) : hora;
+  const mensaje = error ?? errorCola;
 
   return (
-    <div className="flex flex-col gap-2">
-      {enEspera ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {urlLocal && miniatura(urlLocal, true)}
-          <Badge tono={TONO_TAREA.en_espera}>Llave dejada · falta subir la foto</Badge>
-          <span className="text-xs tabular-nums text-tinta-etiqueta">{horaARDe(enEspera.cuando)}</span>
-          {botonDeshacer}
-        </div>
-      ) : hecha ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {fotoUrl && miniatura(fotoUrl, false)}
-          <Badge tono={TONO_TAREA.hecha}>✓ Llave en el candado</Badge>
-          {hora && <span className="text-xs tabular-nums text-tinta-etiqueta">{hora}</span>}
-          {botonDeshacer}
+    <div className="flex flex-col items-end gap-1">
+      {marcada ? (
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={deshacer}
+            disabled={enviando}
+            className="h-11 px-2 text-xs text-tinta-etiqueta underline underline-offset-2 hover:text-tinta-suave"
+          >
+            Deshacer
+          </button>
+          {/* La hora va adentro de la miniatura: así la fila no crece. */}
+          <a
+            href={url ?? undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Ver la foto de la llave"
+            className={`relative block size-11 shrink-0 overflow-hidden rounded-lg border-2 bg-elevada ${
+              enEspera ? "border-aviso" : "border-exito"
+            }`}
+          >
+            {url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            )}
+            <span
+              className={`absolute inset-x-0 bottom-0 text-center text-[10px] font-semibold leading-4 tabular-nums ${
+                enEspera ? "bg-aviso-soft/90 text-aviso-text" : "bg-exito-soft/90 text-exito-text"
+              }`}
+            >
+              {enEspera ? "subir" : `✓${textoHora ?? ""}`}
+            </span>
+          </a>
         </div>
       ) : (
         <>
@@ -117,10 +115,11 @@ export default function DejarLlave({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={enviando}
-            className={`${clsBoton("primario", "grande")} w-full`}
+            aria-label="Dejé la llave: sacar foto"
+            className="flex h-11 min-w-[4.75rem] items-center justify-center gap-1 rounded-lg bg-primary text-sm font-semibold text-tinta-inversa hover:bg-primary-hover disabled:opacity-45"
           >
             <span aria-hidden>📷</span>
-            {enviando ? "Guardando la foto…" : "Dejé la llave · sacar foto"}
+            {enviando ? "…" : "Llave"}
           </button>
           <input
             ref={inputRef}
@@ -132,7 +131,7 @@ export default function DejarLlave({
           />
         </>
       )}
-      {(error ?? errorCola) && <p className="text-sm text-error-text">{error ?? errorCola}</p>}
+      {mensaje && <p className="w-32 text-right text-xs text-error-text">{mensaje}</p>}
     </div>
   );
 }

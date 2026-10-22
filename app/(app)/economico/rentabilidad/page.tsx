@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { crearClienteServidor } from "@/lib/supabase/server";
+import { traerUltimasCargas } from "@/lib/economico/cargas";
 import { traerTodo } from "@/lib/economico/consultar";
+import { hoyAR } from "@/lib/fechas";
+import UltimaCarga from "../UltimaCarga";
 import type { Cobertura } from "@/lib/caja/cobertura";
 import {
   agregarPorDeptoMes,
@@ -94,7 +97,7 @@ export default async function Rentabilidad({
 
   const supabase = await crearClienteServidor();
 
-  const [crudasEconomico, deptos, cuentas, gastosCrudos, tramos, cotizaciones] =
+  const [crudasEconomico, deptos, cuentas, gastosCrudos, tramos, cotizaciones, cargas] =
     await Promise.all([
       traerTodo<CrudaEconomico>(
         () =>
@@ -140,6 +143,7 @@ export default async function Rentabilidad({
             .gte("fecha", `${ARRANCA}-01`) as never,
         "las cotizaciones",
       ),
+      traerUltimasCargas(supabase),
     ]);
 
   // ---- La ganancia mensual, con el mismo motor que el Resumen ----
@@ -230,6 +234,9 @@ export default async function Rentabilidad({
           reembolsa el propietario: esa plata se adelanta y se recupera, no es un costo de
           MTHosting.
         </p>
+        {/* La ganancia sale de los cobros importados; los gastos, de Caja, que
+            se carga en el día. Por eso acá solo se aclara la fecha de los cobros. */}
+        <UltimaCarga cargas={cargas} hoy={hoyAR()} incluirProgramados={false} />
       </div>
 
       <div className="flex flex-col gap-1.5">

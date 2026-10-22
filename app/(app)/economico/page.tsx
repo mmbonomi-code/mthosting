@@ -9,8 +9,11 @@ import {
   type ClaseCuenta,
   type FilaAgregable,
 } from "@/lib/economico/calcular";
+import { traerUltimasCargas } from "@/lib/economico/cargas";
 import { traerTodo } from "@/lib/economico/consultar";
+import { hoyAR } from "@/lib/fechas";
 import Tablas, { type Celda as CeldaTabla } from "./Tablas";
+import UltimaCarga from "./UltimaCarga";
 
 /**
  * La pantalla del módulo: cómo evoluciona la ganancia mes a mes, de qué está
@@ -89,9 +92,10 @@ export default async function Economico({
     "los próximos cobros",
   );
 
-  const [{ data: deptos }, { data: cuentas }] = await Promise.all([
+  const [{ data: deptos }, { data: cuentas }, cargas] = await Promise.all([
     supabase.from("departamentos").select("id, codigo, comision_pct").order("codigo"),
     supabase.from("cuentas_payout").select("id, clasificacion"),
+    traerUltimasCargas(supabase),
   ]);
 
   const codigoDepto = new Map((deptos ?? []).map((d) => [d.id, d.codigo]));
@@ -199,6 +203,7 @@ export default async function Economico({
             {elegido ? codigoDepto.get(elegido) : `${porDepto.size} departamentos`} ·{" "}
             {nombreMes(meses[0])} a {nombreMes(meses[meses.length - 1])} · todo en USD
           </p>
+          <UltimaCarga cargas={cargas} hoy={hoyAR()} />
         </div>
         {elegido && (
           <Link href="/economico" className={"text-sm text-tinta-tenue underline"}>

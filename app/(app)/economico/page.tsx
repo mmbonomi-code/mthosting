@@ -57,17 +57,6 @@ const CAMPOS_PROGRAMADO = `
 const usd = (n: number) =>
   n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const MESES = [
-  "ene", "feb", "mar", "abr", "may", "jun",
-  "jul", "ago", "sep", "oct", "nov", "dic",
-];
-
-/** `2026-04` → `abr 26`. */
-function nombreMes(mes: string): string {
-  const [a, m] = mes.split("-");
-  return `${MESES[Number(m) - 1]} ${a.slice(2)}`;
-}
-
 export default async function Economico({
   searchParams,
 }: {
@@ -182,7 +171,6 @@ export default async function Economico({
   const elegido = params.depto ?? null;
   const visibles = elegido ? celdas.filter((c) => c.depto_id === elegido) : celdas;
 
-  const meses = [...new Set(celdas.map((c) => c.mes))].sort();
   const totalPeriodo = totalizar(visibles);
 
   // ---- Saldos por departamento ----
@@ -200,8 +188,9 @@ export default async function Economico({
             Económico
           </h1>
           <p className="text-sm tabular-nums text-tinta-tenue">
-            {elegido ? codigoDepto.get(elegido) : `${porDepto.size} departamentos`} ·{" "}
-            {nombreMes(meses[0])} a {nombreMes(meses[meses.length - 1])} · todo en USD
+            {/* El período no se nombra acá: lo eligen los años de la tabla. */}
+            {elegido ? codigoDepto.get(elegido) : `${porDepto.size} departamentos`} · todo en
+            USD
           </p>
           <UltimaCarga cargas={cargas} hoy={hoyAR()} />
         </div>

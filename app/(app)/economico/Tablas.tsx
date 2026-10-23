@@ -98,11 +98,41 @@ export default function Tablas({
     () => [...new Set([...celdas, ...programados].map((c) => c.mes))].sort(),
     [celdas, programados],
   );
+  const anios = useMemo(() => [...new Set(meses.map((m) => m.slice(0, 4)))].sort(), [meses]);
+
+  /**
+   * De 2026 en adelante, que es la serie real: lo anterior son restos sueltos
+   * del sistema viejo y ensucian la comparacion mes a mes. Se puede marcar
+   * cualquier combinacion, pero nunca queda ninguno: una tabla vacia no le
+   * sirve a nadie.
+   */
+  const [aniosElegidos, setAniosElegidos] = useState<Set<string>>(() => {
+    const desde2026 = anios.filter((a) => a >= "2026");
+    return new Set(desde2026.length > 0 ? desde2026 : anios);
+  });
+  const alternarAnio = (anio: string) =>
+    setAniosElegidos((previos) => {
+      if (!previos.has(anio)) return new Set(previos).add(anio);
+      if (previos.size === 1) return previos;
+      const siguiente = new Set(previos);
+      siguiente.delete(anio);
+      return siguiente;
+    });
+
   const [mesElegido, setMesElegido] = useState<string>("");
   const [deptoElegido, setDeptoElegido] = useState<string>("");
   const [conProximos, setConProximos] = useState(false);
   const [ordenMes, setOrdenMes] = useState<Orden>({ campo: "mes", asc: true });
   const [ordenDepto, setOrdenDepto] = useState<Orden>({ campo: "ganancia", asc: false });
+
+  const mesesVisibles = useMemo(
+    () => meses.filter((m) => aniosElegidos.has(m.slice(0, 4))),
+    [meses, aniosElegidos],
+  );
+  // Si se destilda el año del mes elegido, el filtro de mes deja de aplicar
+  // en vez de dejar las tablas en blanco.
+  const mesFiltro = aniosElegidos.has(mesElegido.slice(0, 4)) ? mesElegido : "";
+  const enAnio = (c: Celda) => aniosElegidos.has(c.mes.slice(0, 4));
 
   // El filtro de mes afecta a las dos tablas; el de departamento, solo a la
   // evolución mensual: en la tabla por departamento sería una sola fila.
@@ -110,20 +140,24 @@ export default function Tablas({
     () =>
       celdas.filter(
         (c) =>
-          (mesElegido === "" || c.mes === mesElegido) &&
+          enAnio(c) &&
+          (mesFiltro === "" || c.mes === mesFiltro) &&
           (deptoElegido === "" || c.depto_id === deptoElegido),
       ),
-    [celdas, mesElegido, deptoElegido],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [celdas, mesFiltro, deptoElegido, aniosElegidos],
   );
 
   const proximosVisibles = useMemo(
     () =>
       programados.filter(
         (c) =>
-          (mesElegido === "" || c.mes === mesElegido) &&
+          enAnio(c) &&
+          (mesFiltro === "" || c.mes === mesFiltro) &&
           (deptoElegido === "" || c.depto_id === deptoElegido),
       ),
-    [programados, mesElegido, deptoElegido],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [programados, mesFiltro, deptoElegido, aniosElegidos],
   );
 
   /**
@@ -154,7 +188,7 @@ export default function Tablas({
   }, [visibles, proximosVisibles, conProximos]);
 
   const porDepto = useMemo(() => {
-    const delMes = (c: Celda) => mesElegido === "" || c.mes === mesElegido;
+    const delMes = (c: Celda) => enAnio(c) && (mesFiltro === "" || c.mes === mesFiltro);
     const m = new Map<string, { codigo: string; real: Celda[]; prox: Celda[] }>();
     const meter = (c: Celda, cual: "real" | "prox") => {
       const v = m.get(c.depto_id) ?? { codigo: c.codigo, real: [], prox: [] };
@@ -173,7 +207,8 @@ export default function Tablas({
       reservas: real.reduce((s, c) => s + c.reservas, 0),
       porCobrar: prox.reduce((s, c) => s + c.comision + c.limpieza, 0),
     }));
-  }, [celdas, programados, mesElegido, conProximos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [celdas, programados, mesFiltro, conProximos, aniosElegidos]);
 
   function ordenar<T extends Record<string, unknown>>(filas: T[], o: Orden): T[] {
     return [...filas].sort((a, b) => {
@@ -210,17 +245,45 @@ export default function Tablas({
   return (
     <>
       <div className="flex flex-wrap items-end gap-3">
+        {anios.length > 1 && (
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-tinta-etiqueta">
+              Años
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {anios.map((a) => {
+                const activo = aniosElegidos.has(a);
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    aria-pressed={activo}
+                    onClick={() => alternarAnio(a)}
+                    className={`h-11 rounded-md border px-3 text-sm tabular-nums transition-colors ${
+                      activo
+                        ? "border-primary bg-primary-soft text-primary-soft-text"
+                        : "border-borde-control text-tinta-suave hover:bg-superficie-alt"
+                    }`}
+                  >
+                    {a}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium uppercase tracking-wide text-tinta-etiqueta">
             Mes
           </span>
           <select
-            value={mesElegido}
+            value={mesFiltro}
             onChange={(e) => setMesElegido(e.target.value)}
             className={CONTROL}
           >
             <option value="">Todos los meses</option>
-            {meses.map((m) => (
+            {mesesVisibles.map((m) => (
               <option key={m} value={m}>
                 {nombreMes(m)}
               </option>
@@ -260,7 +323,7 @@ export default function Tablas({
           </label>
         )}
 
-        {(mesElegido || deptoElegido) && (
+        {(mesFiltro || deptoElegido) && (
           <button
             type="button"
             onClick={() => {
@@ -398,9 +461,9 @@ export default function Tablas({
         <div>
           <h2 className="font-semibold text-tinta">
             Por departamento
-            {mesElegido && (
+            {mesFiltro && (
               <span className="ml-2 text-sm font-normal text-tinta-tenue">
-                {nombreMes(mesElegido)}
+                {nombreMes(mesFiltro)}
               </span>
             )}
           </h2>
